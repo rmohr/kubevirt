@@ -2,6 +2,8 @@ language: go
 go_import_path: kubevirt.io/kubevirt
 sudo: required
 dist: trusty
+services:
+  - docker
 
 go:
   - 1.6.x
@@ -20,3 +22,9 @@ script:
  - make generate
  - if git diff --name-only | grep 'generated.*.go'; then echo "Content of generated files changed. Please regenerate and commit them."; false; fi
  - make test
+
+deploy:
+  provider: script
+  script: make publish
+  on:
+    branch: master
