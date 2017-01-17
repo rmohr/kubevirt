@@ -1,0 +1,26 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure(2) do |config|
+  config.vm.box = "rmohr/kubevirt"
+
+  config.vm.provider :libvirt do |domain|
+      domain.cpus = 2
+      domain.nested = true  # enable nested virtualization
+      domain.cpu_mode = "host-model"
+      domain.memory = 3000
+  end
+
+  config.vm.define "kubevirt1" do |master|
+      master.vm.hostname = "kubevirt"
+      master.vm.synced_folder ".", "/vagrant", disabled: true
+      master.ssh.password="vagrant"
+
+      master.vm.provision "shell", inline: <<-SHELL, run: "always"
+        #!/bin/bash
+        echo -e "\033[0;32m Deployment was successful!"
+        echo -e "Cockpit is accessible at https://`hostname -I`:9090."
+        echo -e "Credentials for Cockpit are 'root:vagrant'.\033[0m"
+      SHELL
+  end
+end

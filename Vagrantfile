@@ -40,7 +40,7 @@ Vagrant.configure(2) do |config|
   if $use_nfs then
     config.vm.synced_folder "./", "/vagrant", type: "nfs"
   else
-    config.vm.synced_folder "./", "/vagrant", type: "rsync", rsync__exclude: [ "cluster/vagrant/.kubectl", "cluster/vagrant/.kubeconfig" ]
+          config.vm.synced_folder "./", "/vagrant", type: "rsync", rsync__exclude: [ "cluster/vagrant/.kubectl", "cluster/vagrant/.kubeconfig", ".vagrant", "box" ]
   end
 
   config.vm.provision "shell", inline: <<-SHELL
@@ -52,6 +52,7 @@ Vagrant.configure(2) do |config|
 
   config.vm.define "master" do |master|
       master.vm.hostname = "master"
+      master.ssh.insert_key = false
       master.vm.network "private_network", ip: "#{$master_ip}"
       master.vm.provider :libvirt do |domain|
           domain.memory = 3000
@@ -77,6 +78,7 @@ Vagrant.configure(2) do |config|
   (0..($nodes-1)).each do |suffix|
     config.vm.define "node" + suffix.to_s do |node|
         node.vm.hostname = "node" + suffix.to_s
+        node.ssh.insert_key = false
         node.vm.provider :libvirt do |domain|
             domain.memory = 2048
             if $cache_docker then
