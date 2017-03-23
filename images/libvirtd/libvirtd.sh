@@ -2,15 +2,11 @@
 
 set -xe
 
-fatal() { echo "FATAL: $@" >&2 ; exit 2 ; }
-[[ -f /host/var/run/libvirtd.pid ]] && fatal "libvirtd seems to be running on the host"
-
 # HACK
 # Use hosts's /dev to see new devices and allow macvtap
 mkdir /dev.container && {
   mount --rbind /dev /dev.container
-
-  mount --rbind /host/dev /dev
+  mount --rbind /host-dev /dev
 
   # Keep some devices from the containerinal /dev
   keep() { mount --rbind /dev.container/$1 /dev/$1 ; }
@@ -22,6 +18,18 @@ mkdir /dev.container && {
   # Use the container /dev/kvm if available
   [[ -e /dev.container/kvm ]] && keep kvm
 }
+
+mkdir /sys.net.container && {
+  mount --rbind /sys/class/net /sys.net.container
+  mount --rbind /host-sys/class/net /sys/class/net
+}
+
+mkdir /sys.devices.container && {
+  mount --rbind /sys/devices /sys.devices.container
+  mount --rbind /host-sys/devices /sys/devices
+}
+
+mount --rbind /host-sys/fs/cgroup /sys/fs/cgroup
 
 # We create the network on a file basis to not
 # have to wait for libvirtd to come up
@@ -39,5 +47,8 @@ EOX
   ln -s /etc/libvirt/qemu/networks/default.xml /etc/libvirt/qemu/networks/autostart/default.xml
 fi
 
-/usr/sbin/virtlogd &
+grep closefrom_override /etc/sudoers >/dev/null 2>&1 || echo "Defaults closefrom_override" >> /etc/sudoers
+
+echo "cgroup_controllers = [ ]" >> /etc/libvirt/qemu.conf
+
 /usr/sbin/libvirtd -l
