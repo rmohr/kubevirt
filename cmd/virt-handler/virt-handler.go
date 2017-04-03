@@ -57,7 +57,7 @@ func main() {
 	// TODO we need to handle disconnects
 	domainConn, err := virtwrap.NewConnection(*libvirtUri, *libvirtUser, *libvirtPass)
 	if err != nil {
-		panic(fmt.Sprintf("failed to connect to libvirtd: %s", err))
+		panic(fmt.Sprintf("failed to connect to libvirtd: %v", err))
 	}
 	defer domainConn.Close()
 
