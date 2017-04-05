@@ -143,8 +143,7 @@ func NewConnection(uri string, user string, pass string) (Connection, error) {
 		return nil, err
 	}
 	lvConn := &LibvirtConnection{Connect: *virConn, user: user, pass: pass, uri: uri, alive: true}
-	return lvConn, err
-
+	return lvConn, nil
 }
 
 // TODO: needs a functional test.
