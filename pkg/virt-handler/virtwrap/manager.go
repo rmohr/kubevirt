@@ -139,6 +139,9 @@ type LibvirtDomainManager struct {
 
 func NewConnection(uri string, user string, pass string) (Connection, error) {
 	virConn, err := newConnection(uri, user, pass)
+	if err != nil {
+		return nil, err
+	}
 	lvConn := &LibvirtConnection{Connect: *virConn, user: user, pass: pass, uri: uri, alive: true}
 	return lvConn, err
 
