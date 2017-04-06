@@ -31,6 +31,9 @@ mkdir /sys.devices.container && {
 
 mount --rbind /host-sys/fs/cgroup /sys/fs/cgroup
 
+mkdir -p /var/log/kubevirt
+touch /var/log/kubevirt/qemu-kube.log
+
 # We create the network on a file basis to not
 # have to wait for libvirtd to come up
 if [[ -n "$LIBVIRTD_DEFAULT_NETWORK_DEVICE" ]]; then
