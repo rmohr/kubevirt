@@ -1,5 +1,6 @@
 #!/bin/sh
-# alias docker="/usr/bin/docker"
+# alias docker="sudo /usr/bin/docker"
+alias log='echo "$(date) "'
 
 ARGS="$@"
 # static config
@@ -40,7 +41,7 @@ shift
 done
 
 if [ -z "$VM_NAME" ]; then
-    echo "Libvirt is asking for qemu capabilities." >> $LOG
+    log "Libvirt is asking for qemu capabilities." >> $LOG
     exec $QEMU $ARGS
 fi
 
@@ -48,7 +49,7 @@ if [[ "$VM_NAME" == *"="* ]]
 then
     VM_NAME=$(echo -n "$VM_NAME" | awk -F "=" -v RS="," "/guest/ { print \$2; }")
 fi
-echo "${VM_NAME}: Trying to start VM ${VM_NAME}." >> $LOG
+log "${VM_NAME}: Trying to start VM ${VM_NAME}." >> $LOG
 
 function find_container() {
     docker ps --no-trunc | awk "/.*compute.*virt-launcher-$VM_NAME-{5}.*/ { print \$1 }" 2>> $LOG
@@ -56,7 +57,7 @@ function find_container() {
 
 NEXT_WAIT=0
 until test -n "$(find_container)" || [ $NEXT_WAIT -eq 10 ]; do
-           echo "${VM_NAME}: Waiting for container to show up." >> $LOG
+           log "${VM_NAME}: Waiting for container to show up." >> $LOG
            (( NEXT_WAIT++ ))
            sleep 6
 done
@@ -64,19 +65,19 @@ done
 CONTAINER_ID=$( find_container )
 
 if [ -z "$CONTAINER_ID" ]; then
-        echo "Could not find the VM container" >> $LOG
+        log "Could not find the VM container" >> $LOG
         >&2 echo "Could not find the VM container"
         exit 1
 fi
 
-echo "${VM_NAME}: Found container $CONTAINER_ID" >> $LOG
+log "${VM_NAME}: Found container $CONTAINER_ID" >> $LOG
 
 CONTAINER_PID=$(docker inspect --format '{{.State.Pid}}' $CONTAINER_ID)
 CMD="$QEMU $ARGS"
 
-echo "${VM_NAME}: Container target pid is \"$CONTAINER_PID\"" >> $LOG
+log "${VM_NAME}: Container target pid is \"$CONTAINER_PID\"" >> $LOG
 
-echo "${VM_NAME}: $CMD" >> $LOG
+log "${VM_NAME}: $CMD" >> $LOG
 
 set -e
 # Start qemu in the pid namespace of the container to receive signals on container kills
