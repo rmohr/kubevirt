@@ -4,7 +4,9 @@ MAINTAINER "Stu Gott" <sgott@redhat.com>
 ENV container docker
 
 # util-linux listed here explicity as nsenter must be present in this image
-RUN yum install -y \
+RUN yum -y install wget \
+ && wget -P /etc/yum.repos.d https://copr.fedorainfracloud.org/coprs/jmliger/virt7-upstream/repo/epel-7/jmliger-virt7-upstream-epel-7.repo  \
+ && yum install -y \
   libvirt-daemon-kvm \
   libvirt-daemon-qemu \
   libvirt-client \
