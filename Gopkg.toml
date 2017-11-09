@@ -20,7 +20,7 @@
 #  name = "github.com/x/y"
 #  version = "2.4.0"
 
-ignored = ["code.google.com/p/go-charset","github.com/go-kit/kit/examples","github.com/go-kit/kit/log/levels","github.com/go-kit/kit/metrics/influxdb","github.com/go-kit/kit/service","github.com/googleapis/gnostic/plugins","k8s.io/apimachinery/pkg/apis/meta/v1alpha1"]
+ignored = ["code.google.com/p/go-charset","github.com/go-kit/kit/examples","github.com/go-kit/kit/log/levels","github.com/go-kit/kit/metrics/influxdb","github.com/go-kit/kit/service","github.com/googleapis/gnostic/plugins*","k8s.io/apimachinery/pkg/apis/meta/v1alpha1", "github.com/googleapis/gnostic*", "sourcegraph.com/sourcegraph/appdash*"]
 
 [[constraint]]
   name = "github.com/asaskevich/govalidator"
@@ -75,6 +75,9 @@ ignored = ["code.google.com/p/go-charset","github.com/go-kit/kit/examples","gith
   name = "github.com/spf13/pflag"
 
 [[constraint]]
+  name = "github.com/google/gopacket"
+
+[[constraint]]
   name = "golang.org/x/crypto"
 
 [[constraint]]
@@ -103,3 +106,6 @@ ignored = ["code.google.com/p/go-charset","github.com/go-kit/kit/examples","gith
 
 [[constraint]]
   name = "github.com/google/grpc"
+
+[[constraint]]
+  name = "golang.org/x/sys"

@@ -157,6 +157,12 @@
   revision = "24818f796faf91cd76ec7bddd72458fbced7a6c1"
 
 [[projects]]
+  name = "github.com/google/gopacket"
+  packages = [".","layers"]
+  revision = "11c65f1ca9081dfea43b4f9643f5c155583b73ba"
+  version = "v1.1.14"
+
+[[projects]]
   branch = "master"
   name = "github.com/google/goterm"
   packages = ["term"]
@@ -165,7 +171,8 @@
 [[projects]]
   name = "github.com/googleapis/gnostic"
   packages = ["OpenAPIv2","compiler","extensions"]
-  revision = "0c5108395e2debce0d731cf0287ddf7242066aba"
+  revision = "ee43cbb60db7bd22502942cccbc39059117352ab"
+  version = "v0.1.0"
 
 [[projects]]
   branch = "master"
@@ -220,6 +227,12 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/mdlayher/raw"
+  packages = ["."]
+  revision = "077465ea2ac159e31f1adfdebae00882c44ba4f6"
+
+[[projects]]
+  branch = "master"
   name = "github.com/onsi/ginkgo"
   packages = [".","config","extensions/table","internal/codelocation","internal/containernode","internal/failer","internal/leafnodes","internal/remote","internal/spec","internal/spec_iterator","internal/specrunner","internal/suite","internal/testingtproxy","internal/writer","reporters","reporters/stenographer","reporters/stenographer/support/go-colorable","reporters/stenographer/support/go-isatty","types"]
   revision = "11459a886d9cd66b319dac7ef1e917ee221372c9"
@@ -271,13 +284,14 @@
 
 [[projects]]
   name = "golang.org/x/net"
-  packages = ["context","context/ctxhttp","html","html/atom","html/charset","http2","http2/hpack","idna","lex/httplex"]
+  packages = ["bpf","context","context/ctxhttp","html","html/atom","html/charset","http2","http2/hpack","idna","lex/httplex"]
   revision = "1c05540f6879653db88113bc4a2b70aec4bd491f"
 
 [[projects]]
+  branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "7a4fde3fda8ef580a89dbae8138c26041be14299"
+  revision = "75813c647272dd855bda156405bf844a5414f5bf"
 
 [[projects]]
   name = "golang.org/x/text"
@@ -331,6 +345,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "7c2f9e1da3ba8ff621e995e61634d28bb85d7e9217db7f944a4c31b55ab14912"
+  inputs-digest = "4de6dc86308fbca60a7cd46a66e9c885a16c60294f2687e15f53f27bb8f31dd1"
   solver-name = "gps-cdcl"
   solver-version = 1

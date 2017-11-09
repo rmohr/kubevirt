@@ -1,7 +1,7 @@
 apiVersion: kubevirt.io/v1alpha1
 kind: VirtualMachine
 metadata:
-  name: testvm1
+  name: testvm28
 spec:
   domain:
     devices:
@@ -11,6 +11,8 @@ spec:
       - type: nodeNetwork
         model:
           type: virtio
+        mac:
+          address: 6e:3f:a2:cf:f8:12
       video:
       - type: qxl
       disks:
