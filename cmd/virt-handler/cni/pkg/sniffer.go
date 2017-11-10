@@ -1,32 +1,42 @@
-package main
+package pkg
 
 import (
-	"github.com/spf13/pflag"
 	"net"
-	"log"
 	"github.com/mdlayher/raw"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"bytes"
 	"github.com/mdlayher/ethernet"
+	"fmt"
+	"kubevirt.io/kubevirt/pkg/log"
 )
 
 var EthernetBroadcastAddr = raw.Addr{
 	HardwareAddr: ethernet.Broadcast,
 }
 
-func main() {
-	var iface string
-	var oface string
-	pflag.StringVarP(&iface, "iface", "i", "mybridge1", "Device to listen for ethernet frames")
-	pflag.StringVarP(&oface, "oface", "o", "kubevirt0", "Device to write ethernet frames")
-	pflag.Parse()
+type DHCPAck struct {
+	IP net.IP
+	MAC net.HardwareAddr
+}
 
-	inHandle := newConn(iface)
-	inHandle.SetPromiscuous(true)
+func Run(iface, oface string, stopChan chan struct{}, observed chan DHCPAck) error {
+
+	inHandle, err := newConn(iface)
+	if err != nil {
+		return fmt.Errorf("Error opening ")
+	}
 	defer inHandle.Close()
+	err = inHandle.SetPromiscuous(true)
+	if err != nil {
+		return fmt.Errorf("Error setting device %s to promiscuous mode: %v", iface, err)
+	}
 
-	outHandle := newConn(oface)
+	outHandle, err := newConn(oface)
+	if err != nil {
+		return fmt.Errorf("Error setting device %s to promiscuous mode: %v", iface, err)
+	}
+	defer outHandle.Close()
 
 	src := gopacket.NewPacketSource(inHandle, layers.LayerTypeEthernet)
 	in := src.Packets()
@@ -40,8 +50,15 @@ func main() {
 
 	for {
 		var packet gopacket.Packet
+		var open bool
 		select {
-		case packet = <-in:
+		case <- stopChan:
+			return nil
+		case packet, open = <-in:
+
+			if !open{
+				return nil
+			}
 
 			// Filter out packets I sent
 			ethLayer := packet.Layer(layers.LayerTypeEthernet)
@@ -80,23 +97,30 @@ func main() {
 			dhcp := dhcpLayer.(*layers.DHCPv4)
 
 			// Log what we found
-			log.Printf("Type: %v", getOptionType(dhcp.Options))
-			log.Printf("Operation: %v", dhcp.Operation)
-			log.Printf("Client IP: %v", dhcp.ClientIP)
-			log.Printf("Your IP: %v", dhcp.YourClientIP)
-			log.Printf("Client HWADDR: %v", dhcp.ClientHWAddr)
+			log.Log.V(5).Infof("Type: %v", getOptionType(dhcp.Options))
+			log.Log.V(5).Infof("Operation: %v", dhcp.Operation)
+			log.Log.V(5).Infof("Client IP: %v", dhcp.ClientIP)
+			log.Log.V(5).Infof("Your IP: %v", dhcp.YourClientIP)
+			log.Log.V(5).Infof("Client HWADDR: %v", dhcp.ClientHWAddr)
 
+			// If we have a DHCP ack, inform us about the discovered details
+			if getOptionType(dhcp.Options) == layers.DHCPMsgTypeAck {
+				observed <- DHCPAck{
+					IP: dhcp.YourClientIP,
+					MAC: dhcp.ClientHWAddr,
+				}
+			}
 
 			// Re-send the packet, so that it can be rerouted to the VM
-			// TODO check if just replacing the package is good enough to avoid loop processing
 			eth.SrcMAC = []byte(inHandle.Address())
 
 			if err := gopacket.SerializePacket(buf, opts, packet); err != nil {
-				log.Fatalf("Failed to serialize packet: %v", err)
+				log.Log.Reason(err).Error("Failed to serialize packet")
+				continue
 			}
 
 			if err := outHandle.WritePacketData(buf.Bytes()); err != nil {
-				log.Fatalf("Failed to write packet: %v", err)
+				return fmt.Errorf("Error writing to interface %s: %v", oface, err)
 			}
 		}
 	}
@@ -150,14 +174,14 @@ func getOptionType(options layers.DHCPOptions) layers.DHCPMsgType {
 }
 
 
-func newConn(iface string) *Handle {
+func newConn(iface string) (*Handle, error) {
 	i, err := net.InterfaceByName(iface)
 	if err != nil {
-		log.Fatalf("Error %v when searching for device %s", err, i)
+		return nil, fmt.Errorf("Error %v when searching for device %s", err, i)
 	}
 	conn, err := raw.ListenPacket(i, 0x3)
 	if err != nil {
-		log.Fatalf("Failed to open socket to device %s: %v",iface,  err)
+		return nil, fmt.Errorf("Failed to open socket to device %s: %v",iface,  err)
 	}
 
 	// Accept frames up to interface's MTU in size.
@@ -166,5 +190,5 @@ func newConn(iface string) *Handle {
 		conn: conn,
 		index: i.Index,
 		addr: i.HardwareAddr,
-	}
+	}, nil
 }

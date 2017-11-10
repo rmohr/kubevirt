@@ -9,6 +9,8 @@ import (
 
 	"kubevirt.io/kubevirt/pkg/kubecli"
 	"kubevirt.io/kubevirt/pkg/networking"
+	"kubevirt.io/kubevirt/pkg/log"
+	"kubevirt.io/kubevirt/cmd/virt-handler/cni/pkg"
 )
 
 func main() {
@@ -97,7 +99,14 @@ func main() {
 		fmt.Println(res.String())
 	}
 
-	// TODO make sure the the dhcp client is really updating the lease for kubevirt0.
-	// TODO take the mac address and send it again to the dhcp client. If the IPs differ, create a new device and move all routes over
-	select {}
+	stop := make(chan struct{})
+	acks := make (chan pkg.DHCPAck, 100)
+	errs := make (chan error)
+	go func() { errs <- pkg.Run("kubevirtbr0", "kubevirt0", stop, acks)}()
+
+	err = <- errs
+	if errs != nil {
+		log.Log.Reason(err).Error("Sniffing on DHCP traffic failed")
+		os.Exit(1)
+	}
 }
