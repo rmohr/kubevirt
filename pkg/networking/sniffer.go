@@ -1,4 +1,4 @@
-package pkg
+package networking
 
 import (
 	"net"
@@ -9,6 +9,7 @@ import (
 	"github.com/mdlayher/ethernet"
 	"fmt"
 	"kubevirt.io/kubevirt/pkg/log"
+	"github.com/vishvananda/netlink"
 )
 
 var EthernetBroadcastAddr = raw.Addr{
@@ -20,11 +21,12 @@ type DHCPAck struct {
 	MAC net.HardwareAddr
 }
 
-func Run(iface, oface string, stopChan chan struct{}, observed chan DHCPAck) error {
+func RunDHCPSniffer(iface, oface string, stopChan chan struct{}, observed chan DHCPAck) error {
 
+	// Open a connection to iface and set it to promiscuous mode
 	inHandle, err := newConn(iface)
 	if err != nil {
-		return fmt.Errorf("Error opening ")
+		return fmt.Errorf("Error opening connection to %s: %v", iface, err)
 	}
 	defer inHandle.Close()
 	err = inHandle.SetPromiscuous(true)
@@ -32,15 +34,25 @@ func Run(iface, oface string, stopChan chan struct{}, observed chan DHCPAck) err
 		return fmt.Errorf("Error setting device %s to promiscuous mode: %v", iface, err)
 	}
 
+	// Ensure that oface is up
+	ofaceDev, err := netlink.LinkByName(oface)
+	if err != nil {
+		return fmt.Errorf("Error getting device %s: %v", oface, err)
+	}
+	err = netlink.LinkSetUp(ofaceDev)
+	if err != nil {
+		return fmt.Errorf("Error sett device %s to state up: %v", oface, err)
+	}
+
+	// Open a connection to oface
 	outHandle, err := newConn(oface)
 	if err != nil {
-		return fmt.Errorf("Error setting device %s to promiscuous mode: %v", iface, err)
+		return fmt.Errorf("Error opening connection to %s: %v", oface, err)
 	}
 	defer outHandle.Close()
 
 	src := gopacket.NewPacketSource(inHandle, layers.LayerTypeEthernet)
 	in := src.Packets()
-
 
 	buf := gopacket.NewSerializeBuffer()
 	opts := gopacket.SerializeOptions{
@@ -71,6 +83,7 @@ func Run(iface, oface string, stopChan chan struct{}, observed chan DHCPAck) err
 
 			if bytes.Equal([]byte(inHandle.Address()), eth.SrcMAC) {
 				// This is a packet I sent.
+				log.Log.V(5).Infof("Ignoring packet which I sent")
 				continue
 			}
 
@@ -83,8 +96,8 @@ func Run(iface, oface string, stopChan chan struct{}, observed chan DHCPAck) err
 			udp.SetNetworkLayerForChecksum(packet.NetworkLayer())
 
 
-			if  udp.SrcPort != 67 {
-				// Not from a dhcp server
+			if  udp.DstPort != 68 {
+				// Not for a dhcp client
 				continue
 			}
 
@@ -125,7 +138,6 @@ func Run(iface, oface string, stopChan chan struct{}, observed chan DHCPAck) err
 		}
 	}
 }
-
 
 type Handle struct {
 	conn *raw.Conn

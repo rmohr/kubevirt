@@ -56,7 +56,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 		return err
 	}
 
-	store, err := NewFileStore(n.DataDir, n.Name)
+	store, err := networking.NewFileStore(n.DataDir, n.Name)
 	if err != nil {
 		return fmt.Errorf("error creating file based store: %v", err)
 	}
@@ -127,7 +127,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 		if master.Type() == "macvlan" {
 			// First check if we have an IP change. If yes, make sure that we delete the old route
 			if entry != nil && !entry.IP.Equal(result.IPs[0].Address.IP) {
-				err := deleteRoute(master, entry.IP)
+				err := networking.DeleteRoute(master, entry.IP)
 				if err != nil {
 					return fmt.Errorf("error removing outdated route: %v", err)
 				}
@@ -141,7 +141,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 			saved = true
 
 			// Now create the new route
-			err = createRoute(master, result)
+			err = networking.CreateRoute(master, result)
 			if err != nil {
 				return fmt.Errorf("error adding route for %v via %v: %v", result, master.Attrs().Name, err)
 			}
@@ -175,7 +175,7 @@ func cmdDel(args *skel.CmdArgs) error {
 		return err
 	}
 
-	store, err := NewFileStore(n.DataDir, n.Name)
+	store, err := networking.NewFileStore(n.DataDir, n.Name)
 	if err != nil {
 		return fmt.Errorf("error creating file based store: %v", err)
 	}
@@ -196,7 +196,7 @@ func cmdDel(args *skel.CmdArgs) error {
 		}
 
 		if master.Type() == "macvlan" && entry != nil {
-			err = deleteRoute(master, entry.IP)
+			err = networking.DeleteRoute(master, entry.IP)
 			if err != nil {
 				return fmt.Errorf("error removing route for %v; %v ", entry.IP, err)
 			}
@@ -233,61 +233,4 @@ func parseArgs(args string) (map[string]string, error) {
 	}
 
 	return result, nil
-}
-
-func createRoute(dev netlink.Link, result *current.Result) error {
-
-	gw, err := netlink.AddrList(dev, netlink.FAMILY_V4)
-	if err != nil {
-		return fmt.Errorf("error looking up up IP for %s: %v", dev.Attrs().Name, err)
-	}
-	dst := netlink.NewIPNet(result.IPs[0].Address.IP)
-	// Make sure that we exactly match the IP
-	dst.Mask = net.IPv4Mask(255, 255, 255, 255)
-	route := &netlink.Route{
-		Dst: dst,
-		Gw:  gw[0].IP,
-	}
-
-	err = netlink.RouteReplace(route)
-	if err != nil && !os.IsExist(err) {
-		return fmt.Errorf("error creating route %v: %v", route, err)
-	}
-	return nil
-}
-
-func deleteRoute(dev netlink.Link, ip net.IP) error {
-
-	gw, err := netlink.AddrList(dev, netlink.FAMILY_V4)
-	if err != nil {
-		return fmt.Errorf("error looking up up IP for %s: %v", dev.Attrs().Name, err)
-	}
-	dst := netlink.NewIPNet(ip)
-	// Make sure that we exactly match the IP
-	dst.Mask = net.IPv4Mask(255, 255, 255, 255)
-	// remove route
-	route := &netlink.Route{
-		Dst: dst,
-		Gw:  gw[0].IP,
-	}
-	err = netlink.RouteDel(route)
-	// In case that the route does not exist, I got an ESRCH returned
-	// TODO should that be added to os.IsNotExist?
-	if err != nil && !os.IsNotExist(err) && underlyingError(err) != syscall.ESRCH {
-		return fmt.Errorf("error deleting route %v: %v", route, err)
-	}
-	return nil
-}
-
-// underlyingError returns the underlying error for known os error types.
-func underlyingError(err error) error {
-	switch err := err.(type) {
-	case *os.PathError:
-		return err.Err
-	case *os.LinkError:
-		return err.Err
-	case *os.SyscallError:
-		return err.Err
-	}
-	return err
 }

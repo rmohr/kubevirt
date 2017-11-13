@@ -11,17 +11,24 @@ import (
 	"kubevirt.io/kubevirt/pkg/networking"
 	"kubevirt.io/kubevirt/pkg/log"
 	"kubevirt.io/kubevirt/cmd/virt-handler/cni/pkg"
+	"github.com/vishvananda/netlink"
 )
 
 func main() {
 	var hostname string
 	var err error
+	var backend string
 
 	toolsDir := pflag.String("tools-dir", "/tools", "Location for helper binaries")
 	cniConfigDir := pflag.String("cni-config-dir", "/etc/cni/net.d", "Location for CNI configuration")
 	cniDir := pflag.String("cni-dir", "/tools/plugins", "Location for CNI plugin binaries")
 	cacheDir := pflag.String("cache-dir", "/var/lib/cni/networks", "Location where the CNI plugins store their state")
 	pflag.StringVar(&hostname, "hostname-override", "", "Kubernetes Pod to monitor for changes")
+	pflag.StringVar(&backend, "backend", "cni", "Choose one out of 'dhcp' or 'cni'")
+
+	if backend != "cni" && backend != "dhcp" {
+		panic(fmt.Errorf("Unsupported backend %s", backend))
+	}
 
 	if hostname == "" {
 		hostname, err = os.Hostname()
@@ -99,10 +106,33 @@ func main() {
 		fmt.Println(res.String())
 	}
 
+	if backend == "cni" {
+		select{}
+		return
+	}
+
+	br := &netlink.Bridge{LinkAttrs: netlink.LinkAttrs{Name: "kubevirtbr0"}}
+	if err = netlink.LinkAdd(br); err != nil {
+		panic(err)
+	}
+
+	tc, err := networking.NewTC("kubevirt0", "kubevirtbr0")
+	if err != nil {
+		panic(err)
+	}
+
+	if err = tc.EnsureIngressQDisc(); err != nil {
+		panic(err)
+	}
+
+	if err = tc.AddMangledPacketsFilter(); err != nil {
+		panic(err)
+	}
+
 	stop := make(chan struct{})
-	acks := make (chan pkg.DHCPAck, 100)
+	acks := make (chan networking.DHCPAck, 100)
 	errs := make (chan error)
-	go func() { errs <- pkg.Run("kubevirtbr0", "kubevirt0", stop, acks)}()
+	go func() { errs <- networking.RunDHCPSniffer("kubevirtbr0", "kubevirt0", stop, acks)}()
 
 	err = <- errs
 	if errs != nil {

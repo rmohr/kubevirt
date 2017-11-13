@@ -4,17 +4,17 @@ import (
 	"net"
 	"log"
 	"github.com/spf13/pflag"
-	"kubevirt.io/kubevirt/cmd/virt-handler/cni/pkg"
+	"kubevirt.io/kubevirt/pkg/networking"
 )
 
 func main() {
 
 	parentIf := pflag.String("parent", "parentBridge", "parent device")
 	targetIf := pflag.String("target", "targetBridge", "target device")
-	delete := pflag.BoolP("delete", "d",  false, "Remove everything")
+	delete := pflag.BoolP("delete", "d",  false, "Remove everything and quit")
 	pflag.Parse()
 
-	tc, err := pkg.NewTC(*parentIf, *targetIf)
+	tc, err := networking.NewTC(*parentIf, *targetIf)
 	mac, _ := net.ParseMAC("6e:3f:a2:cf:f8:12")
 
 	if !*delete {
@@ -30,7 +30,6 @@ func main() {
 		if err != nil {
 			log.Fatalf("Could not add mangled packets filter: %v", err)
 		}
-
 
 		err = tc.Add(mac)
 		if err != nil {

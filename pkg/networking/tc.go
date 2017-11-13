@@ -1,4 +1,4 @@
-package pkg
+package networking
 
 import (
 	"encoding/binary"
@@ -41,6 +41,7 @@ type Reply struct {
 }
 
 func (t *TC) Add(mac net.HardwareAddr) error {
+	//FIXME don't add it again if it is already present (makes networking slower)
 	return netlink.FilterAdd(t.vmPacketFilter(mac))
 }
 
@@ -51,9 +52,17 @@ func (t *TC) Del(mac net.HardwareAddr) error {
 func (t *TC) vmPacketFilter(mac net.HardwareAddr) netlink.Filter {
 	lo, hi := parseMAC(mac)
 
+	// FIXME in order to be efficient, we need one root filter which checks for port 68
+	// if there is a match we should forward to the per-VM filter chain
 	selectors := &netlink.TcU32Sel{
 		Flags: netlink.TC_U32_TERMINAL,
 		Keys: []netlink.TcU32Key{
+			// match dhcp target port
+			{
+				Off:  20,
+				Val:  0x00000044, // port 68
+				Mask: 0x0000ffff,
+			},
 			// match destination mac
 			{
 				Off:  -16,
@@ -64,12 +73,6 @@ func (t *TC) vmPacketFilter(mac net.HardwareAddr) netlink.Filter {
 				Off:  -12,
 				Mask: 0xffffffff,
 				Val:  lo, // second part of mac
-			},
-			// match dhcp target port
-			{
-				Off:  20,
-				Val:  0x00000044, // port 68
-				Mask: 0x0000ffff,
 			},
 		},
 	}
@@ -94,6 +97,12 @@ func (t *TC) mangledPacketFilter(mac net.HardwareAddr) netlink.Filter {
 	selectors := &netlink.TcU32Sel{
 		Flags: netlink.TC_U32_TERMINAL,
 		Keys: []netlink.TcU32Key{
+			// match dhcp target port
+			{
+				Off:  20,
+				Val:  0x00000044, // port 68
+				Mask: 0x0000ffff,
+			},
 			// match source mac
 			{
 				Off:  -8,
@@ -105,12 +114,7 @@ func (t *TC) mangledPacketFilter(mac net.HardwareAddr) netlink.Filter {
 				Mask: 0xffffffff,
 				Val:  lo, // second part of mac
 			},
-			// match dhcp target port
-			{
-				Off:  20,
-				Val:  0x00000044, // port 68
-				Mask: 0x0000ffff,
-			},
+
 		},
 	}
 

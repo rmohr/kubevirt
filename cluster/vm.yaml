@@ -1,7 +1,7 @@
 apiVersion: kubevirt.io/v1alpha1
 kind: VirtualMachine
 metadata:
-  name: testvm28
+  name: testvm29
 spec:
   domain:
     devices:
