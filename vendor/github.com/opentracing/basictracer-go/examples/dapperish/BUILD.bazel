@@ -1,0 +1,16 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "dapper.go",
+        "random.go",
+        "trivialrecorder.go",
+    ],
+    importpath = "github.com/opentracing/basictracer-go/examples/dapperish",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/opentracing/basictracer-go:go_default_library",
+        "//vendor/github.com/opentracing/opentracing-go:go_default_library",
+    ],
+)

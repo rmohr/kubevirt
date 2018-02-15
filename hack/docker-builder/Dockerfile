@@ -2,8 +2,10 @@ FROM fedora:27
 
 ENV LIBVIRT_VERSION 3.7.0
 
-RUN dnf -y install libvirt-devel-${LIBVIRT_VERSION} make git mercurial sudo gcc findutils gradle rsync-daemon rsync && \
-    dnf -y clean all
+RUN dnf -y install dnf-plugins-core \
+    && dnf -y copr enable vbatts/bazel \
+    && dnf -y install libvirt-devel-${LIBVIRT_VERSION} make git mercurial sudo gcc findutils gradle rsync-daemon rsync bazel \
+    && dnf -y clean all
 
 ENV GIMME_GO_VERSION=1.9.2
 

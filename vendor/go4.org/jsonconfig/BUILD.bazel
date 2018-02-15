@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "eval.go",
+        "jsonconfig.go",
+    ],
+    importpath = "go4.org/jsonconfig",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/go4.org/errorutil:go_default_library",
+        "//vendor/go4.org/wkfs:go_default_library",
+    ],
+)

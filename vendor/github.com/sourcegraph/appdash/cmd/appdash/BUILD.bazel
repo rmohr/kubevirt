@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "appdash.go",
+        "example_app.go",
+        "sample_data.go",
+        "send_cmd.go",
+        "serve_cmd.go",
+    ],
+    importpath = "github.com/sourcegraph/appdash/cmd/appdash",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//vendor/sourcegraph.com/sourcegraph/appdash:go_default_library",
+        "//vendor/sourcegraph.com/sourcegraph/appdash/httptrace:go_default_library",
+        "//vendor/sourcegraph.com/sourcegraph/appdash/sqltrace:go_default_library",
+        "//vendor/sourcegraph.com/sourcegraph/appdash/traceapp:go_default_library",
+        "@com_github_jessevdk_go_flags//:go_default_library",
+    ],
+)
+
+go_binary(
+    name = "appdash",
+    embed = [":go_default_library"],
+    visibility = ["//visibility:public"],
+)

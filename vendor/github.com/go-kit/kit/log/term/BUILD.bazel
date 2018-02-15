@@ -1,0 +1,58 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "colorlogger.go",
+        "term.go",
+    ] + select({
+        "@io_bazel_rules_go//go/platform:android": [
+            "colorwriter_others.go",
+        ],
+        "@io_bazel_rules_go//go/platform:darwin": [
+            "colorwriter_others.go",
+            "terminal_darwin.go",
+            "terminal_notwindows.go",
+        ],
+        "@io_bazel_rules_go//go/platform:dragonfly": [
+            "colorwriter_others.go",
+        ],
+        "@io_bazel_rules_go//go/platform:freebsd": [
+            "colorwriter_others.go",
+            "terminal_freebsd.go",
+            "terminal_notwindows.go",
+        ],
+        "@io_bazel_rules_go//go/platform:linux": [
+            "colorwriter_others.go",
+            "terminal_linux.go",
+            "terminal_notwindows.go",
+        ],
+        "@io_bazel_rules_go//go/platform:nacl": [
+            "colorwriter_others.go",
+        ],
+        "@io_bazel_rules_go//go/platform:netbsd": [
+            "colorwriter_others.go",
+        ],
+        "@io_bazel_rules_go//go/platform:openbsd": [
+            "colorwriter_others.go",
+            "terminal_notwindows.go",
+            "terminal_openbsd.go",
+        ],
+        "@io_bazel_rules_go//go/platform:plan9": [
+            "colorwriter_others.go",
+        ],
+        "@io_bazel_rules_go//go/platform:solaris": [
+            "colorwriter_others.go",
+        ],
+        "@io_bazel_rules_go//go/platform:windows": [
+            "colorwriter_windows.go",
+            "terminal_windows.go",
+        ],
+        "//conditions:default": [],
+    }),
+    importpath = "github.com/go-kit/kit/log/term",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/go-kit/kit/log:go_default_library",
+    ],
+)

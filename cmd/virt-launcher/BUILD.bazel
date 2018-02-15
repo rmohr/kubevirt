@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["virt-launcher.go"],
+    importpath = "kubevirt.io/kubevirt/cmd/virt-launcher",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//pkg/api/v1:go_default_library",
+        "//pkg/cloud-init:go_default_library",
+        "//pkg/log:go_default_library",
+        "//pkg/registry-disk:go_default_library",
+        "//pkg/virt-handler/cmd-client:go_default_library",
+        "//pkg/virt-launcher:go_default_library",
+        "//pkg/virt-launcher/notify-client:go_default_library",
+        "//pkg/virt-launcher/virtwrap:go_default_library",
+        "//pkg/virt-launcher/virtwrap/cli:go_default_library",
+        "//pkg/virt-launcher/virtwrap/cmd-server:go_default_library",
+        "//pkg/virt-launcher/virtwrap/util:go_default_library",
+        "//pkg/watchdog:go_default_library",
+        "//vendor/github.com/libvirt/libvirt-go:go_default_library",
+        "//vendor/github.com/spf13/pflag:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/watch:go_default_library",
+    ],
+)
+
+go_binary(
+    name = "virt-launcher",
+    embed = [":go_default_library"],
+    visibility = ["//visibility:public"],
+)

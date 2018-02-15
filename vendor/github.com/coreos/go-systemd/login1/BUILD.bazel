@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["dbus.go"],
+    importpath = "github.com/coreos/go-systemd/login1",
+    visibility = ["//visibility:public"],
+    deps = ["@com_github_godbus_dbus//:go_default_library"],
+)

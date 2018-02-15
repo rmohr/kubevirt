@@ -1,0 +1,16 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["inmem2tsi.go"],
+    importpath = "github.com/influxdata/influxdb/cmd/influx_inspect/inmem2tsi",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/influxdata/influxdb/logger:go_default_library",
+        "//vendor/github.com/influxdata/influxdb/models:go_default_library",
+        "//vendor/github.com/influxdata/influxdb/tsdb:go_default_library",
+        "//vendor/github.com/influxdata/influxdb/tsdb/engine/tsm1:go_default_library",
+        "//vendor/github.com/influxdata/influxdb/tsdb/index/tsi1:go_default_library",
+        "@org_uber_go_zap//:go_default_library",
+    ],
+)

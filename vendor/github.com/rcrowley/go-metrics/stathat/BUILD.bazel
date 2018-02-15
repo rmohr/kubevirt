@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["stathat.go"],
+    importpath = "github.com/rcrowley/go-metrics/stathat",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/rcrowley/go-metrics:go_default_library",
+        "@com_github_stathat_go//:go_default_library",
+    ],
+)

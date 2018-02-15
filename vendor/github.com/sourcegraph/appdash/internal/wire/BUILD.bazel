@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "collector.pb.go",
+        "gen.go",
+    ],
+    importpath = "github.com/sourcegraph/appdash/internal/wire",
+    visibility = ["//vendor/github.com/sourcegraph/appdash:__subpackages__"],
+    deps = ["//vendor/github.com/gogo/protobuf/proto:go_default_library"],
+)

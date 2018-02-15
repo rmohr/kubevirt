@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "doc.go",
+        "gobreaker.go",
+        "handy_breaker.go",
+        "hystrix.go",
+    ],
+    importpath = "github.com/go-kit/kit/circuitbreaker",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/afex/hystrix-go/hystrix:go_default_library",
+        "//vendor/github.com/go-kit/kit/endpoint:go_default_library",
+        "//vendor/github.com/sony/gobreaker:go_default_library",
+        "//vendor/github.com/streadway/handy/breaker:go_default_library",
+        "//vendor/golang.org/x/net/context:go_default_library",
+    ],
+)

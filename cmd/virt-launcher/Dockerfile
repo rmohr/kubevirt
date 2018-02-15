@@ -16,7 +16,7 @@
 # Copyright 2017 Red Hat, Inc.
 #
 
-FROM kubevirt/libvirt
+FROM kubevirt/libvirt:3.7.0
 
 MAINTAINER "The KubeVirt Project" <kubevirt-dev@googlegroups.com>
 
@@ -32,8 +32,7 @@ RUN dnf -y install \
 COPY sock-connector /sock-connector
 COPY virt-launcher /virt-launcher
 
-COPY kubevirt-sudo /etc/sudoers.d/kubevirt
-RUN chmod 0640 /etc/sudoers.d/kubevirt
+COPY etc/sudoers.d/kubevirt-sudo /etc/sudoers.d/kubevirt
 
 # libvirtd.sh in this image differs from upstream
 RUN rm -f /libvirtd.sh

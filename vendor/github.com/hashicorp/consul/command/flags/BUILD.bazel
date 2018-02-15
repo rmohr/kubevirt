@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "config.go",
+        "flag_map_value.go",
+        "flag_slice_value.go",
+        "http.go",
+        "merge.go",
+        "usage.go",
+    ],
+    importpath = "github.com/hashicorp/consul/command/flags",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/hashicorp/consul/api:go_default_library",
+        "//vendor/github.com/mitchellh/mapstructure:go_default_library",
+        "@com_github_tonnerre_golang_text//:go_default_library",
+    ],
+)

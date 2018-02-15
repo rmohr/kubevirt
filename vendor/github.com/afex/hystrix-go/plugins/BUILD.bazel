@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "datadog_collector.go",
+        "graphite_aggregator.go",
+        "statsd_collector.go",
+    ],
+    importpath = "github.com/afex/hystrix-go/plugins",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/afex/hystrix-go/hystrix/metric_collector:go_default_library",
+        "//vendor/github.com/rcrowley/go-metrics:go_default_library",
+        "@com_github_cactus_go_statsd_client//statsd:go_default_library",
+        "@com_github_datadog_datadog_go//statsd:go_default_library",
+    ],
+)

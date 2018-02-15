@@ -1,0 +1,44 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "osutil.go",
+    ] + select({
+        "@io_bazel_rules_go//go/platform:darwin": [
+            "exec_sysctl.go",
+        ],
+        "@io_bazel_rules_go//go/platform:dragonfly": [
+            "exec_procfs.go",
+        ],
+        "@io_bazel_rules_go//go/platform:freebsd": [
+            "exec_sysctl.go",
+        ],
+        "@io_bazel_rules_go//go/platform:linux": [
+            "exec_procfs.go",
+        ],
+        "@io_bazel_rules_go//go/platform:nacl": [
+            "exec_procfs.go",
+        ],
+        "@io_bazel_rules_go//go/platform:netbsd": [
+            "exec_procfs.go",
+        ],
+        "@io_bazel_rules_go//go/platform:openbsd": [
+            "exec_procfs.go",
+        ],
+        "@io_bazel_rules_go//go/platform:plan9": [
+            "exec_plan9.go",
+        ],
+        "@io_bazel_rules_go//go/platform:windows": [
+            "exec_windows.go",
+        ],
+        "//conditions:default": [],
+    }) + select({
+        "@io_bazel_rules_go//go/platform:solaris_amd64": [
+            "exec_solaris_amd64.go",
+        ],
+        "//conditions:default": [],
+    }),
+    importpath = "go4.org/osutil",
+    visibility = ["//visibility:public"],
+)

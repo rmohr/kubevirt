@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["main.go"],
+    importpath = "github.com/go-kit/kit/examples/addsvc/cmd/addcli",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//vendor/github.com/apache/thrift/lib/go/thrift:go_default_library",
+        "//vendor/github.com/go-kit/kit/examples/addsvc:go_default_library",
+        "//vendor/github.com/go-kit/kit/examples/addsvc/client/grpc:go_default_library",
+        "//vendor/github.com/go-kit/kit/examples/addsvc/client/http:go_default_library",
+        "//vendor/github.com/go-kit/kit/examples/addsvc/client/thrift:go_default_library",
+        "//vendor/github.com/go-kit/kit/examples/addsvc/thrift/gen-go/addsvc:go_default_library",
+        "//vendor/github.com/go-kit/kit/log:go_default_library",
+        "//vendor/github.com/lightstep/lightstep-tracer-go:go_default_library",
+        "//vendor/github.com/opentracing/opentracing-go:go_default_library",
+        "//vendor/github.com/openzipkin/zipkin-go-opentracing:go_default_library",
+        "//vendor/github.com/sourcegraph/appdash/opentracing:go_default_library",
+        "//vendor/golang.org/x/net/context:go_default_library",
+        "//vendor/google.golang.org/grpc:go_default_library",
+        "//vendor/sourcegraph.com/sourcegraph/appdash:go_default_library",
+    ],
+)
+
+go_binary(
+    name = "addcli",
+    embed = [":go_default_library"],
+    visibility = ["//visibility:public"],
+)

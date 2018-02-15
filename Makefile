@@ -2,6 +2,9 @@ export GO15VENDOREXPERIMENT := 1
 
 all: build manifests
 
+bazel-generate:
+	hack/dockerized "bazel run //:gazelle"
+
 generate:
 	hack/dockerized "./hack/generate.sh"
 

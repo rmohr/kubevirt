@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["agent.go"],
+    importpath = "github.com/hashicorp/consul/command/agent",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/hashicorp/consul/agent:go_default_library",
+        "//vendor/github.com/hashicorp/consul/agent/config:go_default_library",
+        "//vendor/github.com/hashicorp/consul/command/flags:go_default_library",
+        "//vendor/github.com/hashicorp/consul/lib:go_default_library",
+        "//vendor/github.com/hashicorp/consul/logger:go_default_library",
+        "@com_github_armon_go_metrics//:go_default_library",
+        "@com_github_armon_go_metrics//circonus:go_default_library",
+        "@com_github_armon_go_metrics//datadog:go_default_library",
+        "@com_github_hashicorp_go_checkpoint//:go_default_library",
+        "@com_github_hashicorp_go_multierror//:go_default_library",
+        "@com_github_hashicorp_logutils//:go_default_library",
+        "@com_github_mitchellh_cli//:go_default_library",
+    ],
+)

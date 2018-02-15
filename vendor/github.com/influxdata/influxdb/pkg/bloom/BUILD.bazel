@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["bloom.go"],
+    importpath = "github.com/influxdata/influxdb/pkg/bloom",
+    visibility = ["//visibility:public"],
+    deps = ["@com_github_cespare_xxhash//:go_default_library"],
+)

@@ -1,0 +1,8 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["xxHash32.go"],
+    importpath = "github.com/pierrec/xxHash/xxHash32",
+    visibility = ["//visibility:public"],
+)

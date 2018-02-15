@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["http_breaker.go"],
+    importpath = "github.com/sony/gobreaker/example",
+    visibility = ["//visibility:private"],
+    deps = ["//vendor/github.com/sony/gobreaker:go_default_library"],
+)
+
+go_binary(
+    name = "example",
+    embed = [":go_default_library"],
+    visibility = ["//visibility:public"],
+)

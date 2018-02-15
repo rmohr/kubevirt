@@ -1,0 +1,11 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "labelvalues.go",
+        "space.go",
+    ],
+    importpath = "github.com/go-kit/kit/metrics/internal/lv",
+    visibility = ["//vendor/github.com/go-kit/kit/metrics:__subpackages__"],
+)

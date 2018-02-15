@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["main.go"],
+    importpath = "github.com/afex/hystrix-go/loadtest/service",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//vendor/github.com/afex/hystrix-go/hystrix:go_default_library",
+        "//vendor/github.com/afex/hystrix-go/hystrix/metric_collector:go_default_library",
+        "//vendor/github.com/afex/hystrix-go/plugins:go_default_library",
+        "@com_github_cactus_go_statsd_client//statsd:go_default_library",
+    ],
+)
+
+go_binary(
+    name = "service",
+    embed = [":go_default_library"],
+    visibility = ["//visibility:public"],
+)

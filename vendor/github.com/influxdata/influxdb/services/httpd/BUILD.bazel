@@ -1,0 +1,38 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "config.go",
+        "gzip.go",
+        "handler.go",
+        "io.go",
+        "listen.go",
+        "pprof.go",
+        "requests.go",
+        "response_logger.go",
+        "response_writer.go",
+        "service.go",
+    ],
+    importpath = "github.com/influxdata/influxdb/services/httpd",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/dgrijalva/jwt-go:go_default_library",
+        "//vendor/github.com/gogo/protobuf/proto:go_default_library",
+        "//vendor/github.com/golang/snappy:go_default_library",
+        "//vendor/github.com/influxdata/influxdb:go_default_library",
+        "//vendor/github.com/influxdata/influxdb/models:go_default_library",
+        "//vendor/github.com/influxdata/influxdb/monitor:go_default_library",
+        "//vendor/github.com/influxdata/influxdb/monitor/diagnostics:go_default_library",
+        "//vendor/github.com/influxdata/influxdb/prometheus:go_default_library",
+        "//vendor/github.com/influxdata/influxdb/prometheus/remote:go_default_library",
+        "//vendor/github.com/influxdata/influxdb/query:go_default_library",
+        "//vendor/github.com/influxdata/influxdb/services/meta:go_default_library",
+        "//vendor/github.com/influxdata/influxdb/tsdb:go_default_library",
+        "//vendor/github.com/influxdata/influxdb/uuid:go_default_library",
+        "@com_github_bmizerany_pat//:go_default_library",
+        "@com_github_influxdata_influxql//:go_default_library",
+        "@com_github_tinylib_msgp//msgp:go_default_library",
+        "@org_uber_go_zap//:go_default_library",
+    ],
+)

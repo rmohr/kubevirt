@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["client.go"],
+    importpath = "github.com/go-kit/kit/examples/addsvc/client/grpc",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/go-kit/kit/circuitbreaker:go_default_library",
+        "//vendor/github.com/go-kit/kit/endpoint:go_default_library",
+        "//vendor/github.com/go-kit/kit/examples/addsvc:go_default_library",
+        "//vendor/github.com/go-kit/kit/examples/addsvc/pb:go_default_library",
+        "//vendor/github.com/go-kit/kit/log:go_default_library",
+        "//vendor/github.com/go-kit/kit/ratelimit:go_default_library",
+        "//vendor/github.com/go-kit/kit/tracing/opentracing:go_default_library",
+        "//vendor/github.com/go-kit/kit/transport/grpc:go_default_library",
+        "//vendor/github.com/juju/ratelimit:go_default_library",
+        "//vendor/github.com/opentracing/opentracing-go:go_default_library",
+        "//vendor/github.com/sony/gobreaker:go_default_library",
+        "//vendor/google.golang.org/grpc:go_default_library",
+    ],
+)

@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "map.go",
+        "mutex.go",
+        "once.go",
+        "pool.go",
+    ],
+    importpath = "github.com/gopherjs/gopherjs/nosync",
+    visibility = ["//visibility:public"],
+)

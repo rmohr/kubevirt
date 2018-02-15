@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["keyring.go"],
+    importpath = "github.com/hashicorp/consul/command/keyring",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/hashicorp/consul/agent:go_default_library",
+        "//vendor/github.com/hashicorp/consul/api:go_default_library",
+        "//vendor/github.com/hashicorp/consul/command/flags:go_default_library",
+        "@com_github_mitchellh_cli//:go_default_library",
+    ],
+)

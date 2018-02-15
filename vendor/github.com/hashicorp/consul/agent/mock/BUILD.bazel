@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["notify.go"],
+    importpath = "github.com/hashicorp/consul/agent/mock",
+    visibility = ["//visibility:public"],
+    deps = ["//vendor/github.com/hashicorp/consul/types:go_default_library"],
+)

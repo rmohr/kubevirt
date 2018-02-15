@@ -1,4 +1,7 @@
 #!/bin/bash
+
+chmod 0640 /etc/sudoers.d/kubevirt
+
 ./virt-launcher $@
 rc=$?
 

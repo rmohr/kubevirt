@@ -1,0 +1,11 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "rolling.go",
+        "rolling_timing.go",
+    ],
+    importpath = "github.com/afex/hystrix-go/hystrix/rolling",
+    visibility = ["//visibility:public"],
+)

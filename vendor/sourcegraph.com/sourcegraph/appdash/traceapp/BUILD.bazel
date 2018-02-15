@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "aggregate.go",
+        "app.go",
+        "dashboard.go",
+        "handler.go",
+        "httputil.go",
+        "prof.go",
+        "router.go",
+        "tmpl.go",
+        "trace.go",
+        "vis.go",
+    ],
+    importpath = "sourcegraph.com/sourcegraph/appdash/traceapp",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/gorilla/mux:go_default_library",
+        "//vendor/sourcegraph.com/sourcegraph/appdash:go_default_library",
+        "//vendor/sourcegraph.com/sourcegraph/appdash/httptrace:go_default_library",
+        "//vendor/sourcegraph.com/sourcegraph/appdash/sqltrace:go_default_library",
+        "//vendor/sourcegraph.com/sourcegraph/appdash/traceapp/tmpl:go_default_library",
+        "@com_sourcegraph_sourcegraph_appdash_data//:go_default_library",
+    ],
+)

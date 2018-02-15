@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["converters.go"],
+    importpath = "github.com/influxdata/influxdb/prometheus",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/influxdata/influxdb/models:go_default_library",
+        "//vendor/github.com/influxdata/influxdb/prometheus/remote:go_default_library",
+        "@com_github_influxdata_influxql//:go_default_library",
+    ],
+)

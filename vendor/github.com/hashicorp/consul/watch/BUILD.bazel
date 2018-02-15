@@ -1,0 +1,16 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "funcs.go",
+        "plan.go",
+        "watch.go",
+    ],
+    importpath = "github.com/hashicorp/consul/watch",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/hashicorp/consul/api:go_default_library",
+        "//vendor/github.com/mitchellh/mapstructure:go_default_library",
+    ],
+)

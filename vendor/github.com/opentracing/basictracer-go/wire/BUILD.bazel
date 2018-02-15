@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "carrier.go",
+        "gen.go",
+        "wire.pb.go",
+    ],
+    importpath = "github.com/opentracing/basictracer-go/wire",
+    visibility = ["//visibility:public"],
+    deps = ["//vendor/github.com/gogo/protobuf/proto:go_default_library"],
+)

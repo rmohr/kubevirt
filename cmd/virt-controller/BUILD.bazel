@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["virt-controller.go"],
+    importpath = "kubevirt.io/kubevirt/cmd/virt-controller",
+    visibility = ["//visibility:private"],
+    deps = ["//pkg/virt-controller/watch:go_default_library"],
+)
+
+go_binary(
+    name = "virt-controller",
+    embed = [":go_default_library"],
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["keygen.go"],
+    importpath = "github.com/hashicorp/consul/command/keygen",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/hashicorp/consul/command/flags:go_default_library",
+        "@com_github_mitchellh_cli//:go_default_library",
+    ],
+)

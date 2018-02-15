@@ -1,0 +1,76 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = select({
+        "@io_bazel_rules_go//go/platform:android": [
+            "sysutil.go",
+        ],
+        "@io_bazel_rules_go//go/platform:darwin": [
+            "sysutil.go",
+        ],
+        "@io_bazel_rules_go//go/platform:dragonfly": [
+            "sysutil.go",
+        ],
+        "@io_bazel_rules_go//go/platform:freebsd": [
+            "sysutil.go",
+        ],
+        "@io_bazel_rules_go//go/platform:linux": [
+            "sysutil.go",
+        ],
+        "@io_bazel_rules_go//go/platform:nacl": [
+            "sysutil.go",
+        ],
+        "@io_bazel_rules_go//go/platform:netbsd": [
+            "sysutil.go",
+        ],
+        "@io_bazel_rules_go//go/platform:openbsd": [
+            "sysutil.go",
+        ],
+        "@io_bazel_rules_go//go/platform:plan9": [
+            "sysutil.go",
+        ],
+        "@io_bazel_rules_go//go/platform:solaris": [
+            "sysutil.go",
+        ],
+        "@io_bazel_rules_go//go/platform:windows": [
+            "sysutil_windows.go",
+        ],
+        "//conditions:default": [],
+    }),
+    importpath = "github.com/gopherjs/gopherjs/internal/sysutil",
+    visibility = ["//vendor/github.com/gopherjs/gopherjs:__subpackages__"],
+    deps = select({
+        "@io_bazel_rules_go//go/platform:android": [
+            "//vendor/golang.org/x/sys/unix:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:darwin": [
+            "//vendor/golang.org/x/sys/unix:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:dragonfly": [
+            "//vendor/golang.org/x/sys/unix:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:freebsd": [
+            "//vendor/golang.org/x/sys/unix:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:linux": [
+            "//vendor/golang.org/x/sys/unix:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:nacl": [
+            "//vendor/golang.org/x/sys/unix:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:netbsd": [
+            "//vendor/golang.org/x/sys/unix:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:openbsd": [
+            "//vendor/golang.org/x/sys/unix:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:plan9": [
+            "//vendor/golang.org/x/sys/unix:go_default_library",
+        ],
+        "@io_bazel_rules_go//go/platform:solaris": [
+            "//vendor/golang.org/x/sys/unix:go_default_library",
+        ],
+        "//conditions:default": [],
+    }),
+)

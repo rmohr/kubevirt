@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["fake_reporting_service.go"],
+    importpath = "github.com/lightstep/lightstep-tracer-go/lightstep_thrift/lightstep_thriftfakes",
+    visibility = ["//visibility:public"],
+    deps = ["//vendor/github.com/lightstep/lightstep-tracer-go/lightstep_thrift:go_default_library"],
+)

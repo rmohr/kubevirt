@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["rhh.go"],
+    importpath = "github.com/influxdata/influxdb/pkg/rhh",
+    visibility = ["//visibility:public"],
+    deps = ["@com_github_cespare_xxhash//:go_default_library"],
+)
