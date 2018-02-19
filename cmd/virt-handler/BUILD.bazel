@@ -2,7 +2,6 @@ load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
 load("@io_bazel_rules_docker//go:image.bzl", "go_image")
 load(
     "@io_bazel_rules_docker//container:container.bzl",
-    "container_push",
     container_repositories = "repositories",
 )
 
@@ -45,13 +44,4 @@ go_image(
     binary = ":virt-handler",
     cmd = [""],
     visibility = ["//visibility:public"],
-)
-
-container_push(
-    name = "push-virt-handler",
-    format = "Docker",
-    image = ":virt-handler-image",
-    registry = "localhost:5000",
-    repository = "kubevirt/virt-handler",
-    tag = "devel",
 )
