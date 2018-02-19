@@ -1,4 +1,10 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+load("@io_bazel_rules_docker//go:image.bzl", "go_image")
+load(
+    "@io_bazel_rules_docker//container:container.bzl",
+    "container_push",
+    container_repositories = "repositories",
+)
 
 go_library(
     name = "go_default_library",
@@ -31,4 +37,20 @@ go_binary(
     name = "virt-handler",
     embed = [":go_default_library"],
     visibility = ["//visibility:public"],
+)
+
+go_image(
+    name = "virt-handler-image",
+    binary = ":virt-handler",  
+    base = "@fedora//image",
+    cmd = [""],
+)
+
+container_push(
+    name = "push-virt-handler",
+    format = "Docker",
+    image = ":virt-handler-image",
+    registry = "localhost:5000",
+    repository = "kubevirt/virt-handler",
+    tag = "devel",
 )
