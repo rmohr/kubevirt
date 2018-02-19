@@ -5,6 +5,9 @@ all: build manifests
 bazel-generate:
 	hack/dockerized "bazel run //:gazelle"
 
+bazel-docker-push:
+	hack/dockerized "bazel run --define docker_prefix=localhost:5000/kubevirt --define docker_tag=latest :push-all"
+
 generate:
 	hack/dockerized "./hack/generate.sh"
 

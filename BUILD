@@ -58,20 +58,20 @@ pkg_tar(
 
 
 container_bundle(
-    name = "bundle",
+    name = "container-bundle",
     images = {
-            "localhost:5000/kubevirt/virt-launcher:devel": "//cmd/virt-launcher:virt-launcher-image",
-            "localhost:5000/kubevirt/virt-controller:devel": "//cmd/virt-controller:virt-controller-image",
-            "localhost:5000/kubevirt/virt-handler:devel": "//cmd/virt-handler:virt-handler-image",
-            "localhost:5000/kubevirt/cirros-registry-disk-demo:devel": "//cmd/registry-disk-v1alpha:cirros-registry-disk-demo",
-            "localhost:5000/kubevirt/alpine-registry-disk-demo:devel": "//cmd/registry-disk-v1alpha:alpine-registry-disk-demo",
-            "localhost:5000/kubevirt/fedora-registry-disk-demo:devel": "//cmd/registry-disk-v1alpha:fedora-registry-disk-demo",
-            "localhost:5000/kubevirt/vm-killer:devel": "@libvirt//image",
-            "localhost:5000/kubevirt/iscsi-demo-target-tgtd:devel": "//images/iscsi-demo-target-tgtd:tgtd",
+            "$(docker_prefix)/virt-launcher:$(docker_tag)": "//cmd/virt-launcher:virt-launcher-image",
+            "$(docker_prefix)/virt-controller:$(docker_tag)": "//cmd/virt-controller:virt-controller-image",
+            "$(docker_prefix)/virt-handler:$(docker_tag)": "//cmd/virt-handler:virt-handler-image",
+            "$(docker_prefix)/cirros-registry-disk-demo:$(docker_tag)": "//cmd/registry-disk-v1alpha:cirros-registry-disk-demo",
+            "$(docker_prefix)/alpine-registry-disk-demo:$(docker_tag)": "//cmd/registry-disk-v1alpha:alpine-registry-disk-demo",
+            "$(docker_prefix)/fedora-registry-disk-demo:$(docker_tag)": "//cmd/registry-disk-v1alpha:fedora-registry-disk-demo",
+            "$(docker_prefix)/vm-killer:$(docker_tag)": "@libvirt//image",
+            "$(docker_prefix)/iscsi-demo-target-tgtd:$(docker_tag)": "//images/iscsi-demo-target-tgtd:tgtd",
     },
 )
 
 docker_push(
     name = "push-all",
-    bundle = ":bundle",
+    bundle = ":container-bundle",
 )

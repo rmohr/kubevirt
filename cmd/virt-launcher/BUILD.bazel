@@ -70,8 +70,8 @@ container_image(
     base = ":virt-launcher-binary-layer",
     cmd = [""],
     entrypoint = ["/entrypoint.sh"],
-    workdir = "/",
     visibility = ["//visibility:public"],
+    workdir = "/",
 )
 
 container_push(
