@@ -1,0 +1,58 @@
+load(
+    "@io_bazel_rules_docker//container:container.bzl",
+    "container_image",
+    "container_push",
+    container_repositories = "repositories",
+)
+
+container_image(
+    name = "registry-disk-base",
+    base = "@libvirt//image",
+    cmd = ["/entry-point.sh"],
+    files = [ "entry-point.sh" ],
+)
+
+container_image(
+    name = "alpine-registry-disk-demo",
+    base = ":registry-disk-base",
+    tars = ["//:alpine-iso-tar"],
+)
+
+container_image(
+    name = "fedora-registry-disk-demo",
+    base = ":registry-disk-base",
+    tars = ["//:fedora-iso-tar"],
+)
+
+container_image(
+    name = "cirros-registry-disk-demo",
+    base = ":registry-disk-base",
+    tars = ["//:cirros-iso-tar"],
+)
+
+container_push(
+    name = "push-cirros-registry-disk-demo",
+    format = "Docker",
+    image = ":cirros-registry-disk-demo",
+    registry = "localhost:5000",
+    repository = "kubevirt/cirros-registry-disk-demo",
+    tag = "devel",
+)
+
+container_push(
+    name = "push-fedora-registry-disk-demo",
+    format = "Docker",
+    image = ":fedora-registry-disk-demo",
+    registry = "localhost:5000",
+    repository = "kubevirt/fedora-registry-disk-demo",
+    tag = "devel",
+)
+
+container_push(
+    name = "push-alpine-registry-disk-demo",
+    format = "Docker",
+    image = ":alpine-registry-disk-demo",
+    registry = "localhost:5000",
+    repository = "kubevirt/alpine-registry-disk-demo",
+    tag = "devel",
+)
