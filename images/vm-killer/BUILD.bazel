@@ -1,0 +1,15 @@
+load(
+    "@io_bazel_rules_docker//container:container.bzl",
+    "container_push",
+    container_repositories = "repositories",
+)
+
+# We just need an image which containes killall
+container_push(
+    name = "vm-killer",
+    format = "Docker",
+    image = "@libvirt//image",
+    registry = "localhost:5000",
+    repository = "kubevirt/vm-killer",
+    tag = "devel",
+)
