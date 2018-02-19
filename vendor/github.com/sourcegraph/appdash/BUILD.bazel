@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "collector.go",
+        "doc.go",
+        "event.go",
+        "id.go",
+        "memstats.go",
+        "multi.go",
+        "recorder.go",
+        "reflect.go",
+        "span.go",
+        "store.go",
+        "trace.go",
+    ],
+    importpath = "github.com/sourcegraph/appdash",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/gogo/protobuf/io:go_default_library",
+        "//vendor/sourcegraph.com/sourcegraph/appdash/internal/wire:go_default_library",
+    ],
+)

@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["scribe-remote.go"],
+    importpath = "github.com/openzipkin/zipkin-go-opentracing/thrift/gen-go/scribe/scribe-remote",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//vendor/github.com/apache/thrift/lib/go/thrift:go_default_library",
+        "//vendor/github.com/openzipkin/zipkin-go-opentracing/thrift/gen-go/scribe:go_default_library",
+    ],
+)
+
+go_binary(
+    name = "scribe-remote",
+    embed = [":go_default_library"],
+    visibility = ["//visibility:public"],
+)

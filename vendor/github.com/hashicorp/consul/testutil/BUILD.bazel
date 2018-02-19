@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "io.go",
+        "server.go",
+        "server_methods.go",
+        "server_wrapper.go",
+    ],
+    importpath = "github.com/hashicorp/consul/testutil",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/hashicorp/consul/lib/freeport:go_default_library",
+        "//vendor/github.com/hashicorp/consul/testutil/retry:go_default_library",
+        "//vendor/github.com/hashicorp/go-cleanhttp:go_default_library",
+        "//vendor/github.com/pkg/errors:go_default_library",
+        "@com_github_hashicorp_go_uuid//:go_default_library",
+    ],
+)

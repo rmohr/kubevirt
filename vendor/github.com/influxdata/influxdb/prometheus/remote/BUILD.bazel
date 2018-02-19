@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "generate.go",
+        "remote.pb.go",
+    ],
+    importpath = "github.com/influxdata/influxdb/prometheus/remote",
+    visibility = ["//visibility:public"],
+    deps = ["//vendor/github.com/gogo/protobuf/proto:go_default_library"],
+)

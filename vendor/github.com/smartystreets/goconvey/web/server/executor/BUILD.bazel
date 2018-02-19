@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "contract.go",
+        "coordinator.go",
+        "executor.go",
+        "tester.go",
+    ],
+    importpath = "github.com/smartystreets/goconvey/web/server/executor",
+    visibility = ["//visibility:public"],
+    deps = ["//vendor/github.com/smartystreets/goconvey/web/server/contract:go_default_library"],
+)

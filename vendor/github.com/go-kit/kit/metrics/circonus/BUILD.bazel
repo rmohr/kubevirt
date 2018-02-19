@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["circonus.go"],
+    importpath = "github.com/go-kit/kit/metrics/circonus",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/circonus-labs/circonus-gometrics:go_default_library",
+        "//vendor/github.com/go-kit/kit/metrics:go_default_library",
+    ],
+)

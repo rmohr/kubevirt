@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "account.go",
+        "acknowledgement.go",
+        "alert.go",
+        "annotation.go",
+        "api.go",
+        "broker.go",
+        "check.go",
+        "check_bundle.go",
+        "check_bundle_metrics.go",
+        "contact_group.go",
+        "dashboard.go",
+        "doc.go",
+        "graph.go",
+        "maintenance.go",
+        "metric.go",
+        "metric_cluster.go",
+        "outlier_report.go",
+        "provision_broker.go",
+        "rule_set.go",
+        "rule_set_group.go",
+        "user.go",
+        "worksheet.go",
+    ],
+    importpath = "github.com/circonus-labs/circonus-gometrics/api",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/circonus-labs/circonus-gometrics/api/config:go_default_library",
+        "//vendor/github.com/hashicorp/go-retryablehttp:go_default_library",
+    ],
+)

@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["tool.go"],
+    importpath = "github.com/gopherjs/gopherjs",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//vendor/github.com/gopherjs/gopherjs/build:go_default_library",
+        "//vendor/github.com/gopherjs/gopherjs/compiler:go_default_library",
+        "//vendor/github.com/gopherjs/gopherjs/internal/sysutil:go_default_library",
+        "//vendor/github.com/spf13/cobra:go_default_library",
+        "//vendor/github.com/spf13/pflag:go_default_library",
+        "//vendor/golang.org/x/crypto/ssh/terminal:go_default_library",
+        "@com_github_kisielk_gotool//:go_default_library",
+        "@com_github_neelance_sourcemap//:go_default_library",
+    ],
+)
+
+go_binary(
+    name = "gopherjs",
+    embed = [":go_default_library"],
+    visibility = ["//visibility:public"],
+)

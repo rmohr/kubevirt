@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "acl.go",
+        "cache.go",
+        "errors.go",
+        "policy.go",
+    ],
+    importpath = "github.com/hashicorp/consul/acl",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/hashicorp/consul/sentinel:go_default_library",
+        "//vendor/github.com/hashicorp/golang-lru:go_default_library",
+        "//vendor/github.com/hashicorp/hcl:go_default_library",
+        "@com_github_armon_go_radix//:go_default_library",
+    ],
+)

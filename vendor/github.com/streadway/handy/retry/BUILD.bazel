@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "delay.go",
+        "retry.go",
+        "strategy.go",
+    ],
+    importpath = "github.com/streadway/handy/retry",
+    visibility = ["//visibility:public"],
+)

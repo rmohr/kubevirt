@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["should.go"],
+    importpath = "github.com/smartystreets/assertions/should",
+    visibility = ["//visibility:public"],
+    deps = ["//vendor/github.com/smartystreets/assertions:go_default_library"],
+)

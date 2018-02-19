@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["main.go"],
+    importpath = "github.com/ziutek/telnet/telnet_example",
+    visibility = ["//visibility:private"],
+    deps = ["//vendor/github.com/ziutek/telnet:go_default_library"],
+)
+
+go_binary(
+    name = "telnet_example",
+    embed = [":go_default_library"],
+    visibility = ["//visibility:public"],
+)

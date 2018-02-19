@@ -1,0 +1,16 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["state.go"],
+    importpath = "github.com/hashicorp/consul/agent/local",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/hashicorp/consul/acl:go_default_library",
+        "//vendor/github.com/hashicorp/consul/agent/structs:go_default_library",
+        "//vendor/github.com/hashicorp/consul/agent/token:go_default_library",
+        "//vendor/github.com/hashicorp/consul/api:go_default_library",
+        "//vendor/github.com/hashicorp/consul/lib:go_default_library",
+        "//vendor/github.com/hashicorp/consul/types:go_default_library",
+    ],
+)

@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "appstats.go",
+        "bytesize.go",
+        "cost.go",
+        "doc.go",
+        "funcs.go",
+        "handler.go",
+        "html.go",
+        "static.go",
+        "types.go",
+    ],
+    importpath = "github.com/mjibson/appstats",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/golang/protobuf/proto:go_default_library",
+        "//vendor/golang.org/x/net/context:go_default_library",
+        "//vendor/google.golang.org/appengine:go_default_library",
+        "//vendor/google.golang.org/appengine/log:go_default_library",
+        "//vendor/google.golang.org/appengine/memcache:go_default_library",
+        "//vendor/google.golang.org/appengine/user:go_default_library",
+    ],
+)

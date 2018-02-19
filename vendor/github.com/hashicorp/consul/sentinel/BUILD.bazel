@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "evaluator.go",
+        "scope.go",
+        "sentinel_stub.go",
+    ],
+    importpath = "github.com/hashicorp/consul/sentinel",
+    visibility = ["//visibility:public"],
+    deps = ["//vendor/github.com/hashicorp/consul/api:go_default_library"],
+)

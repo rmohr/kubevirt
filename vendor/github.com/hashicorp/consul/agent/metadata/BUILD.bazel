@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "build.go",
+        "server.go",
+    ],
+    importpath = "github.com/hashicorp/consul/agent/metadata",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/hashicorp/serf/serf:go_default_library",
+        "@com_github_hashicorp_go_version//:go_default_library",
+    ],
+)

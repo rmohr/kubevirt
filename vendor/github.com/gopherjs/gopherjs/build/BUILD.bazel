@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["build.go"],
+    importpath = "github.com/gopherjs/gopherjs/build",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/fsnotify/fsnotify:go_default_library",
+        "//vendor/github.com/gopherjs/gopherjs/compiler:go_default_library",
+        "//vendor/github.com/gopherjs/gopherjs/compiler/natives:go_default_library",
+        "@com_github_neelance_sourcemap//:go_default_library",
+    ],
+)

@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["multi.go"],
+    importpath = "github.com/go-kit/kit/metrics/multi",
+    visibility = ["//visibility:public"],
+    deps = ["//vendor/github.com/go-kit/kit/metrics:go_default_library"],
+)

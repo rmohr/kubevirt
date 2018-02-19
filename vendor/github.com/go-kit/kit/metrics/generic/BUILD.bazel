@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["generic.go"],
+    importpath = "github.com/go-kit/kit/metrics/generic",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/VividCortex/gohistogram:go_default_library",
+        "//vendor/github.com/go-kit/kit/metrics:go_default_library",
+        "//vendor/github.com/go-kit/kit/metrics/internal/lv:go_default_library",
+    ],
+)

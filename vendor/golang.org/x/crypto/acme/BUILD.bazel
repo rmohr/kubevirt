@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "acme.go",
+        "jws.go",
+        "types.go",
+    ],
+    importpath = "golang.org/x/crypto/acme",
+    visibility = ["//visibility:public"],
+)

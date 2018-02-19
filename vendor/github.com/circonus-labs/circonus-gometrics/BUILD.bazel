@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "circonus-gometrics.go",
+        "counter.go",
+        "gauge.go",
+        "histogram.go",
+        "metrics.go",
+        "submit.go",
+        "text.go",
+        "tools.go",
+        "util.go",
+    ],
+    importpath = "github.com/circonus-labs/circonus-gometrics",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/circonus-labs/circonus-gometrics/api:go_default_library",
+        "//vendor/github.com/circonus-labs/circonus-gometrics/checkmgr:go_default_library",
+        "//vendor/github.com/circonus-labs/circonusllhist:go_default_library",
+        "//vendor/github.com/hashicorp/go-retryablehttp:go_default_library",
+        "//vendor/github.com/pkg/errors:go_default_library",
+    ],
+)

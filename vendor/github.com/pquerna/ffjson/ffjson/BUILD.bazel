@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "decoder.go",
+        "encoder.go",
+        "marshal.go",
+        "pool.go",
+    ],
+    importpath = "github.com/pquerna/ffjson/ffjson",
+    visibility = ["//visibility:public"],
+    deps = ["//vendor/github.com/pquerna/ffjson/fflib/v1:go_default_library"],
+)

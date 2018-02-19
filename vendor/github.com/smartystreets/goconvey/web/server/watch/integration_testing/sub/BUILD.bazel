@@ -1,0 +1,8 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["stuff.go"],
+    importpath = "github.com/smartystreets/goconvey/web/server/watch/integration_testing/sub",
+    visibility = ["//visibility:public"],
+)

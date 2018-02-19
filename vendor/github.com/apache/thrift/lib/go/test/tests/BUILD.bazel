@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "go17.go",
+        "pre_go17.go",
+        "protocol_mock.go",
+        "thrifttest_driver.go",
+        "thrifttest_handler.go",
+        "thrifttest_handler_go17.go",
+    ],
+    importpath = "github.com/apache/thrift/lib/go/test/tests",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/golang/mock/gomock:go_default_library",
+        "//vendor/golang.org/x/net/context:go_default_library",
+    ],
+)

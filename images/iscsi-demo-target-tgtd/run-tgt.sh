@@ -24,7 +24,7 @@ set -e
 SIZE=${SIZE:-1GB}
 WWN=${WWN:-iqn.2017-01.io.kubevirt:sn.42}
 
-[[ -f /volume/0-custom.img ]] || truncate -s ${SIZE} /volume/0-custom.img
+[[ -f /disk/0-custom.img ]] || truncate -s ${SIZE} /disk/0-custom.img
 
 echo "Starting tgtd"
 tgtd -f &
@@ -47,8 +47,8 @@ add_lun_for_file() {
     LUNID=$(($LUNID + 1))
 }
 
-echo "Adding every file in /volume as a LUN"
-for F in $(ls -1 /volume/* | sort); do
+echo "Adding every file in /disk as a LUN"
+for F in $(ls -1 /disk/* | sort); do
     echo "- Adding LUN ID $LUNID for file '$F'"
     add_lun_for_file $F
 done

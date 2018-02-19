@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "gate.go",
+        "group.go",
+        "once.go",
+        "sem.go",
+        "syncutil.go",
+    ],
+    importpath = "go4.org/syncutil",
+    visibility = ["//visibility:public"],
+)

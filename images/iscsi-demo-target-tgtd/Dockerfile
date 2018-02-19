@@ -24,19 +24,19 @@ ENV container docker
 RUN dnf -y update && dnf -y install scsi-target-utils bzip2 qemu-img \
     && dnf -y clean all
 
-RUN mkdir -p /volume
+RUN mkdir -p /disk
 
 # Add alpine image
 RUN curl \
       http://dl-cdn.alpinelinux.org/alpine/v3.7/releases/x86_64/alpine-virt-3.7.0-x86_64.iso \
-      > /volume/alpine.iso
+      > /disk/alpine.iso
 
 # Add cirros
 RUN curl \
       https://download.cirros-cloud.net/0.4.0/cirros-0.4.0-x86_64-disk.img \
-      > /volume/cirros.img \
-      && qemu-img convert -O raw /volume/cirros.img /volume/cirros.rawa \
-      && rm volume/cirros.img
+      > /disk/cirros.img \
+      && qemu-img convert -O raw /disk/cirros.img /disk/cirros.rawa \
+      && rm disk/cirros.img
 
 ADD run-tgt.sh /
 

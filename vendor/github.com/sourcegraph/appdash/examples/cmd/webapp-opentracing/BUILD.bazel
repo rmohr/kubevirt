@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["main.go"],
+    importpath = "github.com/sourcegraph/appdash/examples/cmd/webapp-opentracing",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//vendor/github.com/gorilla/mux:go_default_library",
+        "//vendor/github.com/opentracing/opentracing-go:go_default_library",
+        "//vendor/sourcegraph.com/sourcegraph/appdash:go_default_library",
+        "//vendor/sourcegraph.com/sourcegraph/appdash/opentracing:go_default_library",
+        "//vendor/sourcegraph.com/sourcegraph/appdash/traceapp:go_default_library",
+        "@com_github_urfave_negroni//:go_default_library",
+    ],
+)
+
+go_binary(
+    name = "webapp-opentracing",
+    embed = [":go_default_library"],
+    visibility = ["//visibility:public"],
+)

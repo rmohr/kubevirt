@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "archive.go",
+        "snapshot.go",
+    ],
+    importpath = "github.com/hashicorp/consul/snapshot",
+    visibility = ["//visibility:public"],
+    deps = ["@com_github_hashicorp_raft//:go_default_library"],
+)

@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "json.go",
+        "recorder.go",
+        "tracer.go",
+    ],
+    importpath = "sourcegraph.com/sourcegraph/appdash/opentracing",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/opentracing/basictracer-go:go_default_library",
+        "//vendor/github.com/opentracing/opentracing-go:go_default_library",
+        "//vendor/github.com/opentracing/opentracing-go/log:go_default_library",
+        "//vendor/sourcegraph.com/sourcegraph/appdash:go_default_library",
+    ],
+)

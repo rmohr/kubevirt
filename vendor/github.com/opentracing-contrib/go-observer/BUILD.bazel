@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["observer.go"],
+    importpath = "github.com/opentracing-contrib/go-observer",
+    visibility = ["//visibility:public"],
+    deps = ["//vendor/github.com/opentracing/opentracing-go:go_default_library"],
+)

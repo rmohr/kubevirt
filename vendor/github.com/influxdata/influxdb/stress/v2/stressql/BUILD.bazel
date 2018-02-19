@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["parser.go"],
+    importpath = "github.com/influxdata/influxdb/stress/v2/stressql",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/influxdata/influxdb/stress/v2/statement:go_default_library",
+        "//vendor/github.com/influxdata/influxdb/stress/v2/stressql/statement:go_default_library",
+        "@com_github_influxdata_influxql//:go_default_library",
+    ],
+)

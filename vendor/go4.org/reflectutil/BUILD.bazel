@@ -1,0 +1,65 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "reflectutil.go",
+        "swapper.go",
+    ] + select({
+        "@io_bazel_rules_go//go/platform:386": [
+            "asm_jmp.s",
+            "asm_jmp_14.s",
+            "swapper_unsafe.go",
+            "swapper_unsafe_14.go",
+            "swapper_unsafe_15.go",
+        ],
+        "@io_bazel_rules_go//go/platform:amd64": [
+            "asm_jmp.s",
+            "asm_jmp_14.s",
+            "swapper_unsafe.go",
+            "swapper_unsafe_14.go",
+            "swapper_unsafe_15.go",
+        ],
+        "@io_bazel_rules_go//go/platform:amd64p32": [
+            "swapper_unsafe.go",
+            "swapper_unsafe_14.go",
+            "swapper_unsafe_15.go",
+        ],
+        "@io_bazel_rules_go//go/platform:arm": [
+            "asm_b.s",
+            "asm_b_14.s",
+            "swapper_unsafe.go",
+            "swapper_unsafe_14.go",
+            "swapper_unsafe_15.go",
+        ],
+        "@io_bazel_rules_go//go/platform:arm64": [
+            "swapper_safe.go",
+        ],
+        "@io_bazel_rules_go//go/platform:mips": [
+            "swapper_safe.go",
+        ],
+        "@io_bazel_rules_go//go/platform:mips64": [
+            "swapper_safe.go",
+        ],
+        "@io_bazel_rules_go//go/platform:mips64le": [
+            "swapper_safe.go",
+        ],
+        "@io_bazel_rules_go//go/platform:mipsle": [
+            "swapper_safe.go",
+        ],
+        "@io_bazel_rules_go//go/platform:ppc64": [
+            "swapper_safe.go",
+        ],
+        "@io_bazel_rules_go//go/platform:ppc64le": [
+            "swapper_safe.go",
+        ],
+        "@io_bazel_rules_go//go/platform:s390x": [
+            "swapper_unsafe.go",
+            "swapper_unsafe_14.go",
+            "swapper_unsafe_15.go",
+        ],
+        "//conditions:default": [],
+    }),
+    importpath = "go4.org/reflectutil",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,17 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "client.go",
+        "go17.go",
+        "pre_go17.go",
+        "printing_handler.go",
+        "printing_handler_go17.go",
+        "server.go",
+        "simple_handler.go",
+    ],
+    importpath = "github.com/apache/thrift/test/go/src/common",
+    visibility = ["//visibility:public"],
+    deps = ["//vendor/golang.org/x/net/context:go_default_library"],
+)

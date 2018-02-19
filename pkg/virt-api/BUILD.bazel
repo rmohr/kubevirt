@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["api.go"],
+    importpath = "kubevirt.io/kubevirt/pkg/virt-api",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/api/v1:go_default_library",
+        "//pkg/healthz:go_default_library",
+        "//pkg/rest/filter:go_default_library",
+        "//pkg/service:go_default_library",
+        "//pkg/virt-api/rest:go_default_library",
+        "//vendor/github.com/emicklei/go-restful:go_default_library",
+        "//vendor/github.com/emicklei/go-restful-openapi:go_default_library",
+        "//vendor/github.com/go-openapi/spec:go_default_library",
+        "//vendor/github.com/spf13/pflag:go_default_library",
+        "//vendor/golang.org/x/net/context:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/runtime/schema:go_default_library",
+    ],
+)

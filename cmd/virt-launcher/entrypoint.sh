@@ -1,5 +1,6 @@
 #!/bin/bash
-./virt-launcher $@
+
+/app/cmd/virt-launcher/virt-launcher $@
 rc=$?
 
 echo "virt-launcher exited with code $rc"

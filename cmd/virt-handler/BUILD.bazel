@@ -1,0 +1,47 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+load("@io_bazel_rules_docker//go:image.bzl", "go_image")
+load(
+    "@io_bazel_rules_docker//container:container.bzl",
+    container_repositories = "repositories",
+)
+
+go_library(
+    name = "go_default_library",
+    srcs = ["virt-handler.go"],
+    importpath = "kubevirt.io/kubevirt/cmd/virt-handler",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//pkg/api/v1:go_default_library",
+        "//pkg/controller:go_default_library",
+        "//pkg/inotify-informer:go_default_library",
+        "//pkg/kubecli:go_default_library",
+        "//pkg/log:go_default_library",
+        "//pkg/service:go_default_library",
+        "//pkg/virt-handler:go_default_library",
+        "//pkg/virt-handler/cache:go_default_library",
+        "//pkg/virt-launcher:go_default_library",
+        "//pkg/virt-launcher/virtwrap/api:go_default_library",
+        "//vendor/github.com/spf13/pflag:go_default_library",
+        "//vendor/k8s.io/api/core/v1:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/fields:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/labels:go_default_library",
+        "//vendor/k8s.io/client-go/kubernetes/scheme:go_default_library",
+        "//vendor/k8s.io/client-go/kubernetes/typed/core/v1:go_default_library",
+        "//vendor/k8s.io/client-go/tools/cache:go_default_library",
+        "//vendor/k8s.io/client-go/tools/record:go_default_library",
+    ],
+)
+
+go_binary(
+    name = "virt-handler",
+    embed = [":go_default_library"],
+    visibility = ["//visibility:public"],
+)
+
+go_image(
+    name = "virt-handler-image",
+    base = "@fedora//image",
+    binary = ":virt-handler",
+    cmd = [""],
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["main.go"],
+    importpath = "github.com/smartystreets/assertions/assert/example",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//vendor/github.com/smartystreets/assertions/assert:go_default_library",
+        "//vendor/github.com/smartystreets/assertions/should:go_default_library",
+    ],
+)
+
+go_binary(
+    name = "example",
+    embed = [":go_default_library"],
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["main.go"],
+    importpath = "github.com/hashicorp/consul",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//vendor/github.com/hashicorp/consul/command:go_default_library",
+        "//vendor/github.com/hashicorp/consul/lib:go_default_library",
+        "@com_github_mitchellh_cli//:go_default_library",
+    ],
+)
+
+go_binary(
+    name = "consul",
+    embed = [":go_default_library"],
+    visibility = ["//visibility:public"],
+)

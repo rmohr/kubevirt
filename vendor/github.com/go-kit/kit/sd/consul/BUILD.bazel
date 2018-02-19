@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "client.go",
+        "doc.go",
+        "registrar.go",
+        "subscriber.go",
+    ],
+    importpath = "github.com/go-kit/kit/sd/consul",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/go-kit/kit/endpoint:go_default_library",
+        "//vendor/github.com/go-kit/kit/log:go_default_library",
+        "//vendor/github.com/go-kit/kit/sd:go_default_library",
+        "//vendor/github.com/go-kit/kit/sd/cache:go_default_library",
+        "//vendor/github.com/hashicorp/consul/api:go_default_library",
+    ],
+)

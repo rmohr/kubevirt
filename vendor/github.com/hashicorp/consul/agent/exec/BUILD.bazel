@@ -1,0 +1,45 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "exec.go",
+    ] + select({
+        "@io_bazel_rules_go//go/platform:android": [
+            "exec_unix.go",
+        ],
+        "@io_bazel_rules_go//go/platform:darwin": [
+            "exec_unix.go",
+        ],
+        "@io_bazel_rules_go//go/platform:dragonfly": [
+            "exec_unix.go",
+        ],
+        "@io_bazel_rules_go//go/platform:freebsd": [
+            "exec_unix.go",
+        ],
+        "@io_bazel_rules_go//go/platform:linux": [
+            "exec_unix.go",
+        ],
+        "@io_bazel_rules_go//go/platform:nacl": [
+            "exec_unix.go",
+        ],
+        "@io_bazel_rules_go//go/platform:netbsd": [
+            "exec_unix.go",
+        ],
+        "@io_bazel_rules_go//go/platform:openbsd": [
+            "exec_unix.go",
+        ],
+        "@io_bazel_rules_go//go/platform:plan9": [
+            "exec_unix.go",
+        ],
+        "@io_bazel_rules_go//go/platform:solaris": [
+            "exec_unix.go",
+        ],
+        "@io_bazel_rules_go//go/platform:windows": [
+            "exec_windows.go",
+        ],
+        "//conditions:default": [],
+    }),
+    importpath = "github.com/hashicorp/consul/agent/exec",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["catalog_list_datacenters.go"],
+    importpath = "github.com/hashicorp/consul/command/catalog/list/dc",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/hashicorp/consul/command/flags:go_default_library",
+        "@com_github_mitchellh_cli//:go_default_library",
+    ],
+)

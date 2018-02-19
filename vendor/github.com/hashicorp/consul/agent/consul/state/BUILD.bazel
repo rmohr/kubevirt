@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "acl.go",
+        "autopilot.go",
+        "catalog.go",
+        "coordinate.go",
+        "delay.go",
+        "graveyard.go",
+        "kvs.go",
+        "prepared_query.go",
+        "prepared_query_index.go",
+        "schema.go",
+        "session.go",
+        "state_store.go",
+        "tombstone_gc.go",
+        "txn.go",
+    ],
+    importpath = "github.com/hashicorp/consul/agent/consul/state",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/hashicorp/consul/agent/consul/prepared_query:go_default_library",
+        "//vendor/github.com/hashicorp/consul/agent/structs:go_default_library",
+        "//vendor/github.com/hashicorp/consul/api:go_default_library",
+        "//vendor/github.com/hashicorp/consul/lib:go_default_library",
+        "//vendor/github.com/hashicorp/consul/types:go_default_library",
+        "@com_github_hashicorp_go_memdb//:go_default_library",
+    ],
+)

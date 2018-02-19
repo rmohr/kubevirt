@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["ffjson.go"],
+    importpath = "github.com/pquerna/ffjson",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//vendor/github.com/pquerna/ffjson/fflib/v1:go_default_library",
+        "//vendor/github.com/pquerna/ffjson/generator:go_default_library",
+        "//vendor/github.com/pquerna/ffjson/inception:go_default_library",
+    ],
+)
+
+go_binary(
+    name = "ffjson",
+    embed = [":go_default_library"],
+    visibility = ["//visibility:public"],
+)
