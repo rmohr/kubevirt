@@ -41,8 +41,8 @@ go_binary(
 
 go_image(
     name = "virt-handler-image",
-    binary = ":virt-handler",  
     base = "@fedora//image",
+    binary = ":virt-handler",
     cmd = [""],
 )
 

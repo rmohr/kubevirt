@@ -1,6 +1,5 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
 load("@io_bazel_rules_docker//go:image.bzl", "go_image")
-
 load(
     "@io_bazel_rules_docker//container:container.bzl",
     "container_image",
@@ -59,20 +58,19 @@ container_image(
     visibility = ["//visibility:private"],
 )
 
-
 go_image(
     name = "virt-launcher-binary-layer",
-    binary = ":virt-launcher",  
     base = ":virt-launcher-scripts-layer",
+    binary = ":virt-launcher",
     visibility = ["//visibility:private"],
 )
 
 container_image(
     name = "virt-launcher-image",
-    entrypoint = ["/entrypoint.sh"],
+    base = ":virt-launcher-binary-layer",
     cmd = [""],
+    entrypoint = ["/entrypoint.sh"],
     workdir = "/",
-    base = ":virt-launcher-binary-layer"
 )
 
 container_push(

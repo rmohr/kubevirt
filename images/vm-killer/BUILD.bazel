@@ -4,7 +4,6 @@ load(
     container_repositories = "repositories",
 )
 
-# We just need an image which containes killall
 container_push(
     name = "vm-killer",
     format = "Docker",

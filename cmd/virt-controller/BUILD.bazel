@@ -25,11 +25,11 @@ go_binary(
 
 passwd_entry(
     name = "nonroot_user",
+    home = "/home/virt-controller",
     info = "virt-controller",
+    shell = "/bin/bash",
     uid = 1001,
     username = "virt-controller",
-    shell = "/bin/bash",
-    home = "/home/virt-controller",
 )
 
 passwd_file(
@@ -56,8 +56,8 @@ container_image(
 
 go_image(
     name = "virt-controller-image",
-    binary = ":virt-controller",
     base = ":passwd_image",
+    binary = ":virt-controller",
     cmd = [""],
 )
 
