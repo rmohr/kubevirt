@@ -45,6 +45,14 @@ container_pull(
 )
 
 container_pull(
+  name = "tgtd",
+  registry = "index.docker.io",
+  repository = "kubevirt/tgtd",
+  digest = "sha256:81a86099fd19c51510c9b7f1497b7dcfad2d2f40f9c2f6cef17897ee30c779d5",
+  #tag = "latest",
+)
+
+container_pull(
   name = "libvirt",
   registry = "index.docker.io",
   repository = "kubevirt/libvirt",

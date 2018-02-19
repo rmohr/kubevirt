@@ -1,0 +1,28 @@
+load(
+    "@io_bazel_rules_docker//container:container.bzl",
+    "container_image",
+    "container_push",
+    container_repositories = "repositories",
+)
+
+container_image(
+    name = "tgtd-disks",
+    base = "@tgtd//image",
+    tars = ["//:cirros-iso-tar", "//:alpine-iso-tar"],
+)
+
+container_image(
+    name = "tgtd",
+    base = ":tgtd-disks",
+    cmd = ["/run-tgt.sh"],
+    files = [ "run-tgt.sh" ],
+)
+
+container_push(
+    name = "push-tgtd",
+    format = "Docker",
+    image = ":tgtd",
+    registry = "localhost:5000",
+    repository = "kubevirt/iscsi-demo-target-tgtd",
+    tag = "devel",
+)

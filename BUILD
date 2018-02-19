@@ -11,7 +11,7 @@ gazelle(
 genrule(
     name = "alpine-iso",
     srcs = [],
-    outs = ["disk/alpine.raw"],
+    outs = ["disk/alpine.iso"],
     cmd = "mkdir disk && curl http://dl-cdn.alpinelinux.org/alpine/v3.7/releases/x86_64/alpine-virt-3.7.0-x86_64.iso > $@",
 )
 
@@ -25,7 +25,7 @@ pkg_tar(
 genrule(
     name = "cirros-iso",
     srcs = [],
-    outs = ["disk/cirros.raw"],
+    outs = ["disk/cirros.img"],
     cmd = "mkdir disk && curl https://download.cirros-cloud.net/0.4.0/cirros-0.4.0-x86_64-disk.img > $@",
 )
 
