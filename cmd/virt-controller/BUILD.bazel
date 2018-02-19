@@ -59,6 +59,7 @@ go_image(
     base = ":passwd_image",
     binary = ":virt-controller",
     cmd = [""],
+    visibility = ["//visibility:public"],
 )
 
 container_push(

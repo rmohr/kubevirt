@@ -2,6 +2,12 @@ package(default_visibility = ["//visibility:public"])
 
 load("@bazel_gazelle//:def.bzl", "gazelle")
 load("@bazel_tools//tools/build_defs/pkg:pkg.bzl", "pkg_tar")
+load("@io_bazel_rules_docker//contrib:push-all.bzl", "docker_push")
+load(
+    "@io_bazel_rules_docker//container:container.bzl",
+    "container_bundle",
+    container_repositories = "repositories",
+)
 
 gazelle(
     name = "gazelle",
@@ -48,4 +54,24 @@ pkg_tar(
     srcs = [":fedora-iso"],
     package_dir = "disk",
     visibility = ["//visibility:public"],
+)
+
+
+container_bundle(
+    name = "bundle",
+    images = {
+            "localhost:5000/kubevirt/virt-launcher:devel": "//cmd/virt-launcher:virt-launcher-image",
+            "localhost:5000/kubevirt/virt-controller:devel": "//cmd/virt-controller:virt-controller-image",
+            "localhost:5000/kubevirt/virt-handler:devel": "//cmd/virt-handler:virt-handler-image",
+            "localhost:5000/kubevirt/cirros-registry-disk-demo:devel": "//cmd/registry-disk-v1alpha:cirros-registry-disk-demo",
+            "localhost:5000/kubevirt/alpine-registry-disk-demo:devel": "//cmd/registry-disk-v1alpha:alpine-registry-disk-demo",
+            "localhost:5000/kubevirt/fedora-registry-disk-demo:devel": "//cmd/registry-disk-v1alpha:fedora-registry-disk-demo",
+            "localhost:5000/kubevirt/vm-killer:devel": "@libvirt//image",
+            "localhost:5000/kubevirt/iscsi-demo-target-tgtd:devel": "//images/iscsi-demo-target-tgtd:tgtd",
+    },
+)
+
+docker_push(
+    name = "push-all",
+    bundle = ":bundle",
 )

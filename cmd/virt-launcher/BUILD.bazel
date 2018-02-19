@@ -71,6 +71,7 @@ container_image(
     cmd = [""],
     entrypoint = ["/entrypoint.sh"],
     workdir = "/",
+    visibility = ["//visibility:public"],
 )
 
 container_push(

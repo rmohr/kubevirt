@@ -16,6 +16,7 @@ container_image(
     base = ":tgtd-disks",
     cmd = ["/run-tgt.sh"],
     files = [ "run-tgt.sh" ],
+    visibility = ["//visibility:public"],
 )
 
 container_push(

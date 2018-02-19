@@ -16,18 +16,21 @@ container_image(
     name = "alpine-registry-disk-demo",
     base = ":registry-disk-base",
     tars = ["//:alpine-iso-tar"],
+    visibility = ["//visibility:public"],
 )
 
 container_image(
     name = "fedora-registry-disk-demo",
     base = ":registry-disk-base",
     tars = ["//:fedora-iso-tar"],
+    visibility = ["//visibility:public"],
 )
 
 container_image(
     name = "cirros-registry-disk-demo",
     base = ":registry-disk-base",
     tars = ["//:cirros-iso-tar"],
+    visibility = ["//visibility:public"],
 )
 
 container_push(

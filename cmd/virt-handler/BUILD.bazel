@@ -44,6 +44,7 @@ go_image(
     base = "@fedora//image",
     binary = ":virt-handler",
     cmd = [""],
+    visibility = ["//visibility:public"],
 )
 
 container_push(
