@@ -30,9 +30,10 @@ RUN dnf -y install \
   test $(id -u qemu) = 107 # make sure that the qemu user really is 107
 
 COPY sock-connector /sock-connector
-COPY virt-launcher /virt-launcher
+COPY virt-launcher /app/cmd/virt-launcher/virt-launcher
 
 COPY etc/sudoers.d/kubevirt-sudo /etc/sudoers.d/kubevirt
+RUN chmod 0640 /etc/sudoers.d/kubevirt
 
 # libvirtd.sh in this image differs from upstream
 RUN rm -f /libvirtd.sh

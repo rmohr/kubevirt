@@ -1,4 +1,12 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+load("@io_bazel_rules_docker//go:image.bzl", "go_image")
+
+load(
+    "@io_bazel_rules_docker//container:container.bzl",
+    "container_image",
+    "container_push",
+    container_repositories = "repositories",
+)
 
 go_library(
     name = "go_default_library",
@@ -28,4 +36,50 @@ go_binary(
     name = "virt-launcher",
     embed = [":go_default_library"],
     visibility = ["//visibility:public"],
+)
+
+container_image(
+    name = "virt-launcher-sudoers-layer",
+    base = "@libvirt//image",
+    files = [
+        "etc",
+    ],
+    mode = "0640",
+    visibility = ["//visibility:private"],
+)
+
+container_image(
+    name = "virt-launcher-scripts-layer",
+    base = ":virt-launcher-sudoers-layer",
+    files = [
+        "entrypoint.sh",
+        "libvirtd.sh",
+        "sock-connector",
+    ],
+    visibility = ["//visibility:private"],
+)
+
+
+go_image(
+    name = "virt-launcher-binary-layer",
+    binary = ":virt-launcher",  
+    base = ":virt-launcher-scripts-layer",
+    visibility = ["//visibility:private"],
+)
+
+container_image(
+    name = "virt-launcher-image",
+    entrypoint = ["/entrypoint.sh"],
+    cmd = [""],
+    workdir = "/",
+    base = ":virt-launcher-binary-layer"
+)
+
+container_push(
+    name = "push-virt-launcher",
+    format = "Docker",
+    image = ":virt-launcher-image",
+    registry = "localhost:5000",
+    repository = "kubevirt/virt-launcher",
+    tag = "devel",
 )

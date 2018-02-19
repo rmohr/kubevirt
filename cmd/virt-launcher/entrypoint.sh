@@ -1,8 +1,6 @@
 #!/bin/bash
 
-chmod 0640 /etc/sudoers.d/kubevirt
-
-./virt-launcher $@
+/app/cmd/virt-launcher/virt-launcher $@
 rc=$?
 
 echo "virt-launcher exited with code $rc"
