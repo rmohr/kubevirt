@@ -26,7 +26,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var exampleXML = `<domain type="qemu" xmlns:qemu="http://libvirt.org/schemas/domain/qemu/1.0">
+var exampleXML = `<domain type="kvm" xmlns:qemu="http://libvirt.org/schemas/domain/qemu/1.0">
   <name>mynamespace_testvm</name>
   <memory unit="MB">9</memory>
   <os>
@@ -40,6 +40,7 @@ var exampleXML = `<domain type="qemu" xmlns:qemu="http://libvirt.org/schemas/dom
     <baseBoard></baseBoard>
   </sysinfo>
   <devices>
+    <emulator>/usr/bin/qemu-system-x86_64</emulator>
     <interface type="bridge">
       <source bridge="br1"></source>
       <model type="e1000"></model>
@@ -119,6 +120,7 @@ var _ = Describe("Schema", func() {
 	exampleDomain.Spec.Devices.Video = []Video{
 		{Model: VideoModel{Type: "vga", Heads: &heads, VRam: &vram}},
 	}
+	exampleDomain.Spec.Devices.Emulator = "/usr/bin/qemu-system-x86_64"
 	exampleDomain.Spec.Devices.Consoles = []Console{
 		{Type: "pty"},
 	}
