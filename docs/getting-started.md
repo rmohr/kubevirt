@@ -84,7 +84,7 @@ Now it's time to get hands on and give it a try.
 Finally start a VM called `vm-ephemeral`:
 
 ```bash
-    # This can be done from your GIT repo, no need to log into a vagrant VM
+    # This can be done from your GIT repo, no need to log into a VM
 
     # Create a VM
     ./cluster/kubectl.sh create -f cluster/examples/vm-ephemeral.yaml
