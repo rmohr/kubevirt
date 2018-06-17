@@ -5,9 +5,8 @@ package cmdclient
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	v1 "k8s.io/api/core/v1"
 
-	v10 "kubevirt.io/kubevirt/pkg/api/v1"
+	v1 "kubevirt.io/kubevirt/pkg/api/v1"
 	api "kubevirt.io/kubevirt/pkg/virt-launcher/virtwrap/api"
 )
 
@@ -32,18 +31,18 @@ func (_m *MockLauncherClient) EXPECT() *_MockLauncherClientRecorder {
 	return _m.recorder
 }
 
-func (_m *MockLauncherClient) SyncVirtualMachine(vm *v10.VirtualMachine, secrets map[string]*v1.Secret) error {
-	ret := _m.ctrl.Call(_m, "SyncVirtualMachine", vm, secrets)
+func (_m *MockLauncherClient) SyncVirtualMachine(vmi *v1.VirtualMachineInstance) error {
+	ret := _m.ctrl.Call(_m, "SyncVirtualMachine", vmi)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-func (_mr *_MockLauncherClientRecorder) SyncVirtualMachine(arg0, arg1 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "SyncVirtualMachine", arg0, arg1)
+func (_mr *_MockLauncherClientRecorder) SyncVirtualMachine(arg0 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "SyncVirtualMachine", arg0)
 }
 
-func (_m *MockLauncherClient) ShutdownVirtualMachine(vm *v10.VirtualMachine) error {
-	ret := _m.ctrl.Call(_m, "ShutdownVirtualMachine", vm)
+func (_m *MockLauncherClient) ShutdownVirtualMachine(vmi *v1.VirtualMachineInstance) error {
+	ret := _m.ctrl.Call(_m, "ShutdownVirtualMachine", vmi)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
@@ -52,24 +51,14 @@ func (_mr *_MockLauncherClientRecorder) ShutdownVirtualMachine(arg0 interface{})
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "ShutdownVirtualMachine", arg0)
 }
 
-func (_m *MockLauncherClient) KillVirtualMachine(vm *v10.VirtualMachine) error {
-	ret := _m.ctrl.Call(_m, "KillVirtualMachine", vm)
+func (_m *MockLauncherClient) KillVirtualMachine(vmi *v1.VirtualMachineInstance) error {
+	ret := _m.ctrl.Call(_m, "KillVirtualMachine", vmi)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 func (_mr *_MockLauncherClientRecorder) KillVirtualMachine(arg0 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "KillVirtualMachine", arg0)
-}
-
-func (_m *MockLauncherClient) SyncSecret(vm *v10.VirtualMachine, usageType string, usageID string, secretValue string) error {
-	ret := _m.ctrl.Call(_m, "SyncSecret", vm, usageType, usageID, secretValue)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-func (_mr *_MockLauncherClientRecorder) SyncSecret(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "SyncSecret", arg0, arg1, arg2, arg3)
 }
 
 func (_m *MockLauncherClient) GetDomain() (*api.Domain, bool, error) {

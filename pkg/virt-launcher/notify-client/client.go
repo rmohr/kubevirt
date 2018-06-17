@@ -5,10 +5,8 @@ import (
 	"fmt"
 	"net/rpc"
 	"path/filepath"
-	"strings"
 
 	"github.com/libvirt/libvirt-go"
-	k8sv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
 
@@ -73,16 +71,6 @@ func (c *DomainEventClient) SendDomainEvent(event watch.Event) error {
 	return nil
 }
 
-// SplitVMNamespaceKey returns the namespace and name that is encoded in the
-// domain name.
-func SplitVMNamespaceKey(domainName string) (namespace, name string) {
-	splitName := strings.SplitN(domainName, "_", 2)
-	if len(splitName) == 1 {
-		return k8sv1.NamespaceDefault, splitName[0]
-	}
-	return splitName[0], splitName[1]
-}
-
 func newWatchEventError(err error) watch.Event {
 	return watch.Event{Type: watch.Error, Object: &metav1.Status{Status: metav1.StatusFailure, Message: err.Error()}}
 }
@@ -104,7 +92,7 @@ func libvirtEventCallback(d cli.VirDomain, event *libvirt.DomainEventLifecycle, 
 
 	// No matter which event, try to fetch the domain xml
 	// and the state. If we get a IsNotFound error, that
-	// means that the VM was removed.
+	// means that the VirtualMachineInstance was removed.
 	spec, err := util.GetDomainSpec(d)
 	if err != nil {
 		if !domainerrors.IsNotFound(err) {

@@ -34,13 +34,14 @@ import (
 	"kubevirt.io/kubevirt/pkg/log"
 	"kubevirt.io/kubevirt/pkg/virt-launcher/virtwrap/api"
 	"kubevirt.io/kubevirt/pkg/virt-launcher/virtwrap/cli"
+	"kubevirt.io/kubevirt/pkg/virt-launcher/virtwrap/network"
 )
 
 var _ = Describe("Manager", func() {
 	var mockConn *cli.MockConnection
 	var mockDomain *cli.MockVirDomain
 	var ctrl *gomock.Controller
-	testVmName := "testvm"
+	testVmName := "testvmi"
 	testNamespace := "testnamespace"
 	testDomainName := fmt.Sprintf("%s_%s", testNamespace, testVmName)
 
@@ -54,64 +55,63 @@ var _ = Describe("Manager", func() {
 		mockDomain.EXPECT().Free()
 	})
 
-	expectIsolationDetectionForVM := func(vm *v1.VirtualMachine) *api.DomainSpec {
+	expectIsolationDetectionForVMI := func(vmi *v1.VirtualMachineInstance) *api.DomainSpec {
 		domain := &api.Domain{}
 		c := &api.ConverterContext{
-			VirtualMachine: vm,
+			VirtualMachine: vmi,
+			AllowEmulation: true,
 		}
-		Expect(api.Convert_v1_VirtualMachine_To_api_Domain(vm, domain, c)).To(Succeed())
+		Expect(api.Convert_v1_VirtualMachine_To_api_Domain(vmi, domain, c)).To(Succeed())
 		api.SetObjectDefaults_Domain(domain)
 
 		return &domain.Spec
 	}
 
-	Context("on successful VM sync", func() {
-		It("should define and start a new VM", func() {
-			vm := newVM(testNamespace, testVmName)
+	Context("on successful VirtualMachineInstance sync", func() {
+		It("should define and start a new VirtualMachineInstance", func() {
+			StubOutNetworkForTest()
+			vmi := newVMI(testNamespace, testVmName)
 			mockConn.EXPECT().LookupDomainByName(testDomainName).Return(mockDomain, libvirt.Error{Code: libvirt.ERR_NO_DOMAIN})
 
-			domainSpec := expectIsolationDetectionForVM(vm)
+			domainSpec := expectIsolationDetectionForVMI(vmi)
 
 			xml, err := xml.Marshal(domainSpec)
 			Expect(err).To(BeNil())
-			mockConn.EXPECT().ListSecrets().Return(make([]string, 0, 0), nil)
 			mockConn.EXPECT().DomainDefineXML(string(xml)).Return(mockDomain, nil)
 			mockDomain.EXPECT().GetState().Return(libvirt.DOMAIN_SHUTDOWN, 1, nil)
 			mockDomain.EXPECT().Create().Return(nil)
 			mockDomain.EXPECT().GetXMLDesc(libvirt.DomainXMLFlags(0)).Return(string(xml), nil)
 			manager, _ := NewLibvirtDomainManager(mockConn)
-			newspec, err := manager.SyncVM(vm, nil)
+			newspec, err := manager.SyncVMI(vmi, true)
 			Expect(newspec).ToNot(BeNil())
 			Expect(err).To(BeNil())
 		})
-		It("should leave a defined and started VM alone", func() {
-			vm := newVM(testNamespace, testVmName)
-			domainSpec := expectIsolationDetectionForVM(vm)
+		It("should leave a defined and started VirtualMachineInstance alone", func() {
+			vmi := newVMI(testNamespace, testVmName)
+			domainSpec := expectIsolationDetectionForVMI(vmi)
 			xml, err := xml.Marshal(domainSpec)
 
-			mockConn.EXPECT().ListSecrets().Return(make([]string, 0, 0), nil)
 			mockConn.EXPECT().LookupDomainByName(testDomainName).Return(mockDomain, nil)
 			mockDomain.EXPECT().GetState().Return(libvirt.DOMAIN_RUNNING, 1, nil)
 			mockDomain.EXPECT().GetXMLDesc(libvirt.DomainXMLFlags(0)).Return(string(xml), nil)
 			manager, _ := NewLibvirtDomainManager(mockConn)
-			newspec, err := manager.SyncVM(vm, nil)
+			newspec, err := manager.SyncVMI(vmi, true)
 			Expect(newspec).ToNot(BeNil())
 			Expect(err).To(BeNil())
 		})
-		table.DescribeTable("should try to start a VM in state",
+		table.DescribeTable("should try to start a VirtualMachineInstance in state",
 			func(state libvirt.DomainState) {
-				vm := newVM(testNamespace, testVmName)
-				domainSpec := expectIsolationDetectionForVM(vm)
+				vmi := newVMI(testNamespace, testVmName)
+				domainSpec := expectIsolationDetectionForVMI(vmi)
 				xml, err := xml.Marshal(domainSpec)
 
-				mockConn.EXPECT().ListSecrets().Return(make([]string, 0, 0), nil)
 				mockConn.EXPECT().LookupDomainByName(testDomainName).Return(mockDomain, nil)
 				mockDomain.EXPECT().GetState().Return(state, 1, nil)
 				mockConn.EXPECT().DomainDefineXML(string(xml)).Return(mockDomain, nil)
 				mockDomain.EXPECT().Create().Return(nil)
 				mockDomain.EXPECT().GetXMLDesc(libvirt.DomainXMLFlags(0)).Return(string(xml), nil)
 				manager, _ := NewLibvirtDomainManager(mockConn)
-				newspec, err := manager.SyncVM(vm, nil)
+				newspec, err := manager.SyncVMI(vmi, true)
 				Expect(newspec).ToNot(BeNil())
 				Expect(err).To(BeNil())
 			},
@@ -120,31 +120,29 @@ var _ = Describe("Manager", func() {
 			table.Entry("shutoff", libvirt.DOMAIN_SHUTOFF),
 			table.Entry("unknown", libvirt.DOMAIN_NOSTATE),
 		)
-		It("should resume a paused VM", func() {
-			vm := newVM(testNamespace, testVmName)
-			domainSpec := expectIsolationDetectionForVM(vm)
+		It("should resume a paused VirtualMachineInstance", func() {
+			vmi := newVMI(testNamespace, testVmName)
+			domainSpec := expectIsolationDetectionForVMI(vmi)
 			xml, err := xml.Marshal(domainSpec)
 
-			mockConn.EXPECT().ListSecrets().Return(make([]string, 0, 0), nil)
 			mockConn.EXPECT().LookupDomainByName(testDomainName).Return(mockDomain, nil)
 			mockDomain.EXPECT().GetState().Return(libvirt.DOMAIN_PAUSED, 1, nil)
 			mockDomain.EXPECT().Resume().Return(nil)
 			mockDomain.EXPECT().GetXMLDesc(libvirt.DomainXMLFlags(0)).Return(string(xml), nil)
 			manager, _ := NewLibvirtDomainManager(mockConn)
-			newspec, err := manager.SyncVM(vm, nil)
+			newspec, err := manager.SyncVMI(vmi, true)
 			Expect(newspec).ToNot(BeNil())
 			Expect(err).To(BeNil())
 		})
 	})
-	Context("on successful VM kill", func() {
-		table.DescribeTable("should try to undefine a VM in state",
+	Context("on successful VirtualMachineInstance kill", func() {
+		table.DescribeTable("should try to undefine a VirtualMachineInstance in state",
 			func(state libvirt.DomainState) {
-				mockConn.EXPECT().ListSecrets().Return(make([]string, 0, 0), nil)
 				mockConn.EXPECT().LookupDomainByName(testDomainName).Return(mockDomain, nil)
 				mockDomain.EXPECT().GetState().Return(state, 1, nil)
 				mockDomain.EXPECT().Undefine().Return(nil)
 				manager, _ := NewLibvirtDomainManager(mockConn)
-				err := manager.KillVM(newVM(testNamespace, testVmName))
+				err := manager.KillVMI(newVMI(testNamespace, testVmName))
 				Expect(err).To(BeNil())
 			},
 			table.Entry("crashed", libvirt.DOMAIN_CRASHED),
@@ -152,15 +150,14 @@ var _ = Describe("Manager", func() {
 			table.Entry("shutoff", libvirt.DOMAIN_SHUTOFF),
 			table.Entry("unknown", libvirt.DOMAIN_NOSTATE),
 		)
-		table.DescribeTable("should try to destroy and undefine a VM in state",
+		table.DescribeTable("should try to destroy and undefine a VirtualMachineInstance in state",
 			func(state libvirt.DomainState) {
-				mockConn.EXPECT().ListSecrets().Return(make([]string, 0, 0), nil)
 				mockConn.EXPECT().LookupDomainByName(testDomainName).Return(mockDomain, nil)
 				mockDomain.EXPECT().GetState().Return(state, 1, nil)
 				mockDomain.EXPECT().Destroy().Return(nil)
 				mockDomain.EXPECT().Undefine().Return(nil)
 				manager, _ := NewLibvirtDomainManager(mockConn)
-				err := manager.KillVM(newVM(testNamespace, testVmName))
+				err := manager.KillVMI(newVMI(testNamespace, testVmName))
 				Expect(err).To(BeNil())
 			},
 			table.Entry("running", libvirt.DOMAIN_RUNNING),
@@ -178,7 +175,6 @@ var _ = Describe("Manager", func() {
 			mockDomain.EXPECT().GetXMLDesc(gomock.Eq(libvirt.DOMAIN_XML_MIGRATABLE)).Return(string(x), nil)
 			mockDomain.EXPECT().GetXMLDesc(gomock.Eq(libvirt.DOMAIN_XML_INACTIVE)).Return(string(x), nil)
 			mockConn.EXPECT().ListAllDomains(gomock.Eq(libvirt.CONNECT_LIST_DOMAINS_ACTIVE|libvirt.CONNECT_LIST_DOMAINS_INACTIVE)).Return([]cli.VirDomain{mockDomain}, nil)
-			mockConn.EXPECT().ListSecrets().Return(make([]string, 0, 0), nil)
 
 			manager, _ := NewLibvirtDomainManager(mockConn)
 			doms, err := manager.ListAllDomains()
@@ -198,18 +194,22 @@ var _ = Describe("Manager", func() {
 		table.Entry("running", libvirt.DOMAIN_RUNNING, api.Running),
 	)
 
-	// TODO: test error reporting on non successful VM syncs and kill attempts
+	// TODO: test error reporting on non successful VirtualMachineInstance syncs and kill attempts
 
 	AfterEach(func() {
 		ctrl.Finish()
 	})
 })
 
-func newVM(namespace string, name string) *v1.VirtualMachine {
-	vm := &v1.VirtualMachine{
+func newVMI(namespace string, name string) *v1.VirtualMachineInstance {
+	vmi := &v1.VirtualMachineInstance{
 		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
-		Spec:       v1.VirtualMachineSpec{Domain: v1.NewMinimalDomainSpec()},
+		Spec:       v1.VirtualMachineInstanceSpec{Domain: v1.NewMinimalDomainSpec()},
 	}
-	v1.SetObjectDefaults_VirtualMachine(vm)
-	return vm
+	v1.SetObjectDefaults_VirtualMachineInstance(vmi)
+	return vmi
+}
+
+func StubOutNetworkForTest() {
+	network.SetupPodNetwork = func(vm *v1.VirtualMachineInstance, domain *api.Domain) error { return nil }
 }

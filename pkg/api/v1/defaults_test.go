@@ -8,27 +8,34 @@ import (
 var _ = Describe("Defaults", func() {
 
 	It("should add ACPI feature if it is unspecified", func() {
-		vm := &VirtualMachine{}
-		SetObjectDefaults_VirtualMachine(vm)
-		Expect(*vm.Spec.Domain.Features.ACPI.Enabled).To(BeTrue())
+		vmi := &VirtualMachineInstance{}
+		SetObjectDefaults_VirtualMachineInstance(vmi)
+		Expect(*vmi.Spec.Domain.Features.ACPI.Enabled).To(BeTrue())
 	})
 
 	It("should not add non-ACPI feature by default", func() {
-		vm := &VirtualMachine{}
-		SetObjectDefaults_VirtualMachine(vm)
-		Expect(vm.Spec.Domain.Features.APIC).To(BeNil())
-		Expect(vm.Spec.Domain.Features.Hyperv).To(BeNil())
+		vmi := &VirtualMachineInstance{}
+		SetObjectDefaults_VirtualMachineInstance(vmi)
+		Expect(vmi.Spec.Domain.Features.APIC).To(BeNil())
+		Expect(vmi.Spec.Domain.Features.Hyperv).To(BeNil())
+	})
+
+	It("should add interface and pod network by default", func() {
+		vmi := &VirtualMachineInstance{}
+		SetObjectDefaults_VirtualMachineInstance(vmi)
+		Expect(len(vmi.Spec.Domain.Devices.Interfaces)).NotTo(BeZero())
+		Expect(len(vmi.Spec.Networks)).NotTo(BeZero())
 	})
 
 	It("should default to true to all defined features", func() {
-		vm := &VirtualMachine{
-			Spec: VirtualMachineSpec{
+		vmi := &VirtualMachineInstance{
+			Spec: VirtualMachineInstanceSpec{
 				Domain: DomainSpec{},
 			},
 		}
-		vm.Spec.Domain.Features = &Features{
+		vmi.Spec.Domain.Features = &Features{
 			ACPI: FeatureState{},
-			APIC: &FeatureState{},
+			APIC: &FeatureAPIC{},
 			Hyperv: &FeatureHyperv{
 				Relaxed:    &FeatureState{},
 				VAPIC:      &FeatureState{},
@@ -41,9 +48,9 @@ var _ = Describe("Defaults", func() {
 				VendorID:   &FeatureVendorID{},
 			},
 		}
-		SetObjectDefaults_VirtualMachine(vm)
+		SetObjectDefaults_VirtualMachineInstance(vmi)
 
-		features := vm.Spec.Domain.Features
+		features := vmi.Spec.Domain.Features
 		hyperv := features.Hyperv
 
 		Expect(*features.ACPI.Enabled).To(BeTrue())
@@ -61,14 +68,14 @@ var _ = Describe("Defaults", func() {
 	})
 
 	It("should not override defined feature states", func() {
-		vm := &VirtualMachine{
-			Spec: VirtualMachineSpec{
+		vmi := &VirtualMachineInstance{
+			Spec: VirtualMachineInstanceSpec{
 				Domain: DomainSpec{},
 			},
 		}
-		vm.Spec.Domain.Features = &Features{
+		vmi.Spec.Domain.Features = &Features{
 			ACPI: FeatureState{Enabled: _true},
-			APIC: &FeatureState{Enabled: _false},
+			APIC: &FeatureAPIC{Enabled: _false},
 			Hyperv: &FeatureHyperv{
 				Relaxed:    &FeatureState{Enabled: _true},
 				VAPIC:      &FeatureState{Enabled: _false},
@@ -81,9 +88,9 @@ var _ = Describe("Defaults", func() {
 				VendorID:   &FeatureVendorID{Enabled: _true},
 			},
 		}
-		SetObjectDefaults_VirtualMachine(vm)
+		SetObjectDefaults_VirtualMachineInstance(vmi)
 
-		features := vm.Spec.Domain.Features
+		features := vmi.Spec.Domain.Features
 		hyperv := features.Hyperv
 
 		Expect(*features.ACPI.Enabled).To(BeTrue())
@@ -99,9 +106,9 @@ var _ = Describe("Defaults", func() {
 		Expect(*hyperv.Reset.Enabled).To(BeFalse())
 		Expect(*hyperv.VendorID.Enabled).To(BeTrue())
 
-		vm.Spec.Domain.Features = &Features{
+		vmi.Spec.Domain.Features = &Features{
 			ACPI: FeatureState{Enabled: _false},
-			APIC: &FeatureState{Enabled: _true},
+			APIC: &FeatureAPIC{Enabled: _true},
 			Hyperv: &FeatureHyperv{
 				Relaxed:    &FeatureState{Enabled: _false},
 				VAPIC:      &FeatureState{Enabled: _true},
@@ -114,9 +121,9 @@ var _ = Describe("Defaults", func() {
 				VendorID:   &FeatureVendorID{Enabled: _false},
 			},
 		}
-		SetObjectDefaults_VirtualMachine(vm)
+		SetObjectDefaults_VirtualMachineInstance(vmi)
 
-		features = vm.Spec.Domain.Features
+		features = vmi.Spec.Domain.Features
 		hyperv = features.Hyperv
 
 		Expect(*features.ACPI.Enabled).To(BeFalse())
@@ -134,8 +141,8 @@ var _ = Describe("Defaults", func() {
 	})
 
 	It("should set dis defaults", func() {
-		vm := &VirtualMachine{
-			Spec: VirtualMachineSpec{
+		vmi := &VirtualMachineInstance{
+			Spec: VirtualMachineInstanceSpec{
 				Domain: DomainSpec{
 					Devices: Devices{
 						Disks: []Disk{
@@ -177,8 +184,8 @@ var _ = Describe("Defaults", func() {
 				},
 			},
 		}
-		SetObjectDefaults_VirtualMachine(vm)
-		disks := vm.Spec.Domain.Devices.Disks
+		SetObjectDefaults_VirtualMachineInstance(vmi)
+		disks := vmi.Spec.Domain.Devices.Disks
 
 		Expect(disks[0].CDRom.Tray).To(Equal(TrayStateClosed))
 		Expect(*disks[0].CDRom.ReadOnly).To(Equal(true))
@@ -192,8 +199,8 @@ var _ = Describe("Defaults", func() {
 	})
 
 	It("should set the default watchdog and the default watchdog action", func() {
-		vm := &VirtualMachine{
-			Spec: VirtualMachineSpec{
+		vmi := &VirtualMachineInstance{
+			Spec: VirtualMachineInstanceSpec{
 				Domain: DomainSpec{
 					Devices: Devices{
 						Watchdog: &Watchdog{
@@ -205,17 +212,17 @@ var _ = Describe("Defaults", func() {
 				},
 			},
 		}
-		SetObjectDefaults_VirtualMachine(vm)
-		Expect(vm.Spec.Domain.Devices.Watchdog.I6300ESB.Action).To(Equal(WatchdogActionReset))
-		vm.Spec.Domain.Devices.Watchdog.I6300ESB = nil
-		SetObjectDefaults_VirtualMachine(vm)
-		Expect(vm.Spec.Domain.Devices.Watchdog.I6300ESB).ToNot(BeNil())
-		Expect(vm.Spec.Domain.Devices.Watchdog.I6300ESB.Action).To(Equal(WatchdogActionReset))
+		SetObjectDefaults_VirtualMachineInstance(vmi)
+		Expect(vmi.Spec.Domain.Devices.Watchdog.I6300ESB.Action).To(Equal(WatchdogActionReset))
+		vmi.Spec.Domain.Devices.Watchdog.I6300ESB = nil
+		SetObjectDefaults_VirtualMachineInstance(vmi)
+		Expect(vmi.Spec.Domain.Devices.Watchdog.I6300ESB).ToNot(BeNil())
+		Expect(vmi.Spec.Domain.Devices.Watchdog.I6300ESB.Action).To(Equal(WatchdogActionReset))
 	})
 
 	It("should set timer defaults", func() {
-		vm := &VirtualMachine{
-			Spec: VirtualMachineSpec{
+		vmi := &VirtualMachineInstance{
+			Spec: VirtualMachineInstanceSpec{
 				Domain: DomainSpec{
 					Clock: &Clock{
 						Timer: &Timer{
@@ -229,12 +236,40 @@ var _ = Describe("Defaults", func() {
 				},
 			},
 		}
-		SetObjectDefaults_VirtualMachine(vm)
-		timer := vm.Spec.Domain.Clock.Timer
+		SetObjectDefaults_VirtualMachineInstance(vmi)
+		timer := vmi.Spec.Domain.Clock.Timer
 		Expect(*timer.HPET.Enabled).To(BeTrue())
 		Expect(*timer.KVM.Enabled).To(BeTrue())
 		Expect(*timer.PIT.Enabled).To(BeTrue())
 		Expect(*timer.RTC.Enabled).To(BeTrue())
 		Expect(*timer.Hyperv.Enabled).To(BeTrue())
+	})
+})
+
+var _ = Describe("Function SetDefaults_NetworkInterface()", func() {
+
+	It("should append pod interface if interface is not defined", func() {
+		vmi := &VirtualMachineInstance{}
+		SetDefaults_NetworkInterface(vmi)
+		Expect(len(vmi.Spec.Domain.Devices.Interfaces)).To(Equal(1))
+		Expect(vmi.Spec.Domain.Devices.Interfaces[0].Name).To(Equal("default"))
+		Expect(vmi.Spec.Networks[0].Name).To(Equal("default"))
+		Expect(vmi.Spec.Networks[0].Pod).ToNot(BeNil())
+	})
+
+	It("should not append pod interface if interface is defined", func() {
+		vmi := &VirtualMachineInstance{}
+		net := Network{
+			Name: "testnet",
+		}
+		iface := Interface{Name: net.Name}
+		vmi.Spec.Networks = []Network{net}
+		vmi.Spec.Domain.Devices.Interfaces = []Interface{iface}
+
+		SetDefaults_NetworkInterface(vmi)
+		Expect(len(vmi.Spec.Domain.Devices.Interfaces)).To(Equal(1))
+		Expect(vmi.Spec.Domain.Devices.Interfaces[0].Name).To(Equal("testnet"))
+		Expect(vmi.Spec.Networks[0].Name).To(Equal("testnet"))
+		Expect(vmi.Spec.Networks[0].Pod).To(BeNil())
 	})
 })

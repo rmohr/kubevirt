@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Copyright 2017 Red Hat, Inc.
+ * Copyright 2017, 2018 Red Hat, Inc.
  *
  */
 
@@ -36,6 +36,8 @@ import (
 	"kubevirt.io/kubevirt/pkg/log"
 )
 
+const systemNamespace = "kube-system"
+
 type newSharedInformer func() cache.SharedIndexInformer
 
 type KubeInformerFactory interface {
@@ -43,12 +45,26 @@ type KubeInformerFactory interface {
 	// This function is thread safe and idempotent
 	Start(stopCh <-chan struct{})
 
-	// Watches for vm objects
-	VM() cache.SharedIndexInformer
+	// Watches for vmi objects
+	VMI() cache.SharedIndexInformer
 
-	VMReplicaSet() cache.SharedIndexInformer
+	// Watches for VirtualMachineInstanceReplicaSet objects
+	VMIReplicaSet() cache.SharedIndexInformer
+
+	// Watches for VirtualMachineInstancePreset objects
+	VirtualMachinePreset() cache.SharedIndexInformer
+
 	// Watches for pods related only to kubevirt
 	KubeVirtPod() cache.SharedIndexInformer
+
+	// Watches for nodes
+	KubeVirtNode() cache.SharedIndexInformer
+
+	// VirtualMachine handles the VMIs that are stopped or not running
+	VirtualMachine() cache.SharedIndexInformer
+
+	// Watches for ConfigMap objects
+	ConfigMap() cache.SharedIndexInformer
 }
 
 type kubeInformerFactory struct {
@@ -108,17 +124,24 @@ func (f *kubeInformerFactory) getInformer(key string, newFunc newSharedInformer)
 	return informer
 }
 
-func (f *kubeInformerFactory) VM() cache.SharedIndexInformer {
-	return f.getInformer("vmInformer", func() cache.SharedIndexInformer {
-		lw := cache.NewListWatchFromClient(f.restClient, "virtualmachines", k8sv1.NamespaceAll, fields.Everything())
-		return cache.NewSharedIndexInformer(lw, &kubev1.VirtualMachine{}, f.defaultResync, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc})
+func (f *kubeInformerFactory) VMI() cache.SharedIndexInformer {
+	return f.getInformer("vmiInformer", func() cache.SharedIndexInformer {
+		lw := cache.NewListWatchFromClient(f.restClient, "virtualmachineinstances", k8sv1.NamespaceAll, fields.Everything())
+		return cache.NewSharedIndexInformer(lw, &kubev1.VirtualMachineInstance{}, f.defaultResync, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc})
 	})
 }
 
-func (f *kubeInformerFactory) VMReplicaSet() cache.SharedIndexInformer {
-	return f.getInformer("vmrsInformer", func() cache.SharedIndexInformer {
-		lw := cache.NewListWatchFromClient(f.restClient, "virtualmachinereplicasets", k8sv1.NamespaceAll, fields.Everything())
-		return cache.NewSharedIndexInformer(lw, &kubev1.VirtualMachineReplicaSet{}, f.defaultResync, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc})
+func (f *kubeInformerFactory) VMIReplicaSet() cache.SharedIndexInformer {
+	return f.getInformer("vmirsInformer", func() cache.SharedIndexInformer {
+		lw := cache.NewListWatchFromClient(f.restClient, "virtualmachineinstancereplicasets", k8sv1.NamespaceAll, fields.Everything())
+		return cache.NewSharedIndexInformer(lw, &kubev1.VirtualMachineInstanceReplicaSet{}, f.defaultResync, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc})
+	})
+}
+
+func (f *kubeInformerFactory) VirtualMachinePreset() cache.SharedIndexInformer {
+	return f.getInformer("vmiPresetInformer", func() cache.SharedIndexInformer {
+		lw := cache.NewListWatchFromClient(f.restClient, "virtualmachineinstancepresets", k8sv1.NamespaceAll, fields.Everything())
+		return cache.NewSharedIndexInformer(lw, &kubev1.VirtualMachineInstancePreset{}, f.defaultResync, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc})
 	})
 }
 
@@ -131,7 +154,31 @@ func (f *kubeInformerFactory) KubeVirtPod() cache.SharedIndexInformer {
 		}
 
 		lw := NewListWatchFromClient(f.clientSet.CoreV1().RESTClient(), "pods", k8sv1.NamespaceAll, fields.Everything(), labelSelector)
-		return cache.NewSharedIndexInformer(lw, &k8sv1.Pod{}, f.defaultResync, cache.Indexers{})
+		return cache.NewSharedIndexInformer(lw, &k8sv1.Pod{}, f.defaultResync, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc})
+	})
+}
+
+func (f *kubeInformerFactory) KubeVirtNode() cache.SharedIndexInformer {
+	return f.getInformer("kubeVirtNodeInformer", func() cache.SharedIndexInformer {
+		lw := NewListWatchFromClient(f.clientSet.CoreV1().RESTClient(), "nodes", k8sv1.NamespaceAll, fields.Everything(), labels.Everything())
+		return cache.NewSharedIndexInformer(lw, &k8sv1.Node{}, f.defaultResync, cache.Indexers{})
+	})
+}
+
+func (f *kubeInformerFactory) VirtualMachine() cache.SharedIndexInformer {
+	return f.getInformer("vmInformer", func() cache.SharedIndexInformer {
+		lw := cache.NewListWatchFromClient(f.restClient, "virtualmachines", k8sv1.NamespaceAll, fields.Everything())
+		return cache.NewSharedIndexInformer(lw, &kubev1.VirtualMachine{}, f.defaultResync, cache.Indexers{})
+	})
+}
+
+func (f *kubeInformerFactory) ConfigMap() cache.SharedIndexInformer {
+	// We currently only monitor configmaps in the kube-system namespace
+	return f.getInformer("configMapInformer", func() cache.SharedIndexInformer {
+		restClient := f.clientSet.CoreV1().RESTClient()
+		fieldSelector := fields.OneTermEqualSelector("metadata.name", "kubevirt-config")
+		lw := cache.NewListWatchFromClient(restClient, "configmaps", systemNamespace, fieldSelector)
+		return cache.NewSharedIndexInformer(lw, &k8sv1.ConfigMap{}, f.defaultResync, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc})
 	})
 }
 

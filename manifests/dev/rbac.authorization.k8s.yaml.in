@@ -1,8 +1,136 @@
+kind: ServiceAccount
+apiVersion: v1
+metadata:
+  name: kubevirt-apiserver
+  namespace: {{.Namespace}}
+  labels:
+    kubevirt.io: ""
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: kubevirt-apiserver
+  namespace: {{.Namespace}}
+  labels:
+    kubevirt.io: ""
+roleRef:
+  kind: ClusterRole
+  name: kubevirt-apiserver
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+  - kind: ServiceAccount
+    name: kubevirt-apiserver
+    namespace: {{.Namespace}}
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: kubevirt-apiserver-auth-delegator
+  namespace: {{.Namespace}}
+  labels:
+    kubevirt.io: ""
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:auth-delegator
+subjects:
+- kind: ServiceAccount
+  name: kubevirt-apiserver
+  namespace: {{.Namespace}}
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: RoleBinding
+metadata:
+  name: kubevirt-apiserver
+  namespace: {{.Namespace}}
+  labels:
+    kubevirt.io: ""
+roleRef:
+  kind: Role
+  name: kubevirt-apiserver
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+  - kind: ServiceAccount
+    name: kubevirt-apiserver
+    namespace: {{.Namespace}}
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: Role
+metadata:
+  name: kubevirt-apiserver
+  namespace: {{.Namespace}}
+  labels:
+    kubevirt.io: ""
+rules:
+  - apiGroups:
+      - ''
+    resources:
+      - secrets
+    verbs:
+      - get
+      - list
+      - delete
+      - update
+      - create
+  - apiGroups:
+      - ''
+    resources:
+      - configmaps
+    verbs:
+      - get
+      - list
+      - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: kubevirt-apiserver
+  namespace: {{.Namespace}}
+  labels:
+    kubevirt.io: ""
+rules:
+  - apiGroups:
+      - admissionregistration.k8s.io
+    resources:
+      - validatingwebhookconfigurations
+    verbs:
+      - get
+      - create
+      - update
+  - apiGroups:
+      - apiregistration.k8s.io
+    resources:
+      - apiservices
+    verbs:
+      - get
+      - create
+      - update
+  - apiGroups:
+      - ''
+    resources:
+      - pods
+    verbs:
+      - get
+      - list
+  - apiGroups:
+      - ''
+    resources:
+      - pods/exec
+    verbs:
+      - create
+  - apiGroups:
+      - kubevirt.io
+    resources:
+      - virtualmachineinstances
+    verbs:
+      - get
+      - list
+---
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRole
 metadata:
   name: kubevirt-controller
-  namespace: kube-system
+  namespace: {{.Namespace}}
   labels:
     kubevirt.io: ""
 rules:
@@ -15,13 +143,13 @@ rules:
       - list
       - watch
       - delete
-      - update  
-      - create  
+      - update
+      - create
   - apiGroups:
       - ''
     resources:
       - nodes
-      - persistentvolumeclaims  
+      - persistentvolumeclaims
     verbs:
       - get
       - list
@@ -29,22 +157,22 @@ rules:
   - apiGroups:
       - kubevirt.io
     resources:
-      - virtualmachines
-      - virtualmachinereplicasets  
+      - virtualmachineinstances
+      - virtualmachineinstancereplicasets
     verbs:
       - get
       - list
       - watch
       - delete
-      - update  
-      - create  
+      - update
+      - create
       - deletecollection
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: kubevirt-controller
-  namespace: kube-system
+  namespace: {{.Namespace}}
   labels:
     kubevirt.io: ""
 ---
@@ -52,7 +180,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: kubevirt-privileged
-  namespace: kube-system
+  namespace: {{.Namespace}}
   labels:
     kubevirt.io: ""
 ---
@@ -60,7 +188,7 @@ apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
 metadata:
   name: kubevirt-controller
-  namespace: kube-system
+  namespace: {{.Namespace}}
   labels:
     kubevirt.io: ""
 roleRef:
@@ -70,13 +198,13 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: kubevirt-controller
-    namespace: kube-system
+    namespace: {{.Namespace}}
 ---
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
 metadata:
   name: kubevirt-controller-cluster-admin
-  namespace: kube-system
+  namespace: {{.Namespace}}
   labels:
     kubevirt.io: ""
 roleRef:
@@ -86,13 +214,13 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: kubevirt-controller
-    namespace: kube-system
+    namespace: {{.Namespace}}
 ---
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
 metadata:
   name: kubevirt-privileged-cluster-admin
-  namespace: kube-system
+  namespace: {{.Namespace}}
   labels:
     kubevirt.io: ""
 roleRef:
@@ -102,4 +230,131 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: kubevirt-privileged
-    namespace: kube-system
+    namespace: {{.Namespace}}
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: kubevirt.io:admin
+  labels:
+    kubevirt.io: ""
+rules:
+  - apiGroups:
+      - subresources.kubevirt.io
+    resources:
+      - virtualmachineinstances/console
+      - virtualmachineinstances/vnc
+    verbs:
+      - get
+  - apiGroups:
+      - kubevirt.io
+    resources:
+      - virtualmachineinstances
+      - virtualmachines
+      - virtualmachineinstancepresets
+      - virtualmachineinstancereplicasets
+    verbs:
+      - get
+      - delete
+      - create
+      - update
+      - patch
+      - list
+      - watch
+      - deletecollection
+  - apiGroups: [""]
+    resources:
+      - configmaps
+    resourceNames:
+      - kubevirt-config
+    verbs:
+      - update
+      - get
+      - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: kubevirt.io:edit
+  labels:
+    kubevirt.io: ""
+rules:
+  - apiGroups:
+      - subresources.kubevirt.io
+    resources:
+      - virtualmachineinstances/console
+      - virtualmachineinstances/vnc
+    verbs:
+      - get
+  - apiGroups:
+      - kubevirt.io
+    resources:
+      - virtualmachineinstances
+      - virtualmachines
+      - virtualmachineinstancepresets
+      - virtualmachineinstancereplicasets
+    verbs:
+      - get
+      - delete
+      - create
+      - update
+      - patch
+      - list
+      - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: kubevirt.io:view
+  labels:
+    kubevirt.io: ""
+rules:
+  - apiGroups:
+      - kubevirt.io
+    resources:
+      - virtualmachineinstances
+      - virtualmachines
+      - virtualmachineinstancepresets
+      - virtualmachineinstancereplicasets
+    verbs:
+      - get
+      - list
+      - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations:
+    rbac.authorization.kubernetes.io/autoupdate: "true"
+  labels:
+    kubevirt.io: ""
+    kubernetes.io/bootstrapping: rbac-defaults
+  name: kubevirt.io:default
+rules:
+- apiGroups:
+    - subresources.kubevirt.io
+  resources:
+    - version
+  verbs:
+    - get
+    - list
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    kubevirt.io: ""
+  annotations:
+    rbac.authorization.kubernetes.io/autoupdate: "true"
+  name: kubevirt.io:default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kubevirt.io:default
+subjects:
+- apiGroup: rbac.authorization.k8s.io
+  kind: Group
+  name: system:authenticated
+- apiGroup: rbac.authorization.k8s.io
+  kind: Group
+  name: system:unauthenticated

@@ -16,7 +16,7 @@
 # Copyright 2017 Red Hat, Inc.
 #
 
-FROM kubevirt/libvirt
+FROM kubevirt/libvirt:3.7.0
 
 MAINTAINER "The KubeVirt Project" <kubevirt-dev@googlegroups.com>
 
@@ -30,6 +30,7 @@ RUN dnf -y install \
   test $(id -u qemu) = 107 # make sure that the qemu user really is 107
 
 COPY sock-connector /sock-connector
+COPY sh.sh /sh.sh
 COPY virt-launcher /virt-launcher
 
 COPY kubevirt-sudo /etc/sudoers.d/kubevirt

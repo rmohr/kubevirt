@@ -89,7 +89,7 @@ func (app *virtHandlerApp) Run() {
 	}
 	broadcaster := record.NewBroadcaster()
 	broadcaster.StartRecordingToSink(&k8coresv1.EventSinkImpl{Interface: virtCli.CoreV1().Events(k8sv1.NamespaceAll)})
-	// TODO what is scheme used for in Recorder?
+	// Scheme is used to create an ObjectReference from an Object (e.g. VirtualMachineInstance) during Event creation
 	recorder := broadcaster.NewRecorder(scheme.Scheme, k8sv1.EventSource{Component: "virt-handler", Host: app.HostOverride})
 
 	if err != nil {
@@ -101,7 +101,7 @@ func (app *virtHandlerApp) Run() {
 		panic(err)
 	}
 
-	// Wire VM controller
+	// Wire VirtualMachineInstance controller
 
 	// Wire Domain controller
 	domainSharedInformer, err := virtcache.NewSharedInformer(app.VirtShareDir, int(app.WatchdogTimeoutDuration.Seconds()))
@@ -110,8 +110,8 @@ func (app *virtHandlerApp) Run() {
 	}
 
 	vmSharedInformer := cache.NewSharedIndexInformer(
-		controller.NewListWatchFromClient(virtCli.RestClient(), "virtualmachines", k8sv1.NamespaceAll, fields.Everything(), l),
-		&v1.VirtualMachine{},
+		controller.NewListWatchFromClient(virtCli.RestClient(), "virtualmachineinstances", k8sv1.NamespaceAll, fields.Everything(), l),
+		&v1.VirtualMachineInstance{},
 		0,
 		cache.Indexers{},
 	)
@@ -133,6 +133,7 @@ func (app *virtHandlerApp) Run() {
 		vmSharedInformer,
 		domainSharedInformer,
 		gracefulShutdownInformer,
+		int(app.WatchdogTimeoutDuration.Seconds()),
 	)
 
 	// Bootstrapping. From here on the startup order matters

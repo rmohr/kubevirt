@@ -1,88 +1,101 @@
 # Getting Started
 
-A quick start guide to get KubeVirt up and running inside Vagrant.
-
-**Note**: This guide was tested on Fedora 23 and Fedora 25.
-
-**Note:** Fedora 24 is known to have a bug which affects our vagrant setup.
+A quick start guide to get KubeVirt up and running inside our container based
+development cluster.
 
 ## Building
 
 The KubeVirt build system runs completely inside docker. In order to build
 KubeVirt you need to have `docker` and `rsync` installed.
 
-### Vagrant
+**Note:** For running KubeVirt in the dockerized cluster, **nested
+virtualization** must be enabled. As an alternative [software
+emulation](software-emulation.md) can be allowed. Enabling nested
+virtualization should be preferred.
 
-[Vagrant](https://www.vagrantup.com/) is used to bring up a development and
-demo environment:
+### Dockerized environment
 
-```bash
-    sudo dnf install vagrant vagrant-libvirt
-    sudo systemctl enable --now libvirtd
-    sudo systemctl restart virtlogd # Work around rpm packaging bug
-```
-
-On some systems Vagrant will always ask you for your sudo password when you try
-to do something with a VM. To avoid retyping your password all the time you can
-add yourself to the `libvirt` group.
-
-```bash
-sudo gpasswd -a ${USER} libvirt
-newgrp libvirt
-```
-
-On CentOS/RHEL 7 you might also need to change the libvirt connection string to be able to see all libvirt information:
-
-```
-export LIBVIRT_DEFAULT_URI=qemu:///system
-```
+Runs master and nodes containers, when each one of them run virtual machine via QEMU.
+In additional it runs dnsmasq and docker registry containers.
 
 ### Compile and run it
 
 Build all required artifacts and launch the
-Vagrant environment:
+dockerizied environment:
 
 ```bash
-    # Building and deploying kubevirt in Vagrant
-    make cluster-up
-    make cluster-sync
+# Build and deploy KubeVirt on Kubernetes 1.10.3 in our vms inside containers
+export KUBEVIRT_PROVIDER=k8s-1.10.3 # this is also the default if no KUBEVIRT_PROVIDER is set
+make cluster-up
+make cluster-sync
 ```
 
-This will create a VM called `master` which acts as Kubernetes master and then
-deploy Kubevirt there. To create one or more nodes which will register
-themselves on master, you can use the `VAGRANT_NUM_NODES` environment variable.
-This would create a master and one node:
+This will create a VMI called `node01` which acts as node and master. To create
+more nodes which will register themselves on master, you can use the
+`KUBEVIRT_NUM_NODES` environment variable. This would create a master and one
+node:
 
 ```bash
-    VAGRANT_NUM_NODES=1 make cluster-up
+export KUBEVIRT_NUM_NODES=2 # schedulable master + one additional node
+make cluster-up
 ```
-
-If you decide to use separate nodes, pass `VAGRANT_NUM_NODES` variable to all
-vagrant interacting commands. However, just running `master` is enough for most
-development tasks.
 
 You could also run some build steps individually:
 
 ```bash
-    # To build all binaries
-    make
+# To build all binaries
+make
 
-    # Or to build just one binary
-    make build WHAT=cmd/virt-controller
+# Or to build just one binary
+make build WHAT=cmd/virt-controller
 
-    # To build all docker images
-    make docker
+# To build all kubevirt containers
+make docker
+```
+
+To destroy the created cluster, type
+
+```
+make cluster-down
+```
+
+**Note:** Whenever you type `make cluster-down && make cluster-up`, you will
+have a completely fresh cluster to play with.
+
+### Accessing the containerized nodes via ssh
+
+The containerized nodes are named starting from `node01`, `node02`, and so
+forth. `node01` is always the master of the cluster.
+
+Every node can be accessed via its name:
+
+```bash
+cluster/cli.sh ssh node01
+```
+
+To execute a remote command, e.g `ls`, simply type
+
+```bash
+cluster/cli.sh ssh node01 -- ls -lh
 ```
 
 ### Code generation
 
-**Note:** This is only important if you plan to modify sources, you don't need code generators just for building
+**Note:** This is only important if you plan to modify sources, you don't need
+code generators just for building
 
 To invoke all code-generators and regenerate generated code, run:
 
 ```bash
 make generate
 ```
+
+Typical code changes where running the generators is needed:
+
+ * When changing APIs, REST paths or their comments (gets reflected in the api documentation, clients, generated cloners, ...)
+ * When changing mocked interfaces (the mock generator needs to update the generated mocks then)
+
+ We have a check in our CI system, so that you don't miss when `make generate` needs to be called.
 
 ### Testing
 
@@ -92,13 +105,27 @@ After a successful build you can run the *unit tests*:
     make test
 ```
 
-They don't require vagrant. To run the *functional tests*, make sure you have set
-up [Vagrant](#vagrant). Then run
+They don't real environment. To run the *functional tests*, make sure you have set
+up dockerizied environment. Then run
 
 ```bash
     make cluster-sync # synchronize with your code, if necessary
-    make functest # run the functional tests against the Vagrant VMs
+    make functest # run the functional tests against the VMIs
 ```
+
+If you'd like to run specific functional tests only, you can leverage `ginkgo`
+command line options as follows (run a specified suite):
+
+```
+    FUNC_TEST_ARGS='-ginkgo.focus=vm_networking_test -ginkgo.regexScansFilePath' make functest
+```
+
+In addition, if you want to run a specific test or tests you can prepend any `Describe`,
+`Context` and `It` statements of your test with an `F` and Ginkgo will only run items
+that are marked with the prefix. Also, don't forget to remove the prefix before issuing
+your pull request.
+
+For additional information check out the [Ginkgo focused specs documentation](http://onsi.github.io/ginkgo/#focused-specs)
 
 ## Use
 
@@ -106,55 +133,46 @@ Congratulations you are still with us and you have build KubeVirt.
 
 Now it's time to get hands on and give it a try.
 
-### Cockpit
-
-Cockpit is exposed on <http://192.168.200.2:9090>
-The default login is `root:vagrant`
-
-It can be used to view the cluster and verify the running state of
-components within the cluster.
-More information can be found on that [project's site](http://cockpit-project.org/guide/latest/feature-kubernetes.html).
-
 ### Create a first Virtual Machine
 
-Finally start a VM called `testvm`:
+Finally start a VMI called `vmi-ephemeral`:
 
 ```bash
-    # This can be done from your GIT repo, no need to log into a vagrant VM
+    # This can be done from your GIT repo, no need to log into a VMI
 
-    # Create a VM
-    ./cluster/kubectl.sh create -f cluster/vm.yaml
+    # Create a VMI
+    ./cluster/kubectl.sh create -f cluster/examples/vmi-ephemeral.yaml
 
-    # Sure? Let's list all created VMs
+    # Sure? Let's list all created VMIs
     ./cluster/kubectl.sh get vms
 
     # Enough, let's get rid of it
-    ./cluster/kubectl.sh delete -f cluster/vm.yaml
+    ./cluster/kubectl.sh delete -f cluster/examples/vmi-ephemeral.yaml
 
 
     # You can actually use kubelet.sh to introspect the cluster in general
     ./cluster/kubectl.sh get pods
 ```
 
-This will start a VM on master or one of the running nodes with a macvtap and a
+This will start a VMI on master or one of the running nodes with a macvtap and a
 tap networking device attached.
 
 #### Example
 
 ```bash
-$ ./cluster/kubectl.sh create -f cluster/vm.yaml
-vm "testvm" created
+$ ./cluster/kubectl.sh create -f cluster/examples/vmi-ephemeral.yaml
+vm "vmi-ephemeral" created
 
 $ ./cluster/kubectl.sh get pods
-NAME                        READY     STATUS    RESTARTS   AGE
-virt-api                    1/1       Running   1          10h
-virt-controller             1/1       Running   1          10h
-virt-handler-z90mp          1/1       Running   1          10h
-virt-launcher-testvm9q7es   1/1       Running   0          10s
+NAME                              READY     STATUS    RESTARTS   AGE
+virt-api                          1/1       Running   1          10h
+virt-controller                   1/1       Running   1          10h
+virt-handler-z90mp                1/1       Running   1          10h
+virt-launcher-vmi-ephemeral9q7es   1/1       Running   0          10s
 
 $ ./cluster/kubectl.sh get vms
-NAME      LABELS                        DATA
-testvm    kubevirt.io/nodeName=master   {"apiVersion":"kubevirt.io/v1alpha1","kind":"VM","...
+NAME           LABELS                        DATA
+vmi-ephemera    kubevirt.io/nodeName=node01   {"apiVersion":"kubevirt.io/v1alpha2","kind":"VMI","...
 
 $ ./cluster/kubectl.sh get vms -o json
 {
@@ -163,17 +181,17 @@ $ ./cluster/kubectl.sh get vms -o json
     "metadata": {},
     "items": [
         {
-            "apiVersion": "kubevirt.io/v1alpha1",
+            "apiVersion": "kubevirt.io/v1alpha2",
             "kind": "VirtualMachine",
             "metadata": {
                 "creationTimestamp": "2016-12-09T17:54:52Z",
                 "labels": {
                     "kubevirt.io/nodeName": "master"
                 },
-                "name": "testvm",
+                "name": "vmi-ephemeral",
                 "namespace": "default",
                 "resourceVersion": "102534",
-                "selfLink": "/apis/kubevirt.io/v1alpha1/namespaces/default/virtualmachines/testvm",
+                "selfLink": "/apis/kubevirt.io/v1alpha2/namespaces/default/virtualmachineinstances/testvm",
                 "uid": "7e89280a-be62-11e6-a69f-525400efd09f"
             },
             "spec": {
@@ -188,12 +206,15 @@ First make sure you have `remote-viewer` installed. On Fedora run
 dnf install virt-viewer
 ```
 
-Then, after you made sure that the VM `testvm` is running, type
+Then, after you made sure that the VMI `vmi-ephemeral` is running, type
 
 ```
-cluster/kubectl.sh vnc testvm
+cluster/virtctl.sh vnc vmi-ephemeral
 ```
 
 to start a remote session with `remote-viewer`.
 
-Since `kubectl` does not support TPR subresources yet, the above `cluster/kubectl.sh vnc` magic is just a wrapper.
+`cluster/virtctl.sh` is a wrapper around `virtctl`. `virtctl` brings all
+virtual machine specific commands with it. It is supplement to `kubectl`.
+
+**Note:** If accessing your cluster through ssh, be sure to forward your X11 session in order to launch `virtctl vnc`.

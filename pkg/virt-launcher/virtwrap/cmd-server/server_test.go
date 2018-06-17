@@ -28,8 +28,6 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	k8sv1 "k8s.io/api/core/v1"
-
 	"kubevirt.io/kubevirt/pkg/api/v1"
 	"kubevirt.io/kubevirt/pkg/log"
 	cmdclient "kubevirt.io/kubevirt/pkg/virt-handler/cmd-client"
@@ -47,6 +45,8 @@ var _ = Describe("Virt remote commands", func() {
 	var shareDir string
 	var stop chan struct{}
 	var stopped bool
+	var allowEmulation bool
+	var options *ServerOptions
 
 	log.Log.SetIOWriter(GinkgoWriter)
 
@@ -59,7 +59,9 @@ var _ = Describe("Virt remote commands", func() {
 		ctrl = gomock.NewController(GinkgoT())
 		domainManager = virtwrap.NewMockDomainManager(ctrl)
 
-		RunServer(shareDir+"/server.sock", domainManager, stop)
+		allowEmulation = true
+		options = NewServerOptions(allowEmulation)
+		RunServer(shareDir+"/server.sock", domainManager, stop, options)
 		client, err = cmdclient.GetClient(shareDir + "/server.sock")
 		Expect(err).ToNot(HaveOccurred())
 	})
@@ -73,44 +75,33 @@ var _ = Describe("Virt remote commands", func() {
 	})
 
 	Context("server", func() {
-		It("should start a vm", func() {
-			vm := v1.NewVMReferenceFromName("testvm")
-			domain := api.NewMinimalDomain("testvm")
-			domainManager.EXPECT().SyncVM(vm, gomock.Any()).Return(&domain.Spec, nil)
+		It("should start a vmi", func() {
+			vmi := v1.NewVMIReferenceFromName("testvmi")
+			domain := api.NewMinimalDomain("testvmi")
+			domainManager.EXPECT().SyncVMI(vmi, allowEmulation).Return(&domain.Spec, nil)
 
-			var secrets map[string]*k8sv1.Secret
-			err := client.SyncVirtualMachine(vm, secrets)
+			err := client.SyncVirtualMachine(vmi)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
-		It("should kill a vm", func() {
-			vm := v1.NewVMReferenceFromName("testvm")
-			domainManager.EXPECT().KillVM(vm)
+		It("should kill a vmi", func() {
+			vmi := v1.NewVMIReferenceFromName("testvmi")
+			domainManager.EXPECT().KillVMI(vmi)
 
-			err := client.KillVirtualMachine(vm)
+			err := client.KillVirtualMachine(vmi)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
-		It("should shutdown a vm", func() {
-			vm := v1.NewVMReferenceFromName("testvm")
-			domainManager.EXPECT().SignalShutdownVM(vm)
-			err := client.ShutdownVirtualMachine(vm)
-			Expect(err).ToNot(HaveOccurred())
-		})
-
-		It("should Sync Secrets", func() {
-			vm := v1.NewVMReferenceFromName("testvm")
-			usage := "fakeusage"
-			usageId := "fakeusageid"
-			secretValue := "fakesecretval"
-			domainManager.EXPECT().SyncVMSecret(vm, usage, usageId, secretValue)
-			err := client.SyncSecret(vm, usage, usageId, secretValue)
+		It("should shutdown a vmi", func() {
+			vmi := v1.NewVMIReferenceFromName("testvmi")
+			domainManager.EXPECT().SignalShutdownVMI(vmi)
+			err := client.ShutdownVirtualMachine(vmi)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should list domains", func() {
 			var list []*api.Domain
-			list = append(list, api.NewMinimalDomain("testvm1"))
+			list = append(list, api.NewMinimalDomain("testvmi1"))
 
 			domainManager.EXPECT().ListAllDomains().Return(list, nil)
 			domain, exists, err := client.GetDomain()

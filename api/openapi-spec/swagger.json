@@ -14,9 +14,34 @@
    }
   },
   "paths": {
+   "/apis": {
+    "get": {
+     "produces": [
+      "application/json"
+     ],
+     "summary": "Get a KubeVirt API GroupList",
+     "operationId": "getAPIGroup",
+     "responses": {
+      "200": {
+       "description": "OK",
+       "schema": {
+        "$ref": "#/definitions/v1.APIGroupList"
+       }
+      },
+      "404": {
+       "description": "Not Found"
+      },
+      "default": {
+       "description": "OK",
+       "schema": {
+        "$ref": "#/definitions/v1.APIGroupList"
+       }
+      }
+     }
+    }
+   },
    "/apis/kubevirt.io": {
     "get": {
-     "description": "Get a KubeVirt API group",
      "produces": [
       "application/json"
      ],
@@ -41,9 +66,8 @@
      }
     }
    },
-   "/apis/kubevirt.io/v1alpha1": {
+   "/apis/kubevirt.io/v1alpha2": {
     "get": {
-     "description": "Get KubeVirt API Resources",
      "produces": [
       "application/json"
      ],
@@ -68,9 +92,8 @@
      }
     }
    },
-   "/apis/kubevirt.io/v1alpha1/healthz": {
+   "/apis/kubevirt.io/v1alpha2/healthz": {
     "get": {
-     "description": "Health endpoint",
      "consumes": [
       "application/json"
      ],
@@ -92,16 +115,15 @@
      }
     }
    },
-   "/apis/kubevirt.io/v1alpha1/namespaces/{namespace}/virtualmachinereplicasets": {
+   "/apis/kubevirt.io/v1alpha2/namespaces/{namespace}/virtualmachineinstancepresets": {
     "get": {
-     "description": "Get a list of VirtualMachineReplicaSet objects.",
      "produces": [
       "application/json",
       "application/yaml",
       "application/json;stream=watch"
      ],
-     "summary": "Get a list of VirtualMachineReplicaSet objects.",
-     "operationId": "listNamespacedVirtualMachineReplicaSet",
+     "summary": "Get a list of VirtualMachineInstancePreset objects.",
+     "operationId": "listNamespacedVirtualMachineInstancePreset",
      "parameters": [
       {
        "pattern": "[a-z0-9][a-z0-9\\-]*",
@@ -164,7 +186,7 @@
       "200": {
        "description": "OK",
        "schema": {
-        "$ref": "#/definitions/v1.VirtualMachineReplicaSetList"
+        "$ref": "#/definitions/v1.VirtualMachineInstancePresetList"
        }
       },
       "401": {
@@ -173,13 +195,12 @@
       "default": {
        "description": "OK",
        "schema": {
-        "$ref": "#/definitions/v1.VirtualMachineReplicaSetList"
+        "$ref": "#/definitions/v1.VirtualMachineInstancePresetList"
        }
       }
      }
     },
     "post": {
-     "description": "Create a VirtualMachineReplicaSet object.",
      "consumes": [
       "application/json",
       "application/yaml"
@@ -188,15 +209,15 @@
       "application/json",
       "application/yaml"
      ],
-     "summary": "Create a VirtualMachineReplicaSet object.",
-     "operationId": "createNamespacedVirtualMachineReplicaSet",
+     "summary": "Create a VirtualMachineInstancePreset object.",
+     "operationId": "createNamespacedVirtualMachineInstancePreset",
      "parameters": [
       {
        "name": "body",
        "in": "body",
        "required": true,
        "schema": {
-        "$ref": "#/definitions/v1.VirtualMachineReplicaSet"
+        "$ref": "#/definitions/v1.VirtualMachineInstancePreset"
        }
       },
       {
@@ -212,19 +233,19 @@
       "200": {
        "description": "OK",
        "schema": {
-        "$ref": "#/definitions/v1.VirtualMachineReplicaSet"
+        "$ref": "#/definitions/v1.VirtualMachineInstancePreset"
        }
       },
       "201": {
        "description": "Created",
        "schema": {
-        "$ref": "#/definitions/v1.VirtualMachineReplicaSet"
+        "$ref": "#/definitions/v1.VirtualMachineInstancePreset"
        }
       },
       "202": {
        "description": "Accepted",
        "schema": {
-        "$ref": "#/definitions/v1.VirtualMachineReplicaSet"
+        "$ref": "#/definitions/v1.VirtualMachineInstancePreset"
        }
       },
       "401": {
@@ -233,19 +254,18 @@
       "default": {
        "description": "OK",
        "schema": {
-        "$ref": "#/definitions/v1.VirtualMachineReplicaSet"
+        "$ref": "#/definitions/v1.VirtualMachineInstancePreset"
        }
       }
      }
     },
     "delete": {
-     "description": "Delete a collection of VirtualMachineReplicaSet objects.",
      "produces": [
       "application/json",
       "application/yaml"
      ],
-     "summary": "Delete a collection of VirtualMachineReplicaSet objects.",
-     "operationId": "deleteCollectionNamespacedVirtualMachineReplicaSet",
+     "summary": "Delete a collection of VirtualMachineInstancePreset objects.",
+     "operationId": "deleteCollectionNamespacedVirtualMachineInstancePreset",
      "parameters": [
       {
        "type": "string",
@@ -315,16 +335,15 @@
      }
     }
    },
-   "/apis/kubevirt.io/v1alpha1/namespaces/{namespace}/virtualmachinereplicasets/{name}": {
+   "/apis/kubevirt.io/v1alpha2/namespaces/{namespace}/virtualmachineinstancepresets/{name}": {
     "get": {
-     "description": "Get a VirtualMachineReplicaSet object.",
      "produces": [
       "application/json",
       "application/yaml",
       "application/json;stream=watch"
      ],
-     "summary": "Get a VirtualMachineReplicaSet object.",
-     "operationId": "readNamespacedVirtualMachineReplicaSet",
+     "summary": "Get a VirtualMachineInstancePreset object.",
+     "operationId": "readNamespacedVirtualMachineInstancePreset",
      "parameters": [
       {
        "pattern": "[a-z0-9][a-z0-9\\-]*",
@@ -359,7 +378,7 @@
       "200": {
        "description": "OK",
        "schema": {
-        "$ref": "#/definitions/v1.VirtualMachineReplicaSet"
+        "$ref": "#/definitions/v1.VirtualMachineInstancePreset"
        }
       },
       "401": {
@@ -368,13 +387,12 @@
       "default": {
        "description": "OK",
        "schema": {
-        "$ref": "#/definitions/v1.VirtualMachineReplicaSet"
+        "$ref": "#/definitions/v1.VirtualMachineInstancePreset"
        }
       }
      }
     },
     "put": {
-     "description": "Update a VirtualMachineReplicaSet object.",
      "consumes": [
       "application/json",
       "application/yaml"
@@ -383,15 +401,15 @@
       "application/json",
       "application/yaml"
      ],
-     "summary": "Update a VirtualMachineReplicaSet object.",
-     "operationId": "replaceNamespacedVirtualMachineReplicaSet",
+     "summary": "Update a VirtualMachineInstancePreset object.",
+     "operationId": "replaceNamespacedVirtualMachineInstancePreset",
      "parameters": [
       {
        "name": "body",
        "in": "body",
        "required": true,
        "schema": {
-        "$ref": "#/definitions/v1.VirtualMachineReplicaSet"
+        "$ref": "#/definitions/v1.VirtualMachineInstancePreset"
        }
       },
       {
@@ -415,13 +433,13 @@
       "200": {
        "description": "OK",
        "schema": {
-        "$ref": "#/definitions/v1.VirtualMachineReplicaSet"
+        "$ref": "#/definitions/v1.VirtualMachineInstancePreset"
        }
       },
       "201": {
        "description": "Create",
        "schema": {
-        "$ref": "#/definitions/v1.VirtualMachineReplicaSet"
+        "$ref": "#/definitions/v1.VirtualMachineInstancePreset"
        }
       },
       "401": {
@@ -430,13 +448,12 @@
       "default": {
        "description": "OK",
        "schema": {
-        "$ref": "#/definitions/v1.VirtualMachineReplicaSet"
+        "$ref": "#/definitions/v1.VirtualMachineInstancePreset"
        }
       }
      }
     },
     "delete": {
-     "description": "Delete a VirtualMachineReplicaSet object.",
      "consumes": [
       "application/json",
       "application/yaml"
@@ -445,8 +462,8 @@
       "application/json",
       "application/yaml"
      ],
-     "summary": "Delete a VirtualMachineReplicaSet object.",
-     "operationId": "deleteNamespacedVirtualMachineReplicaSet",
+     "summary": "Delete a VirtualMachineInstancePreset object.",
+     "operationId": "deleteNamespacedVirtualMachineInstancePreset",
      "parameters": [
       {
        "name": "body",
@@ -510,7 +527,6 @@
      }
     },
     "patch": {
-     "description": "Patch a VirtualMachineReplicaSet object.",
      "consumes": [
       "application/json-patch+json",
       "application/merge-patch+json"
@@ -518,8 +534,8 @@
      "produces": [
       "application/json"
      ],
-     "summary": "Patch a VirtualMachineReplicaSet object.",
-     "operationId": "patchNamespacedVirtualMachineReplicaSet",
+     "summary": "Patch a VirtualMachineInstancePreset object.",
+     "operationId": "patchNamespacedVirtualMachineInstancePreset",
      "parameters": [
       {
        "name": "body",
@@ -528,13 +544,29 @@
        "schema": {
         "$ref": "#/definitions/v1.Patch"
        }
+      },
+      {
+       "pattern": "[a-z0-9][a-z0-9\\-]*",
+       "type": "string",
+       "description": "Object name and auth scope, such as for teams and projects",
+       "name": "namespace",
+       "in": "path",
+       "required": true
+      },
+      {
+       "pattern": "[a-z0-9][a-z0-9\\-]*",
+       "type": "string",
+       "description": "Name of the resource",
+       "name": "name",
+       "in": "path",
+       "required": true
       }
      ],
      "responses": {
       "200": {
        "description": "OK",
        "schema": {
-        "$ref": "#/definitions/v1.VirtualMachineReplicaSet"
+        "$ref": "#/definitions/v1.VirtualMachineInstancePreset"
        }
       },
       "401": {
@@ -543,15 +575,946 @@
       "default": {
        "description": "OK",
        "schema": {
-        "$ref": "#/definitions/v1.VirtualMachineReplicaSet"
+        "$ref": "#/definitions/v1.VirtualMachineInstancePreset"
        }
       }
      }
     }
    },
-   "/apis/kubevirt.io/v1alpha1/namespaces/{namespace}/virtualmachines": {
+   "/apis/kubevirt.io/v1alpha2/namespaces/{namespace}/virtualmachineinstancereplicasets": {
     "get": {
-     "description": "Get a list of VirtualMachine objects.",
+     "produces": [
+      "application/json",
+      "application/yaml",
+      "application/json;stream=watch"
+     ],
+     "summary": "Get a list of VirtualMachineInstanceReplicaSet objects.",
+     "operationId": "listNamespacedVirtualMachineInstanceReplicaSet",
+     "parameters": [
+      {
+       "pattern": "[a-z0-9][a-z0-9\\-]*",
+       "type": "string",
+       "description": "Object name and auth scope, such as for teams and projects",
+       "name": "namespace",
+       "in": "path",
+       "required": true
+      },
+      {
+       "type": "string",
+       "description": "The continue option should be set when retrieving more results from the server. Since this value is server defined, clients may only use the continue value from a previous query result with identical query parameters (except for the value of continue) and the server may reject a continue value it does not recognize. If the specified continue value is no longer valid whether due to expiration (generally five to fifteen minutes) or a configuration change on the server the server will respond with a 410 ResourceExpired error indicating the client must restart their list without the continue field. This field is not supported when watch is true. Clients may start a watch from the last resourceVersion value returned by the server and not miss any modifications.",
+       "name": "continue",
+       "in": "query"
+      },
+      {
+       "type": "string",
+       "description": "A selector to restrict the list of returned objects by their fields. Defaults to everything.",
+       "name": "fieldSelector",
+       "in": "query"
+      },
+      {
+       "type": "boolean",
+       "description": "If true, partially initialized resources are included in the response.",
+       "name": "includeUninitialized",
+       "in": "query"
+      },
+      {
+       "type": "string",
+       "description": "A selector to restrict the list of returned objects by their labels. Defaults to everything",
+       "name": "labelSelector",
+       "in": "query"
+      },
+      {
+       "type": "integer",
+       "description": "limit is a maximum number of responses to return for a list call. If more items exist, the server will set the `continue` field on the list metadata to a value that can be used with the same initial query to retrieve the next set of results. Setting a limit may return fewer than the requested amount of items (up to zero items) in the event all requested objects are filtered out and clients should only use the presence of the continue field to determine whether more results are available. Servers may choose not to support the limit argument and will return all of the available results. If limit is specified and the continue field is empty, clients may assume that no more results are available. This field is not supported if watch is true.\n\nThe server guarantees that the objects returned when using continue will be identical to issuing a single list call without a limit - that is, no objects created, modified, or deleted after the first request is issued will be included in any subsequent continued requests. This is sometimes referred to as a consistent snapshot, and ensures that a client that is using limit to receive smaller chunks of a very large result can ensure they see all possible objects. If objects are updated during a chunked list the version of the object that was present at the time the first list result was calculated is returned.",
+       "name": "limit",
+       "in": "query"
+      },
+      {
+       "type": "string",
+       "description": "When specified with a watch call, shows changes that occur after that particular version of a resource. Defaults to changes from the beginning of history.",
+       "name": "resourceVersion",
+       "in": "query"
+      },
+      {
+       "type": "integer",
+       "description": "TimeoutSeconds for the list/watch call.",
+       "name": "timeoutSeconds",
+       "in": "query"
+      },
+      {
+       "type": "boolean",
+       "description": "Watch for changes to the described resources and return them as a stream of add, update, and remove notifications. Specify resourceVersion.",
+       "name": "watch",
+       "in": "query"
+      }
+     ],
+     "responses": {
+      "200": {
+       "description": "OK",
+       "schema": {
+        "$ref": "#/definitions/v1.VirtualMachineInstanceReplicaSetList"
+       }
+      },
+      "401": {
+       "description": "Unauthorized"
+      },
+      "default": {
+       "description": "OK",
+       "schema": {
+        "$ref": "#/definitions/v1.VirtualMachineInstanceReplicaSetList"
+       }
+      }
+     }
+    },
+    "post": {
+     "consumes": [
+      "application/json",
+      "application/yaml"
+     ],
+     "produces": [
+      "application/json",
+      "application/yaml"
+     ],
+     "summary": "Create a VirtualMachineInstanceReplicaSet object.",
+     "operationId": "createNamespacedVirtualMachineInstanceReplicaSet",
+     "parameters": [
+      {
+       "name": "body",
+       "in": "body",
+       "required": true,
+       "schema": {
+        "$ref": "#/definitions/v1.VirtualMachineInstanceReplicaSet"
+       }
+      },
+      {
+       "pattern": "[a-z0-9][a-z0-9\\-]*",
+       "type": "string",
+       "description": "Object name and auth scope, such as for teams and projects",
+       "name": "namespace",
+       "in": "path",
+       "required": true
+      }
+     ],
+     "responses": {
+      "200": {
+       "description": "OK",
+       "schema": {
+        "$ref": "#/definitions/v1.VirtualMachineInstanceReplicaSet"
+       }
+      },
+      "201": {
+       "description": "Created",
+       "schema": {
+        "$ref": "#/definitions/v1.VirtualMachineInstanceReplicaSet"
+       }
+      },
+      "202": {
+       "description": "Accepted",
+       "schema": {
+        "$ref": "#/definitions/v1.VirtualMachineInstanceReplicaSet"
+       }
+      },
+      "401": {
+       "description": "Unauthorized"
+      },
+      "default": {
+       "description": "OK",
+       "schema": {
+        "$ref": "#/definitions/v1.VirtualMachineInstanceReplicaSet"
+       }
+      }
+     }
+    },
+    "delete": {
+     "produces": [
+      "application/json",
+      "application/yaml"
+     ],
+     "summary": "Delete a collection of VirtualMachineInstanceReplicaSet objects.",
+     "operationId": "deleteCollectionNamespacedVirtualMachineInstanceReplicaSet",
+     "parameters": [
+      {
+       "type": "string",
+       "description": "The continue option should be set when retrieving more results from the server. Since this value is server defined, clients may only use the continue value from a previous query result with identical query parameters (except for the value of continue) and the server may reject a continue value it does not recognize. If the specified continue value is no longer valid whether due to expiration (generally five to fifteen minutes) or a configuration change on the server the server will respond with a 410 ResourceExpired error indicating the client must restart their list without the continue field. This field is not supported when watch is true. Clients may start a watch from the last resourceVersion value returned by the server and not miss any modifications.",
+       "name": "continue",
+       "in": "query"
+      },
+      {
+       "type": "string",
+       "description": "A selector to restrict the list of returned objects by their fields. Defaults to everything.",
+       "name": "fieldSelector",
+       "in": "query"
+      },
+      {
+       "type": "boolean",
+       "description": "If true, partially initialized resources are included in the response.",
+       "name": "includeUninitialized",
+       "in": "query"
+      },
+      {
+       "type": "string",
+       "description": "A selector to restrict the list of returned objects by their labels. Defaults to everything",
+       "name": "labelSelector",
+       "in": "query"
+      },
+      {
+       "type": "integer",
+       "description": "limit is a maximum number of responses to return for a list call. If more items exist, the server will set the `continue` field on the list metadata to a value that can be used with the same initial query to retrieve the next set of results. Setting a limit may return fewer than the requested amount of items (up to zero items) in the event all requested objects are filtered out and clients should only use the presence of the continue field to determine whether more results are available. Servers may choose not to support the limit argument and will return all of the available results. If limit is specified and the continue field is empty, clients may assume that no more results are available. This field is not supported if watch is true.\n\nThe server guarantees that the objects returned when using continue will be identical to issuing a single list call without a limit - that is, no objects created, modified, or deleted after the first request is issued will be included in any subsequent continued requests. This is sometimes referred to as a consistent snapshot, and ensures that a client that is using limit to receive smaller chunks of a very large result can ensure they see all possible objects. If objects are updated during a chunked list the version of the object that was present at the time the first list result was calculated is returned.",
+       "name": "limit",
+       "in": "query"
+      },
+      {
+       "type": "string",
+       "description": "When specified with a watch call, shows changes that occur after that particular version of a resource. Defaults to changes from the beginning of history.",
+       "name": "resourceVersion",
+       "in": "query"
+      },
+      {
+       "type": "integer",
+       "description": "TimeoutSeconds for the list/watch call.",
+       "name": "timeoutSeconds",
+       "in": "query"
+      },
+      {
+       "type": "boolean",
+       "description": "Watch for changes to the described resources and return them as a stream of add, update, and remove notifications. Specify resourceVersion.",
+       "name": "watch",
+       "in": "query"
+      }
+     ],
+     "responses": {
+      "200": {
+       "description": "OK",
+       "schema": {
+        "$ref": "#/definitions/v1.Status"
+       }
+      },
+      "401": {
+       "description": "Unauthorized"
+      },
+      "default": {
+       "description": "OK",
+       "schema": {
+        "$ref": "#/definitions/v1.Status"
+       }
+      }
+     }
+    }
+   },
+   "/apis/kubevirt.io/v1alpha2/namespaces/{namespace}/virtualmachineinstancereplicasets/{name}": {
+    "get": {
+     "produces": [
+      "application/json",
+      "application/yaml",
+      "application/json;stream=watch"
+     ],
+     "summary": "Get a VirtualMachineInstanceReplicaSet object.",
+     "operationId": "readNamespacedVirtualMachineInstanceReplicaSet",
+     "parameters": [
+      {
+       "pattern": "[a-z0-9][a-z0-9\\-]*",
+       "type": "string",
+       "description": "Name of the resource",
+       "name": "name",
+       "in": "path",
+       "required": true
+      },
+      {
+       "pattern": "[a-z0-9][a-z0-9\\-]*",
+       "type": "string",
+       "description": "Object name and auth scope, such as for teams and projects",
+       "name": "namespace",
+       "in": "path",
+       "required": true
+      },
+      {
+       "type": "boolean",
+       "description": "Should the export be exact. Exact export maintains cluster-specific fields like 'Namespace'.",
+       "name": "exact",
+       "in": "query"
+      },
+      {
+       "type": "boolean",
+       "description": "Should this value be exported. Export strips fields that a user can not specify.",
+       "name": "export",
+       "in": "query"
+      }
+     ],
+     "responses": {
+      "200": {
+       "description": "OK",
+       "schema": {
+        "$ref": "#/definitions/v1.VirtualMachineInstanceReplicaSet"
+       }
+      },
+      "401": {
+       "description": "Unauthorized"
+      },
+      "default": {
+       "description": "OK",
+       "schema": {
+        "$ref": "#/definitions/v1.VirtualMachineInstanceReplicaSet"
+       }
+      }
+     }
+    },
+    "put": {
+     "consumes": [
+      "application/json",
+      "application/yaml"
+     ],
+     "produces": [
+      "application/json",
+      "application/yaml"
+     ],
+     "summary": "Update a VirtualMachineInstanceReplicaSet object.",
+     "operationId": "replaceNamespacedVirtualMachineInstanceReplicaSet",
+     "parameters": [
+      {
+       "name": "body",
+       "in": "body",
+       "required": true,
+       "schema": {
+        "$ref": "#/definitions/v1.VirtualMachineInstanceReplicaSet"
+       }
+      },
+      {
+       "pattern": "[a-z0-9][a-z0-9\\-]*",
+       "type": "string",
+       "description": "Object name and auth scope, such as for teams and projects",
+       "name": "namespace",
+       "in": "path",
+       "required": true
+      },
+      {
+       "pattern": "[a-z0-9][a-z0-9\\-]*",
+       "type": "string",
+       "description": "Name of the resource",
+       "name": "name",
+       "in": "path",
+       "required": true
+      }
+     ],
+     "responses": {
+      "200": {
+       "description": "OK",
+       "schema": {
+        "$ref": "#/definitions/v1.VirtualMachineInstanceReplicaSet"
+       }
+      },
+      "201": {
+       "description": "Create",
+       "schema": {
+        "$ref": "#/definitions/v1.VirtualMachineInstanceReplicaSet"
+       }
+      },
+      "401": {
+       "description": "Unauthorized"
+      },
+      "default": {
+       "description": "OK",
+       "schema": {
+        "$ref": "#/definitions/v1.VirtualMachineInstanceReplicaSet"
+       }
+      }
+     }
+    },
+    "delete": {
+     "consumes": [
+      "application/json",
+      "application/yaml"
+     ],
+     "produces": [
+      "application/json",
+      "application/yaml"
+     ],
+     "summary": "Delete a VirtualMachineInstanceReplicaSet object.",
+     "operationId": "deleteNamespacedVirtualMachineInstanceReplicaSet",
+     "parameters": [
+      {
+       "name": "body",
+       "in": "body",
+       "required": true,
+       "schema": {
+        "$ref": "#/definitions/v1.DeleteOptions"
+       }
+      },
+      {
+       "pattern": "[a-z0-9][a-z0-9\\-]*",
+       "type": "string",
+       "description": "Object name and auth scope, such as for teams and projects",
+       "name": "namespace",
+       "in": "path",
+       "required": true
+      },
+      {
+       "pattern": "[a-z0-9][a-z0-9\\-]*",
+       "type": "string",
+       "description": "Name of the resource",
+       "name": "name",
+       "in": "path",
+       "required": true
+      },
+      {
+       "type": "integer",
+       "description": "The duration in seconds before the object should be deleted. Value must be non-negative integer. The value zero indicates delete immediately. If this value is nil, the default grace period for the specified type will be used. Defaults to a per object value if not specified. zero means delete immediately.",
+       "name": "gracePeriodSeconds",
+       "in": "query"
+      },
+      {
+       "type": "boolean",
+       "description": "Deprecated: please use the PropagationPolicy, this field will be deprecated in 1.7. Should the dependent objects be orphaned. If true/false, the \"orphan\" finalizer will be added to/removed from the object's finalizers list. Either this field or PropagationPolicy may be set, but not both.",
+       "name": "orphanDependents",
+       "in": "query"
+      },
+      {
+       "type": "string",
+       "description": "Whether and how garbage collection will be performed. Either this field or OrphanDependents may be set, but not both. The default policy is decided by the existing finalizer set in the metadata.finalizers and the resource-specific default policy. Acceptable values are: 'Orphan' - orphan the dependents; 'Background' - allow the garbage collector to delete the dependents in the background; 'Foreground' - a cascading policy that deletes all dependents in the foreground.",
+       "name": "propagationPolicy",
+       "in": "query"
+      }
+     ],
+     "responses": {
+      "200": {
+       "description": "OK",
+       "schema": {
+        "$ref": "#/definitions/v1.Status"
+       }
+      },
+      "401": {
+       "description": "Unauthorized"
+      },
+      "default": {
+       "description": "OK",
+       "schema": {
+        "$ref": "#/definitions/v1.Status"
+       }
+      }
+     }
+    },
+    "patch": {
+     "consumes": [
+      "application/json-patch+json",
+      "application/merge-patch+json"
+     ],
+     "produces": [
+      "application/json"
+     ],
+     "summary": "Patch a VirtualMachineInstanceReplicaSet object.",
+     "operationId": "patchNamespacedVirtualMachineInstanceReplicaSet",
+     "parameters": [
+      {
+       "name": "body",
+       "in": "body",
+       "required": true,
+       "schema": {
+        "$ref": "#/definitions/v1.Patch"
+       }
+      },
+      {
+       "pattern": "[a-z0-9][a-z0-9\\-]*",
+       "type": "string",
+       "description": "Object name and auth scope, such as for teams and projects",
+       "name": "namespace",
+       "in": "path",
+       "required": true
+      },
+      {
+       "pattern": "[a-z0-9][a-z0-9\\-]*",
+       "type": "string",
+       "description": "Name of the resource",
+       "name": "name",
+       "in": "path",
+       "required": true
+      }
+     ],
+     "responses": {
+      "200": {
+       "description": "OK",
+       "schema": {
+        "$ref": "#/definitions/v1.VirtualMachineInstanceReplicaSet"
+       }
+      },
+      "401": {
+       "description": "Unauthorized"
+      },
+      "default": {
+       "description": "OK",
+       "schema": {
+        "$ref": "#/definitions/v1.VirtualMachineInstanceReplicaSet"
+       }
+      }
+     }
+    }
+   },
+   "/apis/kubevirt.io/v1alpha2/namespaces/{namespace}/virtualmachineinstances": {
+    "get": {
+     "produces": [
+      "application/json",
+      "application/yaml",
+      "application/json;stream=watch"
+     ],
+     "summary": "Get a list of VirtualMachineInstance objects.",
+     "operationId": "listNamespacedVirtualMachineInstance",
+     "parameters": [
+      {
+       "pattern": "[a-z0-9][a-z0-9\\-]*",
+       "type": "string",
+       "description": "Object name and auth scope, such as for teams and projects",
+       "name": "namespace",
+       "in": "path",
+       "required": true
+      },
+      {
+       "type": "string",
+       "description": "The continue option should be set when retrieving more results from the server. Since this value is server defined, clients may only use the continue value from a previous query result with identical query parameters (except for the value of continue) and the server may reject a continue value it does not recognize. If the specified continue value is no longer valid whether due to expiration (generally five to fifteen minutes) or a configuration change on the server the server will respond with a 410 ResourceExpired error indicating the client must restart their list without the continue field. This field is not supported when watch is true. Clients may start a watch from the last resourceVersion value returned by the server and not miss any modifications.",
+       "name": "continue",
+       "in": "query"
+      },
+      {
+       "type": "string",
+       "description": "A selector to restrict the list of returned objects by their fields. Defaults to everything.",
+       "name": "fieldSelector",
+       "in": "query"
+      },
+      {
+       "type": "boolean",
+       "description": "If true, partially initialized resources are included in the response.",
+       "name": "includeUninitialized",
+       "in": "query"
+      },
+      {
+       "type": "string",
+       "description": "A selector to restrict the list of returned objects by their labels. Defaults to everything",
+       "name": "labelSelector",
+       "in": "query"
+      },
+      {
+       "type": "integer",
+       "description": "limit is a maximum number of responses to return for a list call. If more items exist, the server will set the `continue` field on the list metadata to a value that can be used with the same initial query to retrieve the next set of results. Setting a limit may return fewer than the requested amount of items (up to zero items) in the event all requested objects are filtered out and clients should only use the presence of the continue field to determine whether more results are available. Servers may choose not to support the limit argument and will return all of the available results. If limit is specified and the continue field is empty, clients may assume that no more results are available. This field is not supported if watch is true.\n\nThe server guarantees that the objects returned when using continue will be identical to issuing a single list call without a limit - that is, no objects created, modified, or deleted after the first request is issued will be included in any subsequent continued requests. This is sometimes referred to as a consistent snapshot, and ensures that a client that is using limit to receive smaller chunks of a very large result can ensure they see all possible objects. If objects are updated during a chunked list the version of the object that was present at the time the first list result was calculated is returned.",
+       "name": "limit",
+       "in": "query"
+      },
+      {
+       "type": "string",
+       "description": "When specified with a watch call, shows changes that occur after that particular version of a resource. Defaults to changes from the beginning of history.",
+       "name": "resourceVersion",
+       "in": "query"
+      },
+      {
+       "type": "integer",
+       "description": "TimeoutSeconds for the list/watch call.",
+       "name": "timeoutSeconds",
+       "in": "query"
+      },
+      {
+       "type": "boolean",
+       "description": "Watch for changes to the described resources and return them as a stream of add, update, and remove notifications. Specify resourceVersion.",
+       "name": "watch",
+       "in": "query"
+      }
+     ],
+     "responses": {
+      "200": {
+       "description": "OK",
+       "schema": {
+        "$ref": "#/definitions/v1.VirtualMachineInstanceList"
+       }
+      },
+      "401": {
+       "description": "Unauthorized"
+      },
+      "default": {
+       "description": "OK",
+       "schema": {
+        "$ref": "#/definitions/v1.VirtualMachineInstanceList"
+       }
+      }
+     }
+    },
+    "post": {
+     "consumes": [
+      "application/json",
+      "application/yaml"
+     ],
+     "produces": [
+      "application/json",
+      "application/yaml"
+     ],
+     "summary": "Create a VirtualMachineInstance object.",
+     "operationId": "createNamespacedVirtualMachineInstance",
+     "parameters": [
+      {
+       "name": "body",
+       "in": "body",
+       "required": true,
+       "schema": {
+        "$ref": "#/definitions/v1.VirtualMachineInstance"
+       }
+      },
+      {
+       "pattern": "[a-z0-9][a-z0-9\\-]*",
+       "type": "string",
+       "description": "Object name and auth scope, such as for teams and projects",
+       "name": "namespace",
+       "in": "path",
+       "required": true
+      }
+     ],
+     "responses": {
+      "200": {
+       "description": "OK",
+       "schema": {
+        "$ref": "#/definitions/v1.VirtualMachineInstance"
+       }
+      },
+      "201": {
+       "description": "Created",
+       "schema": {
+        "$ref": "#/definitions/v1.VirtualMachineInstance"
+       }
+      },
+      "202": {
+       "description": "Accepted",
+       "schema": {
+        "$ref": "#/definitions/v1.VirtualMachineInstance"
+       }
+      },
+      "401": {
+       "description": "Unauthorized"
+      },
+      "default": {
+       "description": "OK",
+       "schema": {
+        "$ref": "#/definitions/v1.VirtualMachineInstance"
+       }
+      }
+     }
+    },
+    "delete": {
+     "produces": [
+      "application/json",
+      "application/yaml"
+     ],
+     "summary": "Delete a collection of VirtualMachineInstance objects.",
+     "operationId": "deleteCollectionNamespacedVirtualMachineInstance",
+     "parameters": [
+      {
+       "type": "string",
+       "description": "The continue option should be set when retrieving more results from the server. Since this value is server defined, clients may only use the continue value from a previous query result with identical query parameters (except for the value of continue) and the server may reject a continue value it does not recognize. If the specified continue value is no longer valid whether due to expiration (generally five to fifteen minutes) or a configuration change on the server the server will respond with a 410 ResourceExpired error indicating the client must restart their list without the continue field. This field is not supported when watch is true. Clients may start a watch from the last resourceVersion value returned by the server and not miss any modifications.",
+       "name": "continue",
+       "in": "query"
+      },
+      {
+       "type": "string",
+       "description": "A selector to restrict the list of returned objects by their fields. Defaults to everything.",
+       "name": "fieldSelector",
+       "in": "query"
+      },
+      {
+       "type": "boolean",
+       "description": "If true, partially initialized resources are included in the response.",
+       "name": "includeUninitialized",
+       "in": "query"
+      },
+      {
+       "type": "string",
+       "description": "A selector to restrict the list of returned objects by their labels. Defaults to everything",
+       "name": "labelSelector",
+       "in": "query"
+      },
+      {
+       "type": "integer",
+       "description": "limit is a maximum number of responses to return for a list call. If more items exist, the server will set the `continue` field on the list metadata to a value that can be used with the same initial query to retrieve the next set of results. Setting a limit may return fewer than the requested amount of items (up to zero items) in the event all requested objects are filtered out and clients should only use the presence of the continue field to determine whether more results are available. Servers may choose not to support the limit argument and will return all of the available results. If limit is specified and the continue field is empty, clients may assume that no more results are available. This field is not supported if watch is true.\n\nThe server guarantees that the objects returned when using continue will be identical to issuing a single list call without a limit - that is, no objects created, modified, or deleted after the first request is issued will be included in any subsequent continued requests. This is sometimes referred to as a consistent snapshot, and ensures that a client that is using limit to receive smaller chunks of a very large result can ensure they see all possible objects. If objects are updated during a chunked list the version of the object that was present at the time the first list result was calculated is returned.",
+       "name": "limit",
+       "in": "query"
+      },
+      {
+       "type": "string",
+       "description": "When specified with a watch call, shows changes that occur after that particular version of a resource. Defaults to changes from the beginning of history.",
+       "name": "resourceVersion",
+       "in": "query"
+      },
+      {
+       "type": "integer",
+       "description": "TimeoutSeconds for the list/watch call.",
+       "name": "timeoutSeconds",
+       "in": "query"
+      },
+      {
+       "type": "boolean",
+       "description": "Watch for changes to the described resources and return them as a stream of add, update, and remove notifications. Specify resourceVersion.",
+       "name": "watch",
+       "in": "query"
+      }
+     ],
+     "responses": {
+      "200": {
+       "description": "OK",
+       "schema": {
+        "$ref": "#/definitions/v1.Status"
+       }
+      },
+      "401": {
+       "description": "Unauthorized"
+      },
+      "default": {
+       "description": "OK",
+       "schema": {
+        "$ref": "#/definitions/v1.Status"
+       }
+      }
+     }
+    }
+   },
+   "/apis/kubevirt.io/v1alpha2/namespaces/{namespace}/virtualmachineinstances/{name}": {
+    "get": {
+     "produces": [
+      "application/json",
+      "application/yaml",
+      "application/json;stream=watch"
+     ],
+     "summary": "Get a VirtualMachineInstance object.",
+     "operationId": "readNamespacedVirtualMachineInstance",
+     "parameters": [
+      {
+       "pattern": "[a-z0-9][a-z0-9\\-]*",
+       "type": "string",
+       "description": "Name of the resource",
+       "name": "name",
+       "in": "path",
+       "required": true
+      },
+      {
+       "pattern": "[a-z0-9][a-z0-9\\-]*",
+       "type": "string",
+       "description": "Object name and auth scope, such as for teams and projects",
+       "name": "namespace",
+       "in": "path",
+       "required": true
+      },
+      {
+       "type": "boolean",
+       "description": "Should the export be exact. Exact export maintains cluster-specific fields like 'Namespace'.",
+       "name": "exact",
+       "in": "query"
+      },
+      {
+       "type": "boolean",
+       "description": "Should this value be exported. Export strips fields that a user can not specify.",
+       "name": "export",
+       "in": "query"
+      }
+     ],
+     "responses": {
+      "200": {
+       "description": "OK",
+       "schema": {
+        "$ref": "#/definitions/v1.VirtualMachineInstance"
+       }
+      },
+      "401": {
+       "description": "Unauthorized"
+      },
+      "default": {
+       "description": "OK",
+       "schema": {
+        "$ref": "#/definitions/v1.VirtualMachineInstance"
+       }
+      }
+     }
+    },
+    "put": {
+     "consumes": [
+      "application/json",
+      "application/yaml"
+     ],
+     "produces": [
+      "application/json",
+      "application/yaml"
+     ],
+     "summary": "Update a VirtualMachineInstance object.",
+     "operationId": "replaceNamespacedVirtualMachineInstance",
+     "parameters": [
+      {
+       "name": "body",
+       "in": "body",
+       "required": true,
+       "schema": {
+        "$ref": "#/definitions/v1.VirtualMachineInstance"
+       }
+      },
+      {
+       "pattern": "[a-z0-9][a-z0-9\\-]*",
+       "type": "string",
+       "description": "Object name and auth scope, such as for teams and projects",
+       "name": "namespace",
+       "in": "path",
+       "required": true
+      },
+      {
+       "pattern": "[a-z0-9][a-z0-9\\-]*",
+       "type": "string",
+       "description": "Name of the resource",
+       "name": "name",
+       "in": "path",
+       "required": true
+      }
+     ],
+     "responses": {
+      "200": {
+       "description": "OK",
+       "schema": {
+        "$ref": "#/definitions/v1.VirtualMachineInstance"
+       }
+      },
+      "201": {
+       "description": "Create",
+       "schema": {
+        "$ref": "#/definitions/v1.VirtualMachineInstance"
+       }
+      },
+      "401": {
+       "description": "Unauthorized"
+      },
+      "default": {
+       "description": "OK",
+       "schema": {
+        "$ref": "#/definitions/v1.VirtualMachineInstance"
+       }
+      }
+     }
+    },
+    "delete": {
+     "consumes": [
+      "application/json",
+      "application/yaml"
+     ],
+     "produces": [
+      "application/json",
+      "application/yaml"
+     ],
+     "summary": "Delete a VirtualMachineInstance object.",
+     "operationId": "deleteNamespacedVirtualMachineInstance",
+     "parameters": [
+      {
+       "name": "body",
+       "in": "body",
+       "required": true,
+       "schema": {
+        "$ref": "#/definitions/v1.DeleteOptions"
+       }
+      },
+      {
+       "pattern": "[a-z0-9][a-z0-9\\-]*",
+       "type": "string",
+       "description": "Object name and auth scope, such as for teams and projects",
+       "name": "namespace",
+       "in": "path",
+       "required": true
+      },
+      {
+       "pattern": "[a-z0-9][a-z0-9\\-]*",
+       "type": "string",
+       "description": "Name of the resource",
+       "name": "name",
+       "in": "path",
+       "required": true
+      },
+      {
+       "type": "integer",
+       "description": "The duration in seconds before the object should be deleted. Value must be non-negative integer. The value zero indicates delete immediately. If this value is nil, the default grace period for the specified type will be used. Defaults to a per object value if not specified. zero means delete immediately.",
+       "name": "gracePeriodSeconds",
+       "in": "query"
+      },
+      {
+       "type": "boolean",
+       "description": "Deprecated: please use the PropagationPolicy, this field will be deprecated in 1.7. Should the dependent objects be orphaned. If true/false, the \"orphan\" finalizer will be added to/removed from the object's finalizers list. Either this field or PropagationPolicy may be set, but not both.",
+       "name": "orphanDependents",
+       "in": "query"
+      },
+      {
+       "type": "string",
+       "description": "Whether and how garbage collection will be performed. Either this field or OrphanDependents may be set, but not both. The default policy is decided by the existing finalizer set in the metadata.finalizers and the resource-specific default policy. Acceptable values are: 'Orphan' - orphan the dependents; 'Background' - allow the garbage collector to delete the dependents in the background; 'Foreground' - a cascading policy that deletes all dependents in the foreground.",
+       "name": "propagationPolicy",
+       "in": "query"
+      }
+     ],
+     "responses": {
+      "200": {
+       "description": "OK",
+       "schema": {
+        "$ref": "#/definitions/v1.Status"
+       }
+      },
+      "401": {
+       "description": "Unauthorized"
+      },
+      "default": {
+       "description": "OK",
+       "schema": {
+        "$ref": "#/definitions/v1.Status"
+       }
+      }
+     }
+    },
+    "patch": {
+     "consumes": [
+      "application/json-patch+json",
+      "application/merge-patch+json"
+     ],
+     "produces": [
+      "application/json"
+     ],
+     "summary": "Patch a VirtualMachineInstance object.",
+     "operationId": "patchNamespacedVirtualMachineInstance",
+     "parameters": [
+      {
+       "name": "body",
+       "in": "body",
+       "required": true,
+       "schema": {
+        "$ref": "#/definitions/v1.Patch"
+       }
+      },
+      {
+       "pattern": "[a-z0-9][a-z0-9\\-]*",
+       "type": "string",
+       "description": "Object name and auth scope, such as for teams and projects",
+       "name": "namespace",
+       "in": "path",
+       "required": true
+      },
+      {
+       "pattern": "[a-z0-9][a-z0-9\\-]*",
+       "type": "string",
+       "description": "Name of the resource",
+       "name": "name",
+       "in": "path",
+       "required": true
+      }
+     ],
+     "responses": {
+      "200": {
+       "description": "OK",
+       "schema": {
+        "$ref": "#/definitions/v1.VirtualMachineInstance"
+       }
+      },
+      "401": {
+       "description": "Unauthorized"
+      },
+      "default": {
+       "description": "OK",
+       "schema": {
+        "$ref": "#/definitions/v1.VirtualMachineInstance"
+       }
+      }
+     }
+    }
+   },
+   "/apis/kubevirt.io/v1alpha2/namespaces/{namespace}/virtualmachines": {
+    "get": {
      "produces": [
       "application/json",
       "application/yaml",
@@ -636,7 +1599,6 @@
      }
     },
     "post": {
-     "description": "Create a VirtualMachine object.",
      "consumes": [
       "application/json",
       "application/yaml"
@@ -696,7 +1658,6 @@
      }
     },
     "delete": {
-     "description": "Delete a collection of VirtualMachine objects.",
      "produces": [
       "application/json",
       "application/yaml"
@@ -772,9 +1733,8 @@
      }
     }
    },
-   "/apis/kubevirt.io/v1alpha1/namespaces/{namespace}/virtualmachines/{name}": {
+   "/apis/kubevirt.io/v1alpha2/namespaces/{namespace}/virtualmachines/{name}": {
     "get": {
-     "description": "Get a VirtualMachine object.",
      "produces": [
       "application/json",
       "application/yaml",
@@ -831,7 +1791,6 @@
      }
     },
     "put": {
-     "description": "Update a VirtualMachine object.",
      "consumes": [
       "application/json",
       "application/yaml"
@@ -893,7 +1852,6 @@
      }
     },
     "delete": {
-     "description": "Delete a VirtualMachine object.",
      "consumes": [
       "application/json",
       "application/yaml"
@@ -967,7 +1925,6 @@
      }
     },
     "patch": {
-     "description": "Patch a VirtualMachine object.",
      "consumes": [
       "application/json-patch+json",
       "application/merge-patch+json"
@@ -985,6 +1942,22 @@
        "schema": {
         "$ref": "#/definitions/v1.Patch"
        }
+      },
+      {
+       "pattern": "[a-z0-9][a-z0-9\\-]*",
+       "type": "string",
+       "description": "Object name and auth scope, such as for teams and projects",
+       "name": "namespace",
+       "in": "path",
+       "required": true
+      },
+      {
+       "pattern": "[a-z0-9][a-z0-9\\-]*",
+       "type": "string",
+       "description": "Name of the resource",
+       "name": "name",
+       "in": "path",
+       "required": true
       }
      ],
      "responses": {
@@ -1006,16 +1979,15 @@
      }
     }
    },
-   "/apis/kubevirt.io/v1alpha1/virtualmachinereplicasets": {
+   "/apis/kubevirt.io/v1alpha2/virtualmachineinstancepresets": {
     "get": {
-     "description": "Get a list of all VirtualMachineReplicaSet objects.",
      "produces": [
       "application/json",
       "application/yaml",
       "application/json;stream=watch"
      ],
-     "summary": "Get a list of all VirtualMachineReplicaSet objects.",
-     "operationId": "listVirtualMachineReplicaSetForAllNamespaces",
+     "summary": "Get a list of all VirtualMachineInstancePreset objects.",
+     "operationId": "listVirtualMachineInstancePresetForAllNamespaces",
      "parameters": [
       {
        "type": "string",
@@ -1070,7 +2042,7 @@
       "200": {
        "description": "OK",
        "schema": {
-        "$ref": "#/definitions/v1.VirtualMachineReplicaSetList"
+        "$ref": "#/definitions/v1.VirtualMachineInstancePresetList"
        }
       },
       "401": {
@@ -1079,15 +2051,170 @@
       "default": {
        "description": "OK",
        "schema": {
-        "$ref": "#/definitions/v1.VirtualMachineReplicaSetList"
+        "$ref": "#/definitions/v1.VirtualMachineInstancePresetList"
        }
       }
      }
     }
    },
-   "/apis/kubevirt.io/v1alpha1/virtualmachines": {
+   "/apis/kubevirt.io/v1alpha2/virtualmachineinstancereplicasets": {
     "get": {
-     "description": "Get a list of all VirtualMachine objects.",
+     "produces": [
+      "application/json",
+      "application/yaml",
+      "application/json;stream=watch"
+     ],
+     "summary": "Get a list of all VirtualMachineInstanceReplicaSet objects.",
+     "operationId": "listVirtualMachineInstanceReplicaSetForAllNamespaces",
+     "parameters": [
+      {
+       "type": "string",
+       "description": "The continue option should be set when retrieving more results from the server. Since this value is server defined, clients may only use the continue value from a previous query result with identical query parameters (except for the value of continue) and the server may reject a continue value it does not recognize. If the specified continue value is no longer valid whether due to expiration (generally five to fifteen minutes) or a configuration change on the server the server will respond with a 410 ResourceExpired error indicating the client must restart their list without the continue field. This field is not supported when watch is true. Clients may start a watch from the last resourceVersion value returned by the server and not miss any modifications.",
+       "name": "continue",
+       "in": "query"
+      },
+      {
+       "type": "string",
+       "description": "A selector to restrict the list of returned objects by their fields. Defaults to everything.",
+       "name": "fieldSelector",
+       "in": "query"
+      },
+      {
+       "type": "boolean",
+       "description": "If true, partially initialized resources are included in the response.",
+       "name": "includeUninitialized",
+       "in": "query"
+      },
+      {
+       "type": "string",
+       "description": "A selector to restrict the list of returned objects by their labels. Defaults to everything",
+       "name": "labelSelector",
+       "in": "query"
+      },
+      {
+       "type": "integer",
+       "description": "limit is a maximum number of responses to return for a list call. If more items exist, the server will set the `continue` field on the list metadata to a value that can be used with the same initial query to retrieve the next set of results. Setting a limit may return fewer than the requested amount of items (up to zero items) in the event all requested objects are filtered out and clients should only use the presence of the continue field to determine whether more results are available. Servers may choose not to support the limit argument and will return all of the available results. If limit is specified and the continue field is empty, clients may assume that no more results are available. This field is not supported if watch is true.\n\nThe server guarantees that the objects returned when using continue will be identical to issuing a single list call without a limit - that is, no objects created, modified, or deleted after the first request is issued will be included in any subsequent continued requests. This is sometimes referred to as a consistent snapshot, and ensures that a client that is using limit to receive smaller chunks of a very large result can ensure they see all possible objects. If objects are updated during a chunked list the version of the object that was present at the time the first list result was calculated is returned.",
+       "name": "limit",
+       "in": "query"
+      },
+      {
+       "type": "string",
+       "description": "When specified with a watch call, shows changes that occur after that particular version of a resource. Defaults to changes from the beginning of history.",
+       "name": "resourceVersion",
+       "in": "query"
+      },
+      {
+       "type": "integer",
+       "description": "TimeoutSeconds for the list/watch call.",
+       "name": "timeoutSeconds",
+       "in": "query"
+      },
+      {
+       "type": "boolean",
+       "description": "Watch for changes to the described resources and return them as a stream of add, update, and remove notifications. Specify resourceVersion.",
+       "name": "watch",
+       "in": "query"
+      }
+     ],
+     "responses": {
+      "200": {
+       "description": "OK",
+       "schema": {
+        "$ref": "#/definitions/v1.VirtualMachineInstanceReplicaSetList"
+       }
+      },
+      "401": {
+       "description": "Unauthorized"
+      },
+      "default": {
+       "description": "OK",
+       "schema": {
+        "$ref": "#/definitions/v1.VirtualMachineInstanceReplicaSetList"
+       }
+      }
+     }
+    }
+   },
+   "/apis/kubevirt.io/v1alpha2/virtualmachineinstances": {
+    "get": {
+     "produces": [
+      "application/json",
+      "application/yaml",
+      "application/json;stream=watch"
+     ],
+     "summary": "Get a list of all VirtualMachineInstance objects.",
+     "operationId": "listVirtualMachineInstanceForAllNamespaces",
+     "parameters": [
+      {
+       "type": "string",
+       "description": "The continue option should be set when retrieving more results from the server. Since this value is server defined, clients may only use the continue value from a previous query result with identical query parameters (except for the value of continue) and the server may reject a continue value it does not recognize. If the specified continue value is no longer valid whether due to expiration (generally five to fifteen minutes) or a configuration change on the server the server will respond with a 410 ResourceExpired error indicating the client must restart their list without the continue field. This field is not supported when watch is true. Clients may start a watch from the last resourceVersion value returned by the server and not miss any modifications.",
+       "name": "continue",
+       "in": "query"
+      },
+      {
+       "type": "string",
+       "description": "A selector to restrict the list of returned objects by their fields. Defaults to everything.",
+       "name": "fieldSelector",
+       "in": "query"
+      },
+      {
+       "type": "boolean",
+       "description": "If true, partially initialized resources are included in the response.",
+       "name": "includeUninitialized",
+       "in": "query"
+      },
+      {
+       "type": "string",
+       "description": "A selector to restrict the list of returned objects by their labels. Defaults to everything",
+       "name": "labelSelector",
+       "in": "query"
+      },
+      {
+       "type": "integer",
+       "description": "limit is a maximum number of responses to return for a list call. If more items exist, the server will set the `continue` field on the list metadata to a value that can be used with the same initial query to retrieve the next set of results. Setting a limit may return fewer than the requested amount of items (up to zero items) in the event all requested objects are filtered out and clients should only use the presence of the continue field to determine whether more results are available. Servers may choose not to support the limit argument and will return all of the available results. If limit is specified and the continue field is empty, clients may assume that no more results are available. This field is not supported if watch is true.\n\nThe server guarantees that the objects returned when using continue will be identical to issuing a single list call without a limit - that is, no objects created, modified, or deleted after the first request is issued will be included in any subsequent continued requests. This is sometimes referred to as a consistent snapshot, and ensures that a client that is using limit to receive smaller chunks of a very large result can ensure they see all possible objects. If objects are updated during a chunked list the version of the object that was present at the time the first list result was calculated is returned.",
+       "name": "limit",
+       "in": "query"
+      },
+      {
+       "type": "string",
+       "description": "When specified with a watch call, shows changes that occur after that particular version of a resource. Defaults to changes from the beginning of history.",
+       "name": "resourceVersion",
+       "in": "query"
+      },
+      {
+       "type": "integer",
+       "description": "TimeoutSeconds for the list/watch call.",
+       "name": "timeoutSeconds",
+       "in": "query"
+      },
+      {
+       "type": "boolean",
+       "description": "Watch for changes to the described resources and return them as a stream of add, update, and remove notifications. Specify resourceVersion.",
+       "name": "watch",
+       "in": "query"
+      }
+     ],
+     "responses": {
+      "200": {
+       "description": "OK",
+       "schema": {
+        "$ref": "#/definitions/v1.VirtualMachineInstanceList"
+       }
+      },
+      "401": {
+       "description": "Unauthorized"
+      },
+      "default": {
+       "description": "OK",
+       "schema": {
+        "$ref": "#/definitions/v1.VirtualMachineInstanceList"
+       }
+      }
+     }
+    }
+   },
+   "/apis/kubevirt.io/v1alpha2/virtualmachines": {
+    "get": {
      "produces": [
       "application/json",
       "application/yaml",
@@ -1164,14 +2291,13 @@
      }
     }
    },
-   "/apis/kubevirt.io/v1alpha1/watch/namespaces/{namespace}/virtualmachinereplicasets": {
+   "/apis/kubevirt.io/v1alpha2/watch/namespaces/{namespace}/virtualmachineinstancepresets": {
     "get": {
-     "description": "Watch a VirtualMachineReplicaSet object.",
      "produces": [
       "application/json"
      ],
-     "summary": "Watch a VirtualMachineReplicaSet object.",
-     "operationId": "watchNamespacedVirtualMachineReplicaSet",
+     "summary": "Watch a VirtualMachineInstancePreset object.",
+     "operationId": "watchNamespacedVirtualMachineInstancePreset",
      "parameters": [
       {
        "pattern": "[a-z0-9][a-z0-9\\-]*",
@@ -1249,9 +2375,176 @@
      }
     }
    },
-   "/apis/kubevirt.io/v1alpha1/watch/namespaces/{namespace}/virtualmachines": {
+   "/apis/kubevirt.io/v1alpha2/watch/namespaces/{namespace}/virtualmachineinstancereplicasets": {
     "get": {
-     "description": "Watch a VirtualMachine object.",
+     "produces": [
+      "application/json"
+     ],
+     "summary": "Watch a VirtualMachineInstanceReplicaSet object.",
+     "operationId": "watchNamespacedVirtualMachineInstanceReplicaSet",
+     "parameters": [
+      {
+       "pattern": "[a-z0-9][a-z0-9\\-]*",
+       "type": "string",
+       "description": "Object name and auth scope, such as for teams and projects",
+       "name": "namespace",
+       "in": "path",
+       "required": true
+      },
+      {
+       "type": "string",
+       "description": "The continue option should be set when retrieving more results from the server. Since this value is server defined, clients may only use the continue value from a previous query result with identical query parameters (except for the value of continue) and the server may reject a continue value it does not recognize. If the specified continue value is no longer valid whether due to expiration (generally five to fifteen minutes) or a configuration change on the server the server will respond with a 410 ResourceExpired error indicating the client must restart their list without the continue field. This field is not supported when watch is true. Clients may start a watch from the last resourceVersion value returned by the server and not miss any modifications.",
+       "name": "continue",
+       "in": "query"
+      },
+      {
+       "type": "string",
+       "description": "A selector to restrict the list of returned objects by their fields. Defaults to everything.",
+       "name": "fieldSelector",
+       "in": "query"
+      },
+      {
+       "type": "boolean",
+       "description": "If true, partially initialized resources are included in the response.",
+       "name": "includeUninitialized",
+       "in": "query"
+      },
+      {
+       "type": "string",
+       "description": "A selector to restrict the list of returned objects by their labels. Defaults to everything",
+       "name": "labelSelector",
+       "in": "query"
+      },
+      {
+       "type": "integer",
+       "description": "limit is a maximum number of responses to return for a list call. If more items exist, the server will set the `continue` field on the list metadata to a value that can be used with the same initial query to retrieve the next set of results. Setting a limit may return fewer than the requested amount of items (up to zero items) in the event all requested objects are filtered out and clients should only use the presence of the continue field to determine whether more results are available. Servers may choose not to support the limit argument and will return all of the available results. If limit is specified and the continue field is empty, clients may assume that no more results are available. This field is not supported if watch is true.\n\nThe server guarantees that the objects returned when using continue will be identical to issuing a single list call without a limit - that is, no objects created, modified, or deleted after the first request is issued will be included in any subsequent continued requests. This is sometimes referred to as a consistent snapshot, and ensures that a client that is using limit to receive smaller chunks of a very large result can ensure they see all possible objects. If objects are updated during a chunked list the version of the object that was present at the time the first list result was calculated is returned.",
+       "name": "limit",
+       "in": "query"
+      },
+      {
+       "type": "string",
+       "description": "When specified with a watch call, shows changes that occur after that particular version of a resource. Defaults to changes from the beginning of history.",
+       "name": "resourceVersion",
+       "in": "query"
+      },
+      {
+       "type": "integer",
+       "description": "TimeoutSeconds for the list/watch call.",
+       "name": "timeoutSeconds",
+       "in": "query"
+      },
+      {
+       "type": "boolean",
+       "description": "Watch for changes to the described resources and return them as a stream of add, update, and remove notifications. Specify resourceVersion.",
+       "name": "watch",
+       "in": "query"
+      }
+     ],
+     "responses": {
+      "200": {
+       "description": "OK",
+       "schema": {
+        "$ref": "#/definitions/v1.WatchEvent"
+       }
+      },
+      "401": {
+       "description": "Unauthorized"
+      },
+      "default": {
+       "description": "OK",
+       "schema": {
+        "$ref": "#/definitions/v1.WatchEvent"
+       }
+      }
+     }
+    }
+   },
+   "/apis/kubevirt.io/v1alpha2/watch/namespaces/{namespace}/virtualmachineinstances": {
+    "get": {
+     "produces": [
+      "application/json"
+     ],
+     "summary": "Watch a VirtualMachineInstance object.",
+     "operationId": "watchNamespacedVirtualMachineInstance",
+     "parameters": [
+      {
+       "pattern": "[a-z0-9][a-z0-9\\-]*",
+       "type": "string",
+       "description": "Object name and auth scope, such as for teams and projects",
+       "name": "namespace",
+       "in": "path",
+       "required": true
+      },
+      {
+       "type": "string",
+       "description": "The continue option should be set when retrieving more results from the server. Since this value is server defined, clients may only use the continue value from a previous query result with identical query parameters (except for the value of continue) and the server may reject a continue value it does not recognize. If the specified continue value is no longer valid whether due to expiration (generally five to fifteen minutes) or a configuration change on the server the server will respond with a 410 ResourceExpired error indicating the client must restart their list without the continue field. This field is not supported when watch is true. Clients may start a watch from the last resourceVersion value returned by the server and not miss any modifications.",
+       "name": "continue",
+       "in": "query"
+      },
+      {
+       "type": "string",
+       "description": "A selector to restrict the list of returned objects by their fields. Defaults to everything.",
+       "name": "fieldSelector",
+       "in": "query"
+      },
+      {
+       "type": "boolean",
+       "description": "If true, partially initialized resources are included in the response.",
+       "name": "includeUninitialized",
+       "in": "query"
+      },
+      {
+       "type": "string",
+       "description": "A selector to restrict the list of returned objects by their labels. Defaults to everything",
+       "name": "labelSelector",
+       "in": "query"
+      },
+      {
+       "type": "integer",
+       "description": "limit is a maximum number of responses to return for a list call. If more items exist, the server will set the `continue` field on the list metadata to a value that can be used with the same initial query to retrieve the next set of results. Setting a limit may return fewer than the requested amount of items (up to zero items) in the event all requested objects are filtered out and clients should only use the presence of the continue field to determine whether more results are available. Servers may choose not to support the limit argument and will return all of the available results. If limit is specified and the continue field is empty, clients may assume that no more results are available. This field is not supported if watch is true.\n\nThe server guarantees that the objects returned when using continue will be identical to issuing a single list call without a limit - that is, no objects created, modified, or deleted after the first request is issued will be included in any subsequent continued requests. This is sometimes referred to as a consistent snapshot, and ensures that a client that is using limit to receive smaller chunks of a very large result can ensure they see all possible objects. If objects are updated during a chunked list the version of the object that was present at the time the first list result was calculated is returned.",
+       "name": "limit",
+       "in": "query"
+      },
+      {
+       "type": "string",
+       "description": "When specified with a watch call, shows changes that occur after that particular version of a resource. Defaults to changes from the beginning of history.",
+       "name": "resourceVersion",
+       "in": "query"
+      },
+      {
+       "type": "integer",
+       "description": "TimeoutSeconds for the list/watch call.",
+       "name": "timeoutSeconds",
+       "in": "query"
+      },
+      {
+       "type": "boolean",
+       "description": "Watch for changes to the described resources and return them as a stream of add, update, and remove notifications. Specify resourceVersion.",
+       "name": "watch",
+       "in": "query"
+      }
+     ],
+     "responses": {
+      "200": {
+       "description": "OK",
+       "schema": {
+        "$ref": "#/definitions/v1.WatchEvent"
+       }
+      },
+      "401": {
+       "description": "Unauthorized"
+      },
+      "default": {
+       "description": "OK",
+       "schema": {
+        "$ref": "#/definitions/v1.WatchEvent"
+       }
+      }
+     }
+    }
+   },
+   "/apis/kubevirt.io/v1alpha2/watch/namespaces/{namespace}/virtualmachines": {
+    "get": {
      "produces": [
       "application/json"
      ],
@@ -1334,14 +2627,13 @@
      }
     }
    },
-   "/apis/kubevirt.io/v1alpha1/watch/virtualmachinereplicasets": {
+   "/apis/kubevirt.io/v1alpha2/watch/virtualmachineinstancepresets": {
     "get": {
-     "description": "Watch a VirtualMachineReplicaSetList object.",
      "produces": [
       "application/json"
      ],
-     "summary": "Watch a VirtualMachineReplicaSetList object.",
-     "operationId": "watchVirtualMachineReplicaSetListForAllNamespaces",
+     "summary": "Watch a VirtualMachineInstancePresetList object.",
+     "operationId": "watchVirtualMachineInstancePresetListForAllNamespaces",
      "parameters": [
       {
        "type": "string",
@@ -1411,9 +2703,160 @@
      }
     }
    },
-   "/apis/kubevirt.io/v1alpha1/watch/virtualmachines": {
+   "/apis/kubevirt.io/v1alpha2/watch/virtualmachineinstancereplicasets": {
     "get": {
-     "description": "Watch a VirtualMachineList object.",
+     "produces": [
+      "application/json"
+     ],
+     "summary": "Watch a VirtualMachineInstanceReplicaSetList object.",
+     "operationId": "watchVirtualMachineInstanceReplicaSetListForAllNamespaces",
+     "parameters": [
+      {
+       "type": "string",
+       "description": "The continue option should be set when retrieving more results from the server. Since this value is server defined, clients may only use the continue value from a previous query result with identical query parameters (except for the value of continue) and the server may reject a continue value it does not recognize. If the specified continue value is no longer valid whether due to expiration (generally five to fifteen minutes) or a configuration change on the server the server will respond with a 410 ResourceExpired error indicating the client must restart their list without the continue field. This field is not supported when watch is true. Clients may start a watch from the last resourceVersion value returned by the server and not miss any modifications.",
+       "name": "continue",
+       "in": "query"
+      },
+      {
+       "type": "string",
+       "description": "A selector to restrict the list of returned objects by their fields. Defaults to everything.",
+       "name": "fieldSelector",
+       "in": "query"
+      },
+      {
+       "type": "boolean",
+       "description": "If true, partially initialized resources are included in the response.",
+       "name": "includeUninitialized",
+       "in": "query"
+      },
+      {
+       "type": "string",
+       "description": "A selector to restrict the list of returned objects by their labels. Defaults to everything",
+       "name": "labelSelector",
+       "in": "query"
+      },
+      {
+       "type": "integer",
+       "description": "limit is a maximum number of responses to return for a list call. If more items exist, the server will set the `continue` field on the list metadata to a value that can be used with the same initial query to retrieve the next set of results. Setting a limit may return fewer than the requested amount of items (up to zero items) in the event all requested objects are filtered out and clients should only use the presence of the continue field to determine whether more results are available. Servers may choose not to support the limit argument and will return all of the available results. If limit is specified and the continue field is empty, clients may assume that no more results are available. This field is not supported if watch is true.\n\nThe server guarantees that the objects returned when using continue will be identical to issuing a single list call without a limit - that is, no objects created, modified, or deleted after the first request is issued will be included in any subsequent continued requests. This is sometimes referred to as a consistent snapshot, and ensures that a client that is using limit to receive smaller chunks of a very large result can ensure they see all possible objects. If objects are updated during a chunked list the version of the object that was present at the time the first list result was calculated is returned.",
+       "name": "limit",
+       "in": "query"
+      },
+      {
+       "type": "string",
+       "description": "When specified with a watch call, shows changes that occur after that particular version of a resource. Defaults to changes from the beginning of history.",
+       "name": "resourceVersion",
+       "in": "query"
+      },
+      {
+       "type": "integer",
+       "description": "TimeoutSeconds for the list/watch call.",
+       "name": "timeoutSeconds",
+       "in": "query"
+      },
+      {
+       "type": "boolean",
+       "description": "Watch for changes to the described resources and return them as a stream of add, update, and remove notifications. Specify resourceVersion.",
+       "name": "watch",
+       "in": "query"
+      }
+     ],
+     "responses": {
+      "200": {
+       "description": "OK",
+       "schema": {
+        "$ref": "#/definitions/v1.WatchEvent"
+       }
+      },
+      "401": {
+       "description": "Unauthorized"
+      },
+      "default": {
+       "description": "OK",
+       "schema": {
+        "$ref": "#/definitions/v1.WatchEvent"
+       }
+      }
+     }
+    }
+   },
+   "/apis/kubevirt.io/v1alpha2/watch/virtualmachineinstances": {
+    "get": {
+     "produces": [
+      "application/json"
+     ],
+     "summary": "Watch a VirtualMachineInstanceList object.",
+     "operationId": "watchVirtualMachineInstanceListForAllNamespaces",
+     "parameters": [
+      {
+       "type": "string",
+       "description": "The continue option should be set when retrieving more results from the server. Since this value is server defined, clients may only use the continue value from a previous query result with identical query parameters (except for the value of continue) and the server may reject a continue value it does not recognize. If the specified continue value is no longer valid whether due to expiration (generally five to fifteen minutes) or a configuration change on the server the server will respond with a 410 ResourceExpired error indicating the client must restart their list without the continue field. This field is not supported when watch is true. Clients may start a watch from the last resourceVersion value returned by the server and not miss any modifications.",
+       "name": "continue",
+       "in": "query"
+      },
+      {
+       "type": "string",
+       "description": "A selector to restrict the list of returned objects by their fields. Defaults to everything.",
+       "name": "fieldSelector",
+       "in": "query"
+      },
+      {
+       "type": "boolean",
+       "description": "If true, partially initialized resources are included in the response.",
+       "name": "includeUninitialized",
+       "in": "query"
+      },
+      {
+       "type": "string",
+       "description": "A selector to restrict the list of returned objects by their labels. Defaults to everything",
+       "name": "labelSelector",
+       "in": "query"
+      },
+      {
+       "type": "integer",
+       "description": "limit is a maximum number of responses to return for a list call. If more items exist, the server will set the `continue` field on the list metadata to a value that can be used with the same initial query to retrieve the next set of results. Setting a limit may return fewer than the requested amount of items (up to zero items) in the event all requested objects are filtered out and clients should only use the presence of the continue field to determine whether more results are available. Servers may choose not to support the limit argument and will return all of the available results. If limit is specified and the continue field is empty, clients may assume that no more results are available. This field is not supported if watch is true.\n\nThe server guarantees that the objects returned when using continue will be identical to issuing a single list call without a limit - that is, no objects created, modified, or deleted after the first request is issued will be included in any subsequent continued requests. This is sometimes referred to as a consistent snapshot, and ensures that a client that is using limit to receive smaller chunks of a very large result can ensure they see all possible objects. If objects are updated during a chunked list the version of the object that was present at the time the first list result was calculated is returned.",
+       "name": "limit",
+       "in": "query"
+      },
+      {
+       "type": "string",
+       "description": "When specified with a watch call, shows changes that occur after that particular version of a resource. Defaults to changes from the beginning of history.",
+       "name": "resourceVersion",
+       "in": "query"
+      },
+      {
+       "type": "integer",
+       "description": "TimeoutSeconds for the list/watch call.",
+       "name": "timeoutSeconds",
+       "in": "query"
+      },
+      {
+       "type": "boolean",
+       "description": "Watch for changes to the described resources and return them as a stream of add, update, and remove notifications. Specify resourceVersion.",
+       "name": "watch",
+       "in": "query"
+      }
+     ],
+     "responses": {
+      "200": {
+       "description": "OK",
+       "schema": {
+        "$ref": "#/definitions/v1.WatchEvent"
+       }
+      },
+      "401": {
+       "description": "Unauthorized"
+      },
+      "default": {
+       "description": "OK",
+       "schema": {
+        "$ref": "#/definitions/v1.WatchEvent"
+       }
+      }
+     }
+    }
+   },
+   "/apis/kubevirt.io/v1alpha2/watch/virtualmachines": {
+    "get": {
      "produces": [
       "application/json"
      ],
@@ -1487,6 +2930,158 @@
       }
      }
     }
+   },
+   "/apis/subresources.kubevirt.io": {
+    "get": {
+     "produces": [
+      "application/json"
+     ],
+     "summary": "Get a KubeVirt API Group",
+     "operationId": "getAPIGroup",
+     "responses": {
+      "200": {
+       "description": "OK",
+       "schema": {
+        "$ref": "#/definitions/v1.APIGroup"
+       }
+      },
+      "404": {
+       "description": "Not Found"
+      },
+      "default": {
+       "description": "OK",
+       "schema": {
+        "$ref": "#/definitions/v1.APIGroup"
+       }
+      }
+     }
+    }
+   },
+   "/apis/subresources.kubevirt.io/v1alpha2": {
+    "get": {
+     "produces": [
+      "application/json"
+     ],
+     "summary": "Get a KubeVirt API resources",
+     "operationId": "getAPIResources",
+     "responses": {
+      "200": {
+       "description": "OK",
+       "schema": {
+        "$ref": "#/definitions/v1.APIResourceList"
+       }
+      },
+      "404": {
+       "description": "Not Found"
+      },
+      "default": {
+       "description": "OK",
+       "schema": {
+        "$ref": "#/definitions/v1.APIResourceList"
+       }
+      }
+     }
+    }
+   },
+   "/apis/subresources.kubevirt.io/v1alpha2/namespaces/{namespace}/virtualmachineinstances/{name}/console": {
+    "get": {
+     "summary": "Open a websocket connection to a serial console on the specified VirtualMachineInstance.",
+     "operationId": "console",
+     "parameters": [
+      {
+       "pattern": "[a-z0-9][a-z0-9\\-]*",
+       "type": "string",
+       "description": "Object name and auth scope, such as for teams and projects",
+       "name": "namespace",
+       "in": "path",
+       "required": true
+      },
+      {
+       "pattern": "[a-z0-9][a-z0-9\\-]*",
+       "type": "string",
+       "description": "Name of the resource",
+       "name": "name",
+       "in": "path",
+       "required": true
+      }
+     ],
+     "responses": {
+      "200": {
+       "description": "OK"
+      }
+     }
+    }
+   },
+   "/apis/subresources.kubevirt.io/v1alpha2/namespaces/{namespace}/virtualmachineinstances/{name}/test": {
+    "get": {
+     "summary": "Test endpoint verifying apiserver connectivity.",
+     "operationId": "test",
+     "parameters": [
+      {
+       "pattern": "[a-z0-9][a-z0-9\\-]*",
+       "type": "string",
+       "description": "Object name and auth scope, such as for teams and projects",
+       "name": "namespace",
+       "in": "path",
+       "required": true
+      },
+      {
+       "pattern": "[a-z0-9][a-z0-9\\-]*",
+       "type": "string",
+       "description": "Name of the resource",
+       "name": "name",
+       "in": "path",
+       "required": true
+      }
+     ],
+     "responses": {
+      "200": {
+       "description": "OK"
+      }
+     }
+    }
+   },
+   "/apis/subresources.kubevirt.io/v1alpha2/namespaces/{namespace}/virtualmachineinstances/{name}/vnc": {
+    "get": {
+     "summary": "Open a websocket connection to connect to VNC on the specified VirtualMachineInstance.",
+     "operationId": "vnc",
+     "parameters": [
+      {
+       "pattern": "[a-z0-9][a-z0-9\\-]*",
+       "type": "string",
+       "description": "Object name and auth scope, such as for teams and projects",
+       "name": "namespace",
+       "in": "path",
+       "required": true
+      },
+      {
+       "pattern": "[a-z0-9][a-z0-9\\-]*",
+       "type": "string",
+       "description": "Name of the resource",
+       "name": "name",
+       "in": "path",
+       "required": true
+      }
+     ],
+     "responses": {
+      "200": {
+       "description": "OK"
+      }
+     }
+    }
+   },
+   "/apis/subresources.kubevirt.io/v1alpha2/version": {
+    "get": {
+     "produces": [
+      "application/json"
+     ],
+     "operationId": "version",
+     "responses": {
+      "200": {
+       "description": "OK"
+      }
+     }
+    }
    }
   },
   "definitions": {
@@ -1528,6 +3123,29 @@
       "items": {
        "$ref": "#/definitions/v1.GroupVersionForDiscovery"
       }
+     }
+    }
+   },
+   "v1.APIGroupList": {
+    "description": "APIGroupList is a list of APIGroup, to allow clients to discover the API at /apis.",
+    "required": [
+     "groups"
+    ],
+    "properties": {
+     "apiVersion": {
+      "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+      "type": "string"
+     },
+     "groups": {
+      "description": "groups is a list of APIGroup.",
+      "type": "array",
+      "items": {
+       "$ref": "#/definitions/v1.APIGroup"
+      }
+     },
+     "kind": {
+      "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+      "type": "string"
      }
     }
    },
@@ -1617,11 +3235,19 @@
     }
    },
    "v1.Affinity": {
-    "description": "Affinity groups all the affinity rules related to a VM",
+    "description": "Affinity groups all the affinity rules related to a VirtualMachineInstance",
     "properties": {
      "nodeAffinity": {
       "description": "Node affinity support",
       "$ref": "#/definitions/v1.NodeAffinity"
+     },
+     "podAffinity": {
+      "description": "Pod affinity support",
+      "$ref": "#/definitions/v1.PodAffinity"
+     },
+     "podAntiAffinity": {
+      "description": "Pod anti-affinity support",
+      "$ref": "#/definitions/v1.PodAntiAffinity"
      }
     }
    },
@@ -1645,19 +3271,19 @@
     "description": "CPU allow specifying the CPU topology",
     "properties": {
      "cores": {
-      "description": "Cores specifies the number of cores inside the vm.\nMust be a value greater or equal 1.",
+      "description": "Cores specifies the number of cores inside the vmi.\nMust be a value greater or equal 1.",
       "type": "integer"
      }
     }
    },
    "v1.Clock": {
-    "description": "Represents the clock and timers of a vm",
+    "description": "Represents the clock and timers of a vmi",
     "required": [
      "timer"
     ],
     "properties": {
      "timer": {
-      "description": "Timer specifies whih timers are attached to the vm",
+      "description": "Timer specifies whih timers are attached to the vmi",
       "$ref": "#/definitions/v1.Timer"
      },
      "timezone": {
@@ -1687,6 +3313,10 @@
      "secretRef": {
       "description": "UserDataSecretRef references a k8s secret that contains NoCloud userdata\n+ optional",
       "$ref": "#/definitions/v1.LocalObjectReference"
+     },
+     "userData": {
+      "description": "UserData contains NoCloud inline cloud-init userdata\n+ optional",
+      "type": "string"
      },
      "userDataBase64": {
       "description": "UserDataBase64 contains NoCloud cloud-init userdata as a base64 encoded string\n+ optional",
@@ -1719,7 +3349,7 @@
       "$ref": "#/definitions/v1.Preconditions"
      },
      "propagationPolicy": {
-      "description": "Whether and how garbage collection will be performed. Either this field or OrphanDependents may be set, but not both. The default policy is decided by the existing finalizer set in the metadata.finalizers and the resource-specific default policy.",
+      "description": "Whether and how garbage collection will be performed. Either this field or OrphanDependents may be set, but not both. The default policy is decided by the existing finalizer set in the metadata.finalizers and the resource-specific default policy. Acceptable values are: 'Orphan' - orphan the dependents; 'Background' - allow the garbage collector to delete the dependents in the background; 'Foreground' - a cascading policy that deletes all dependents in the foreground.",
       "$ref": "#/definitions/v1.DeletionPropagation"
      }
     }
@@ -1728,14 +3358,21 @@
    "v1.Devices": {
     "properties": {
      "disks": {
-      "description": "Disks describes disks, cdroms, floppy and luns which are connected to the vm",
+      "description": "Disks describes disks, cdroms, floppy and luns which are connected to the vmi",
       "type": "array",
       "items": {
        "$ref": "#/definitions/v1.Disk"
       }
      },
+     "interfaces": {
+      "description": "Interfaces describe network interfaces which are added to the vm",
+      "type": "array",
+      "items": {
+       "$ref": "#/definitions/v1.Interface"
+      }
+     },
      "watchdog": {
-      "description": "Watchdog describes a watchdog device which can be added to the vm",
+      "description": "Watchdog describes a watchdog device which can be added to the vmi",
       "$ref": "#/definitions/v1.Watchdog"
      }
     }
@@ -1746,20 +3383,25 @@
      "volumeName"
     ],
     "properties": {
+     "bootOrder": {
+      "description": "BootOrder is an integer value \u003e 0, used to determine ordering of boot devices.\nLower values take precedence.\nDisks without a boot order are not tried if a disk with a boot order exists.\n+optional",
+      "type": "integer",
+      "format": "integer"
+     },
      "cdrom": {
-      "description": "Attach a volume as a cdrom to the vm",
+      "description": "Attach a volume as a cdrom to the vmi",
       "$ref": "#/definitions/v1.CDRomTarget"
      },
      "disk": {
-      "description": "Attach a volume as a disk to the vm",
+      "description": "Attach a volume as a disk to the vmi",
       "$ref": "#/definitions/v1.DiskTarget"
      },
      "floppy": {
-      "description": "Attach a volume as a floppy to the vm",
+      "description": "Attach a volume as a floppy to the vmi",
       "$ref": "#/definitions/v1.FloppyTarget"
      },
      "lun": {
-      "description": "Attach a volume as a LUN to the vm",
+      "description": "Attach a volume as a LUN to the vmi",
       "$ref": "#/definitions/v1.LunTarget"
      },
      "name": {
@@ -1790,11 +3432,11 @@
     ],
     "properties": {
      "clock": {
-      "description": "Clock sets the clock and timers of the vm.\n+optional",
+      "description": "Clock sets the clock and timers of the vmi.\n+optional",
       "$ref": "#/definitions/v1.Clock"
      },
      "cpu": {
-      "description": "CPU allow specified the detailed CPU topology inside the vm.\n+optional",
+      "description": "CPU allow specified the detailed CPU topology inside the vmi.\n+optional",
       "$ref": "#/definitions/v1.CPU"
      },
      "devices": {
@@ -1813,9 +3455,45 @@
       "description": "Machine type\n+optional",
       "$ref": "#/definitions/v1.Machine"
      },
+     "memory": {
+      "description": "Memory allow specifying the VMI memory features.\n+optional",
+      "$ref": "#/definitions/v1.Memory"
+     },
      "resources": {
-      "description": "Resources describes the Compute Resources required by this vm.",
+      "description": "Resources describes the Compute Resources required by this vmi.",
       "$ref": "#/definitions/v1.ResourceRequirements"
+     }
+    }
+   },
+   "v1.EmptyDiskSource": {
+    "description": "EmptyDisk represents a temporary disk which shares the vmis lifecycle",
+    "required": [
+     "capacity"
+    ],
+    "properties": {
+     "capacity": {
+      "description": "Capacity of the sparse disk.",
+      "type": "string"
+     }
+    }
+   },
+   "v1.EphemeralVolumeSource": {
+    "properties": {
+     "persistentVolumeClaim": {
+      "description": "PersistentVolumeClaimVolumeSource represents a reference to a PersistentVolumeClaim in the same namespace.\nDirectly attached to the vmi via qemu.\nMore info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#persistentvolumeclaims\n+optional",
+      "$ref": "#/definitions/v1.PersistentVolumeClaimVolumeSource"
+     }
+    }
+   },
+   "v1.FeatureAPIC": {
+    "properties": {
+     "enabled": {
+      "description": "Enabled determines if the feature should be enabled or disabled on the guest\nDefaults to true\n+optional",
+      "type": "boolean"
+     },
+     "endOfInterrupt": {
+      "description": "EndOfInterrupt enables the end of interrupt notification in the guest\nDefaults to false\n+optional",
+      "type": "boolean"
      }
     }
    },
@@ -1827,7 +3505,7 @@
       "$ref": "#/definitions/v1.FeatureState"
      },
      "reset": {
-      "description": "Reset enables Hyperv reboot/reset for the vm\nDefaults to the machine type setting\n+optional",
+      "description": "Reset enables Hyperv reboot/reset for the vmi\nDefaults to the machine type setting\n+optional",
       "$ref": "#/definitions/v1.FeatureState"
      },
      "runtime": {
@@ -1882,16 +3560,13 @@
     }
    },
    "v1.FeatureVendorID": {
-    "required": [
-     "vendorid"
-    ],
     "properties": {
      "enabled": {
       "description": "Enabled determines if the feature should be enabled or disabled on the guest\nDefaults to true\n+optional",
       "type": "boolean"
      },
      "vendorid": {
-      "description": "VendorID sets the hypervisor vendor id, visible to the vm\nString up to twelve characters",
+      "description": "VendorID sets the hypervisor vendor id, visible to the vmi\nString up to twelve characters",
       "type": "string"
      }
     }
@@ -1904,7 +3579,7 @@
      },
      "apic": {
       "description": "Defaults to the machine type setting\n+optional",
-      "$ref": "#/definitions/v1.FeatureState"
+      "$ref": "#/definitions/v1.FeatureAPIC"
      },
      "hyperv": {
       "description": "Defaults to the machine type setting\n+optional",
@@ -1915,7 +3590,7 @@
    "v1.Firmware": {
     "properties": {
      "uuid": {
-      "description": "UUID reported by the vm bios\nDefaults to a random generated uid",
+      "description": "UUID reported by the vmi bios\nDefaults to a random generated uid",
       "type": "string"
      }
     }
@@ -1961,6 +3636,15 @@
      }
     }
    },
+   "v1.Hugepages": {
+    "description": "Hugepages allow to use hugepages for the VirtualMachineInstance instead of regular memory.",
+    "properties": {
+     "pageSize": {
+      "description": "PageSize specifies the hugepage size, for x86_64 architecture valid values are 1Gi and 2Mi.",
+      "type": "string"
+     }
+    }
+   },
    "v1.HypervTimer": {
     "properties": {
      "present": {
@@ -1974,64 +3658,6 @@
     "properties": {
      "action": {
       "description": "The action to take. Valid values are poweroff, reset, shutdown.\nDefaults to reset",
-      "type": "string"
-     }
-    }
-   },
-   "v1.ISCSIVolumeSource": {
-    "description": "Represents an ISCSI disk. ISCSI volumes can only be mounted as read/write once. ISCSI volumes support ownership management and SELinux relabeling.",
-    "required": [
-     "targetPortal",
-     "iqn",
-     "lun"
-    ],
-    "properties": {
-     "chapAuthDiscovery": {
-      "description": "whether support iSCSI Discovery CHAP authentication",
-      "type": "boolean"
-     },
-     "chapAuthSession": {
-      "description": "whether support iSCSI Session CHAP authentication",
-      "type": "boolean"
-     },
-     "fsType": {
-      "description": "Filesystem type of the volume that you want to mount. Tip: Ensure that the filesystem type is supported by the host operating system. Examples: \"ext4\", \"xfs\", \"ntfs\". Implicitly inferred to be \"ext4\" if unspecified. More info: https://kubernetes.io/docs/concepts/storage/volumes#iscsi",
-      "type": "string"
-     },
-     "initiatorName": {
-      "description": "Custom iSCSI initiator name. If initiatorName is specified with iscsiInterface simultaneously, new iSCSI interface \u003ctarget portal\u003e:\u003cvolume name\u003e will be created for the connection.",
-      "type": "string"
-     },
-     "iqn": {
-      "description": "Target iSCSI Qualified Name.",
-      "type": "string"
-     },
-     "iscsiInterface": {
-      "description": "Optional: Defaults to 'default' (tcp). iSCSI interface name that uses an iSCSI transport.",
-      "type": "string"
-     },
-     "lun": {
-      "description": "iSCSI target lun number.",
-      "type": "integer",
-      "format": "int32"
-     },
-     "portals": {
-      "description": "iSCSI target portal List. The portal is either an IP or ip_addr:port if the port is other than default (typically TCP ports 860 and 3260).",
-      "type": "array",
-      "items": {
-       "type": "string"
-      }
-     },
-     "readOnly": {
-      "description": "ReadOnly here will force the ReadOnly setting in VolumeMounts. Defaults to false.",
-      "type": "boolean"
-     },
-     "secretRef": {
-      "description": "CHAP secret for iSCSI target and initiator authentication",
-      "$ref": "#/definitions/v1.LocalObjectReference"
-     },
-     "targetPortal": {
-      "description": "iSCSI target portal. The portal is either an IP or ip_addr:port if the port is other than default (typically TCP ports 860 and 3260).",
       "type": "string"
      }
     }
@@ -2067,6 +3693,21 @@
      }
     }
    },
+   "v1.Interface": {
+    "required": [
+     "name"
+    ],
+    "properties": {
+     "bridge": {
+      "$ref": "#/definitions/v1.InterfaceBridge"
+     },
+     "name": {
+      "description": "Logical name of the interface as well as a reference to the associated networks\nMust match the Name of a Network",
+      "type": "string"
+     }
+    }
+   },
+   "v1.InterfaceBridge": {},
    "v1.KVMTimer": {
     "properties": {
      "present": {
@@ -2159,8 +3800,32 @@
     ],
     "properties": {
      "type": {
-      "description": "QEMU machine type is the actual chipset of the VM.",
+      "description": "QEMU machine type is the actual chipset of the VirtualMachineInstance.",
       "type": "string"
+     }
+    }
+   },
+   "v1.Memory": {
+    "description": "Memory allow specifying the VirtualMachineInstance memory features",
+    "properties": {
+     "hugepages": {
+      "description": "Hugepages allow to use hugepages for the VirtualMachineInstance instead of regular memory.\n+optional",
+      "$ref": "#/definitions/v1.Hugepages"
+     }
+    }
+   },
+   "v1.Network": {
+    "description": "Network represents a network type and a resource that should be connected to the vm.",
+    "required": [
+     "name"
+    ],
+    "properties": {
+     "name": {
+      "description": "Network name\nMust be a DNS_LABEL and unique within the vm.\nMore info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names",
+      "type": "string"
+     },
+     "pod": {
+      "$ref": "#/definitions/v1.PodNetwork"
      }
     }
    },
@@ -2255,7 +3920,7 @@
       "format": "int64"
      },
      "deletionTimestamp": {
-      "description": "DeletionTimestamp is RFC 3339 date and time at which this resource will be deleted. This field is set by the server when a graceful deletion is requested by the user, and is not directly settable by a client. The resource is expected to be deleted (no longer visible from resource lists, and not reachable by name) after the time in this field. Once set, this value may not be unset or be set further into the future, although it may be shortened or the resource may be deleted prior to this time. For example, a user may request that a pod is deleted in 30 seconds. The Kubelet will react by sending a graceful termination signal to the containers in the pod. After that 30 seconds, the Kubelet will send a hard termination signal (SIGKILL) to the container and after cleanup, remove the pod from the API. In the presence of network partitions, this object may still exist after this timestamp, until an administrator or automated process can determine the resource is fully terminated. If not set, graceful deletion of the object has not been requested.\n\nPopulated by the system when a graceful deletion is requested. Read-only. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata",
+      "description": "DeletionTimestamp is RFC 3339 date and time at which this resource will be deleted. This field is set by the server when a graceful deletion is requested by the user, and is not directly settable by a client. The resource is expected to be deleted (no longer visible from resource lists, and not reachable by name) after the time in this field, once the finalizers list is empty. As long as the finalizers list contains items, deletion is blocked. Once the deletionTimestamp is set, this value may not be unset or be set further into the future, although it may be shortened or the resource may be deleted prior to this time. For example, a user may request that a pod is deleted in 30 seconds. The Kubelet will react by sending a graceful termination signal to the containers in the pod. After that 30 seconds, the Kubelet will send a hard termination signal (SIGKILL) to the container and after cleanup, remove the pod from the API. In the presence of network partitions, this object may still exist after this timestamp, until an administrator or automated process can determine the resource is fully terminated. If not set, graceful deletion of the object has not been requested.\n\nPopulated by the system when a graceful deletion is requested. Read-only. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata",
       "type": "string"
      },
      "finalizers": {
@@ -2377,6 +4042,70 @@
      }
     }
    },
+   "v1.PodAffinity": {
+    "description": "Pod affinity is a group of inter pod affinity scheduling rules.",
+    "properties": {
+     "preferredDuringSchedulingIgnoredDuringExecution": {
+      "description": "The scheduler will prefer to schedule pods to nodes that satisfy the affinity expressions specified by this field, but it may choose a node that violates one or more of the expressions. The node that is most preferred is the one with the greatest sum of weights, i.e. for each node that meets all of the scheduling requirements (resource request, requiredDuringScheduling affinity expressions, etc.), compute a sum by iterating through the elements of this field and adding \"weight\" to the sum if the node has pods which matches the corresponding podAffinityTerm; the node(s) with the highest sum are the most preferred.",
+      "type": "array",
+      "items": {
+       "$ref": "#/definitions/v1.WeightedPodAffinityTerm"
+      }
+     },
+     "requiredDuringSchedulingIgnoredDuringExecution": {
+      "description": "If the affinity requirements specified by this field are not met at scheduling time, the pod will not be scheduled onto the node. If the affinity requirements specified by this field cease to be met at some point during pod execution (e.g. due to a pod label update), the system may or may not try to eventually evict the pod from its node. When there are multiple elements, the lists of nodes corresponding to each podAffinityTerm are intersected, i.e. all terms must be satisfied.",
+      "type": "array",
+      "items": {
+       "$ref": "#/definitions/v1.PodAffinityTerm"
+      }
+     }
+    }
+   },
+   "v1.PodAffinityTerm": {
+    "description": "Defines a set of pods (namely those matching the labelSelector relative to the given namespace(s)) that this pod should be co-located (affinity) or not co-located (anti-affinity) with, where co-located is defined as running on a node whose value of the label with key \u003ctopologyKey\u003e matches that of any node on which a pod of the set of pods is running",
+    "required": [
+     "topologyKey"
+    ],
+    "properties": {
+     "labelSelector": {
+      "description": "A label query over a set of resources, in this case pods.",
+      "$ref": "#/definitions/v1.LabelSelector"
+     },
+     "namespaces": {
+      "description": "namespaces specifies which namespaces the labelSelector applies to (matches against); null or empty list means \"this pod's namespace\"",
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "topologyKey": {
+      "description": "This pod should be co-located (affinity) or not co-located (anti-affinity) with the pods matching the labelSelector in the specified namespaces, where co-located is defined as running on a node whose value of the label with key topologyKey matches that of any node on which any of the selected pods is running. Empty topologyKey is not allowed.",
+      "type": "string"
+     }
+    }
+   },
+   "v1.PodAntiAffinity": {
+    "description": "Pod anti affinity is a group of inter pod anti affinity scheduling rules.",
+    "properties": {
+     "preferredDuringSchedulingIgnoredDuringExecution": {
+      "description": "The scheduler will prefer to schedule pods to nodes that satisfy the anti-affinity expressions specified by this field, but it may choose a node that violates one or more of the expressions. The node that is most preferred is the one with the greatest sum of weights, i.e. for each node that meets all of the scheduling requirements (resource request, requiredDuringScheduling anti-affinity expressions, etc.), compute a sum by iterating through the elements of this field and adding \"weight\" to the sum if the node has pods which matches the corresponding podAffinityTerm; the node(s) with the highest sum are the most preferred.",
+      "type": "array",
+      "items": {
+       "$ref": "#/definitions/v1.WeightedPodAffinityTerm"
+      }
+     },
+     "requiredDuringSchedulingIgnoredDuringExecution": {
+      "description": "If the anti-affinity requirements specified by this field are not met at scheduling time, the pod will not be scheduled onto the node. If the anti-affinity requirements specified by this field cease to be met at some point during pod execution (e.g. due to a pod label update), the system may or may not try to eventually evict the pod from its node. When there are multiple elements, the lists of nodes corresponding to each podAffinityTerm are intersected, i.e. all terms must be satisfied.",
+      "type": "array",
+      "items": {
+       "$ref": "#/definitions/v1.PodAffinityTerm"
+      }
+     }
+    }
+   },
+   "v1.PodNetwork": {
+    "description": "Represents the stock pod network interface"
+   },
    "v1.Preconditions": {
     "description": "Preconditions must be fulfilled before an operation (update, delete, etc.) is carried out.",
     "properties": {
@@ -2429,13 +4158,21 @@
      "image": {
       "description": "Image is the name of the image with the embedded disk",
       "type": "string"
+     },
+     "imagePullSecret": {
+      "description": "ImagePullSecret is the name of the Docker registry secret required to pull the image. The secret must already exist.",
+      "type": "string"
      }
     }
    },
    "v1.ResourceRequirements": {
     "properties": {
+     "limits": {
+      "description": "Limits describes the maximum amount of compute resources allowed.\nValid resource keys are \"memory\" and \"cpu\".\n+optional",
+      "type": "object"
+     },
      "requests": {
-      "description": "Requests is a description of the initial vm resources.\nValid resource keys are \"memory\" and \"cpu\".\n+optional",
+      "description": "Requests is a description of the initial vmi resources.\nValid resource keys are \"memory\" and \"cpu\".\n+optional",
       "type": "object"
      }
     }
@@ -2546,7 +4283,7 @@
     }
    },
    "v1.Timer": {
-    "description": "Represents all available timers in a vm",
+    "description": "Represents all available timers in a vmi",
     "properties": {
      "hpet": {
       "description": "HPET (High Precision Event Timer) - multiple timers with periodic interrupts.",
@@ -2570,7 +4307,32 @@
      }
     }
    },
-   "v1.VMReplicaSetCondition": {
+   "v1.VirtualMachine": {
+    "description": "VirtualMachine handles the VirtualMachines that are not running\nor are in a stopped state\nThe VirtualMachine contains the template to create the\nVirtualMachineInstance. It also mirrors the running state of the created\nVirtualMachineInstance in its status.",
+    "properties": {
+     "apiVersion": {
+      "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+      "type": "string"
+     },
+     "kind": {
+      "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+      "type": "string"
+     },
+     "metadata": {
+      "$ref": "#/definitions/v1.ObjectMeta"
+     },
+     "spec": {
+      "description": "Spec contains the specification of VirtualMachineInstance created",
+      "$ref": "#/definitions/v1.VirtualMachineSpec"
+     },
+     "status": {
+      "description": "Status holds the current state of the controller and brief information\nabout its associated VirtualMachineInstance",
+      "$ref": "#/definitions/v1.VirtualMachineStatus"
+     }
+    }
+   },
+   "v1.VirtualMachineCondition": {
+    "description": "VirtualMachineCondition represents the state of VirtualMachine",
     "required": [
      "type",
      "status"
@@ -2596,8 +4358,230 @@
      }
     }
    },
-   "v1.VMReplicaSetSpec": {
+   "v1.VirtualMachineInstance": {
+    "description": "VirtualMachineInstance is *the* VirtualMachineInstance Definition. It represents a virtual machine in the runtime environment of kubernetes.",
+    "properties": {
+     "apiVersion": {
+      "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+      "type": "string"
+     },
+     "kind": {
+      "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+      "type": "string"
+     },
+     "metadata": {
+      "$ref": "#/definitions/v1.ObjectMeta"
+     },
+     "spec": {
+      "description": "VirtualMachineInstance Spec contains the VirtualMachineInstance specification.",
+      "$ref": "#/definitions/v1.VirtualMachineInstanceSpec"
+     },
+     "status": {
+      "description": "Status is the high level overview of how the VirtualMachineInstance is doing. It contains information available to controllers and users.",
+      "$ref": "#/definitions/v1.VirtualMachineInstanceStatus"
+     }
+    }
+   },
+   "v1.VirtualMachineInstanceCondition": {
     "required": [
+     "type",
+     "status"
+    ],
+    "properties": {
+     "lastProbeTime": {
+      "type": "string"
+     },
+     "lastTransitionTime": {
+      "type": "string"
+     },
+     "message": {
+      "type": "string"
+     },
+     "reason": {
+      "type": "string"
+     },
+     "status": {
+      "type": "string"
+     },
+     "type": {
+      "type": "string"
+     }
+    }
+   },
+   "v1.VirtualMachineInstanceList": {
+    "description": "VirtualMachineInstanceList is a list of VirtualMachines",
+    "required": [
+     "items"
+    ],
+    "properties": {
+     "apiVersion": {
+      "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+      "type": "string"
+     },
+     "items": {
+      "type": "array",
+      "items": {
+       "$ref": "#/definitions/v1.VirtualMachineInstance"
+      }
+     },
+     "kind": {
+      "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+      "type": "string"
+     },
+     "metadata": {
+      "$ref": "#/definitions/v1.ListMeta"
+     }
+    }
+   },
+   "v1.VirtualMachineInstanceNetworkInterface": {
+    "properties": {
+     "ipAddress": {
+      "description": "IP address of a Virtual Machine interface",
+      "type": "string"
+     },
+     "mac": {
+      "description": "Hardware address of a Virtual Machine interface",
+      "type": "string"
+     }
+    }
+   },
+   "v1.VirtualMachineInstancePreset": {
+    "properties": {
+     "apiVersion": {
+      "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+      "type": "string"
+     },
+     "kind": {
+      "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+      "type": "string"
+     },
+     "metadata": {
+      "$ref": "#/definitions/v1.ObjectMeta"
+     },
+     "spec": {
+      "description": "VirtualMachineInstance Spec contains the VirtualMachineInstance specification.",
+      "$ref": "#/definitions/v1.VirtualMachineInstancePresetSpec"
+     }
+    }
+   },
+   "v1.VirtualMachineInstancePresetList": {
+    "description": "VirtualMachineInstancePresetList is a list of VirtualMachinePresets",
+    "required": [
+     "items"
+    ],
+    "properties": {
+     "apiVersion": {
+      "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+      "type": "string"
+     },
+     "items": {
+      "type": "array",
+      "items": {
+       "$ref": "#/definitions/v1.VirtualMachineInstancePreset"
+      }
+     },
+     "kind": {
+      "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+      "type": "string"
+     },
+     "metadata": {
+      "$ref": "#/definitions/v1.ListMeta"
+     }
+    }
+   },
+   "v1.VirtualMachineInstancePresetSpec": {
+    "required": [
+     "selector"
+    ],
+    "properties": {
+     "domain": {
+      "description": "Domain is the same object type as contained in VirtualMachineInstanceSpec",
+      "$ref": "#/definitions/v1.DomainSpec"
+     },
+     "selector": {
+      "description": "Selector is a label query over a set of VMIs.\nRequired.",
+      "$ref": "#/definitions/v1.LabelSelector"
+     }
+    }
+   },
+   "v1.VirtualMachineInstanceReplicaSet": {
+    "description": "VirtualMachineInstance is *the* VirtualMachineInstance Definition. It represents a virtual machine in the runtime environment of kubernetes.",
+    "properties": {
+     "apiVersion": {
+      "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+      "type": "string"
+     },
+     "kind": {
+      "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+      "type": "string"
+     },
+     "metadata": {
+      "$ref": "#/definitions/v1.ObjectMeta"
+     },
+     "spec": {
+      "description": "VirtualMachineInstance Spec contains the VirtualMachineInstance specification.",
+      "$ref": "#/definitions/v1.VirtualMachineInstanceReplicaSetSpec"
+     },
+     "status": {
+      "description": "Status is the high level overview of how the VirtualMachineInstance is doing. It contains information available to controllers and users.",
+      "$ref": "#/definitions/v1.VirtualMachineInstanceReplicaSetStatus"
+     }
+    }
+   },
+   "v1.VirtualMachineInstanceReplicaSetCondition": {
+    "required": [
+     "type",
+     "status"
+    ],
+    "properties": {
+     "lastProbeTime": {
+      "type": "string"
+     },
+     "lastTransitionTime": {
+      "type": "string"
+     },
+     "message": {
+      "type": "string"
+     },
+     "reason": {
+      "type": "string"
+     },
+     "status": {
+      "type": "string"
+     },
+     "type": {
+      "type": "string"
+     }
+    }
+   },
+   "v1.VirtualMachineInstanceReplicaSetList": {
+    "description": "VMIList is a list of VMIs",
+    "required": [
+     "items"
+    ],
+    "properties": {
+     "apiVersion": {
+      "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+      "type": "string"
+     },
+     "items": {
+      "type": "array",
+      "items": {
+       "$ref": "#/definitions/v1.VirtualMachineInstanceReplicaSet"
+      }
+     },
+     "kind": {
+      "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+      "type": "string"
+     },
+     "metadata": {
+      "$ref": "#/definitions/v1.ListMeta"
+     }
+    }
+   },
+   "v1.VirtualMachineInstanceReplicaSetSpec": {
+    "required": [
+     "selector",
      "template"
     ],
     "properties": {
@@ -2611,21 +4595,21 @@
       "format": "int32"
      },
      "selector": {
-      "description": "Label selector for pods. Existing ReplicaSets whose pods are\nselected by this will be the ones affected by this deployment.\n+optional",
+      "description": "Label selector for pods. Existing ReplicaSets whose pods are\nselected by this will be the ones affected by this deployment.",
       "$ref": "#/definitions/v1.LabelSelector"
      },
      "template": {
       "description": "Template describes the pods that will be created.",
-      "$ref": "#/definitions/v1.VMTemplateSpec"
+      "$ref": "#/definitions/v1.VirtualMachineInstanceTemplateSpec"
      }
     }
    },
-   "v1.VMReplicaSetStatus": {
+   "v1.VirtualMachineInstanceReplicaSetStatus": {
     "properties": {
      "conditions": {
       "type": "array",
       "items": {
-       "$ref": "#/definitions/v1.VMReplicaSetCondition"
+       "$ref": "#/definitions/v1.VirtualMachineInstanceReplicaSetCondition"
       }
      },
      "readyReplicas": {
@@ -2640,70 +4624,95 @@
      }
     }
    },
-   "v1.VMTemplateSpec": {
-    "properties": {
-     "metadata": {
-      "$ref": "#/definitions/v1.ObjectMeta"
-     },
-     "spec": {
-      "description": "VM Spec contains the VM specification.",
-      "$ref": "#/definitions/v1.VirtualMachineSpec"
-     }
-    }
-   },
-   "v1.VirtualMachine": {
-    "description": "VirtualMachine is *the* VM Definition. It represents a virtual machine in the runtime environment of kubernetes.\n+k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object",
-    "properties": {
-     "apiVersion": {
-      "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
-      "type": "string"
-     },
-     "kind": {
-      "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
-      "type": "string"
-     },
-     "metadata": {
-      "$ref": "#/definitions/v1.ObjectMeta"
-     },
-     "spec": {
-      "description": "VM Spec contains the VM specification.",
-      "$ref": "#/definitions/v1.VirtualMachineSpec"
-     },
-     "status": {
-      "description": "Status is the high level overview of how the VM is doing. It contains information available to controllers and users.",
-      "$ref": "#/definitions/v1.VirtualMachineStatus"
-     }
-    }
-   },
-   "v1.VirtualMachineCondition": {
+   "v1.VirtualMachineInstanceSpec": {
+    "description": "VirtualMachineInstanceSpec is a description of a VirtualMachineInstance.",
     "required": [
-     "type",
-     "status"
+     "domain"
     ],
     "properties": {
-     "lastProbeTime": {
+     "affinity": {
+      "description": "If affinity is specifies, obey all the affinity rules",
+      "$ref": "#/definitions/v1.Affinity"
+     },
+     "domain": {
+      "description": "Specification of the desired behavior of the VirtualMachineInstance on the host.",
+      "$ref": "#/definitions/v1.DomainSpec"
+     },
+     "hostname": {
+      "description": "Specifies the hostname of the vmi\nIf not specified, the hostname will be set to the name of the vmi, if dhcp or cloud-init is configured properly.\n+optional",
       "type": "string"
      },
-     "lastTransitionTime": {
+     "networks": {
+      "description": "List of networks that can be attached to a vm's virtual interface.",
+      "type": "array",
+      "items": {
+       "$ref": "#/definitions/v1.Network"
+      }
+     },
+     "nodeSelector": {
+      "description": "NodeSelector is a selector which must be true for the vmi to fit on a node.\nSelector which must match a node's labels for the vmi to be scheduled on that node.\nMore info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/\n+optional",
+      "type": "object"
+     },
+     "subdomain": {
+      "description": "If specified, the fully qualified vmi hostname will be \"\u003chostname\u003e.\u003csubdomain\u003e.\u003cpod namespace\u003e.svc.\u003ccluster domain\u003e\".\nIf not specified, the vmi will not have a domainname at all. The DNS entry will resolve to the vmi,\nno matter if the vmi itself can pick up a hostname.\n+optional",
       "type": "string"
      },
-     "message": {
+     "terminationGracePeriodSeconds": {
+      "description": "Grace period observed after signalling a VirtualMachineInstance to stop after which the VirtualMachineInstance is force terminated.",
+      "type": "integer",
+      "format": "int64"
+     },
+     "volumes": {
+      "description": "List of volumes that can be mounted by disks belonging to the vmi.",
+      "type": "array",
+      "items": {
+       "$ref": "#/definitions/v1.Volume"
+      }
+     }
+    }
+   },
+   "v1.VirtualMachineInstanceStatus": {
+    "description": "VirtualMachineInstanceStatus represents information about the status of a VirtualMachineInstance. Status may trail the actual\nstate of a system.",
+    "properties": {
+     "conditions": {
+      "description": "Conditions are specific points in VirtualMachineInstance's pod runtime.",
+      "type": "array",
+      "items": {
+       "$ref": "#/definitions/v1.VirtualMachineInstanceCondition"
+      }
+     },
+     "interfaces": {
+      "description": "Interfaces represent the details of available network interfaces.",
+      "type": "array",
+      "items": {
+       "$ref": "#/definitions/v1.VirtualMachineInstanceNetworkInterface"
+      }
+     },
+     "nodeName": {
+      "description": "NodeName is the name where the VirtualMachineInstance is currently running.",
       "type": "string"
      },
-     "reason": {
+     "phase": {
+      "description": "Phase is the status of the VirtualMachineInstance in kubernetes world. It is not the VirtualMachineInstance status, but partially correlates to it.",
       "type": "string"
+     }
+    }
+   },
+   "v1.VirtualMachineInstanceTemplateSpec": {
+    "properties": {
+     "metadata": {
+      "$ref": "#/definitions/v1.ObjectMeta"
      },
-     "status": {
-      "type": "string"
-     },
-     "type": {
-      "type": "string"
+     "spec": {
+      "description": "VirtualMachineInstance Spec contains the VirtualMachineInstance specification.",
+      "$ref": "#/definitions/v1.VirtualMachineInstanceSpec"
      }
     }
    },
    "v1.VirtualMachineList": {
-    "description": "VirtualMachineList is a list of VirtualMachines\n+k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object",
+    "description": "VirtualMachineList is a list of virtualmachines",
     "required": [
+     "metadata",
      "items"
     ],
     "properties": {
@@ -2712,6 +4721,7 @@
       "type": "string"
      },
      "items": {
+      "description": "Items is a list of VirtualMachines",
       "type": "array",
       "items": {
        "$ref": "#/definitions/v1.VirtualMachine"
@@ -2726,127 +4736,67 @@
      }
     }
    },
-   "v1.VirtualMachineReplicaSet": {
-    "description": "VM is *the* VM Definition. It represents a virtual machine in the runtime environment of kubernetes.\n+k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object",
-    "properties": {
-     "apiVersion": {
-      "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
-      "type": "string"
-     },
-     "kind": {
-      "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
-      "type": "string"
-     },
-     "metadata": {
-      "$ref": "#/definitions/v1.ObjectMeta"
-     },
-     "spec": {
-      "description": "VM Spec contains the VM specification.",
-      "$ref": "#/definitions/v1.VMReplicaSetSpec"
-     },
-     "status": {
-      "description": "Status is the high level overview of how the VM is doing. It contains information available to controllers and users.",
-      "$ref": "#/definitions/v1.VMReplicaSetStatus"
-     }
-    }
-   },
-   "v1.VirtualMachineReplicaSetList": {
-    "description": "VMList is a list of VMs\n+k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object",
-    "required": [
-     "items"
-    ],
-    "properties": {
-     "apiVersion": {
-      "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
-      "type": "string"
-     },
-     "items": {
-      "type": "array",
-      "items": {
-       "$ref": "#/definitions/v1.VirtualMachineReplicaSet"
-      }
-     },
-     "kind": {
-      "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
-      "type": "string"
-     },
-     "metadata": {
-      "$ref": "#/definitions/v1.ListMeta"
-     }
-    }
-   },
    "v1.VirtualMachineSpec": {
-    "description": "VirtualMachineSpec is a description of a VirtualMachine.",
+    "description": "VirtualMachineSpec describes how the proper VirtualMachine\nshould look like",
     "required": [
-     "domain"
+     "running",
+     "template"
     ],
     "properties": {
-     "affinity": {
-      "description": "If affinity is specifies, obey all the affinity rules",
-      "$ref": "#/definitions/v1.Affinity"
+     "running": {
+      "description": "Running controls whether the associatied VirtualMachineInstance is created or not",
+      "type": "boolean"
      },
-     "domain": {
-      "description": "Specification of the desired behavior of the VirtualMachine on the host.",
-      "$ref": "#/definitions/v1.DomainSpec"
-     },
-     "nodeSelector": {
-      "description": "NodeSelector is a selector which must be true for the vm to fit on a node.\nSelector which must match a node's labels for the vm to be scheduled on that node.\nMore info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/\n+optional",
-      "type": "object"
-     },
-     "terminationGracePeriodSeconds": {
-      "description": "Grace period observed after signalling a VM to stop after which the VM is force terminated.",
-      "type": "integer",
-      "format": "int64"
-     },
-     "volumes": {
-      "description": "List of volumes that can be mounted by disks belonging to the vm.",
-      "type": "array",
-      "items": {
-       "$ref": "#/definitions/v1.Volume"
-      }
+     "template": {
+      "description": "Template is the direct specification of VirtualMachineInstance",
+      "$ref": "#/definitions/v1.VirtualMachineInstanceTemplateSpec"
      }
     }
    },
    "v1.VirtualMachineStatus": {
-    "description": "VirtualMachineStatus represents information about the status of a VM. Status may trail the actual\nstate of a system.",
+    "description": "VirtualMachineStatus represents the status returned by the\ncontroller to describe how the VirtualMachine is doing",
     "properties": {
      "conditions": {
-      "description": "Conditions are specific points in VM's pod runtime.",
+      "description": "Hold the state information of the VirtualMachine and its VirtualMachineInstance",
       "type": "array",
       "items": {
        "$ref": "#/definitions/v1.VirtualMachineCondition"
       }
      },
-     "nodeName": {
-      "description": "NodeName is the name where the VM is currently running.",
-      "type": "string"
+     "created": {
+      "description": "Created indicates if the virtual machine is created in the cluster",
+      "type": "boolean"
      },
-     "phase": {
-      "description": "Phase is the status of the VM in kubernetes world. It is not the VM status, but partially correlates to it.",
-      "type": "string"
+     "ready": {
+      "description": "Ready indicates if the virtual machine is running and ready",
+      "type": "boolean"
      }
     }
    },
    "v1.Volume": {
-    "description": "Volume represents a named volume in a vm.",
+    "description": "Volume represents a named volume in a vmi.",
     "required": [
      "name"
     ],
     "properties": {
      "cloudInitNoCloud": {
-      "description": "CloudInitNoCloud represents a cloud-init NoCloud user-data source.\nThe NoCloud data will be added as a disk to the vm. A proper cloud-init installation is required inside the guest.\nMore info: http://cloudinit.readthedocs.io/en/latest/topics/datasources/nocloud.html\n+optional",
+      "description": "CloudInitNoCloud represents a cloud-init NoCloud user-data source.\nThe NoCloud data will be added as a disk to the vmi. A proper cloud-init installation is required inside the guest.\nMore info: http://cloudinit.readthedocs.io/en/latest/topics/datasources/nocloud.html\n+optional",
       "$ref": "#/definitions/v1.CloudInitNoCloudSource"
      },
-     "iscsi": {
-      "description": "ISCSI represents an ISCSI Disk resource which is directly attached to the vm via qemu.\n+optional",
-      "$ref": "#/definitions/v1.ISCSIVolumeSource"
+     "emptyDisk": {
+      "description": "EmptyDisk represents a temporary disk which shares the vmis lifecycle\nMore info: https://kubevirt.gitbooks.io/user-guide/disks-and-volumes.html\n+optional",
+      "$ref": "#/definitions/v1.EmptyDiskSource"
+     },
+     "ephemeral": {
+      "description": "Ephemeral is a special volume source that \"wraps\" specified source and provides copy-on-write image on top of it.\n+optional",
+      "$ref": "#/definitions/v1.EphemeralVolumeSource"
      },
      "name": {
-      "description": "Volume's name.\nMust be a DNS_LABEL and unique within the vm.\nMore info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names",
+      "description": "Volume's name.\nMust be a DNS_LABEL and unique within the vmi.\nMore info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names",
       "type": "string"
      },
      "persistentVolumeClaim": {
-      "description": "PersistentVolumeClaimVolumeSource represents a reference to a PersistentVolumeClaim in the same namespace.\nDirectly attached to the vm via qemu.\nMore info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#persistentvolumeclaims\n+optional",
+      "description": "PersistentVolumeClaimVolumeSource represents a reference to a PersistentVolumeClaim in the same namespace.\nDirectly attached to the vmi via qemu.\nMore info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#persistentvolumeclaims\n+optional",
       "$ref": "#/definitions/v1.PersistentVolumeClaimVolumeSource"
      },
      "registryDisk": {
@@ -2884,6 +4834,37 @@
       "type": "string"
      }
     }
+   },
+   "v1.WeightedPodAffinityTerm": {
+    "description": "The weights of all of the matched WeightedPodAffinityTerm fields are added per-node to find the most preferred node(s)",
+    "required": [
+     "weight",
+     "podAffinityTerm"
+    ],
+    "properties": {
+     "podAffinityTerm": {
+      "description": "Required. A pod affinity term, associated with the corresponding weight.",
+      "$ref": "#/definitions/v1.PodAffinityTerm"
+     },
+     "weight": {
+      "description": "weight associated with matching the corresponding podAffinityTerm, in the range 1-100.",
+      "type": "integer",
+      "format": "int32"
+     }
+    }
    }
-  }
+  },
+  "securityDefinitions": {
+   "BearerToken": {
+    "description": "Bearer Token authentication",
+    "type": "apiKey",
+    "name": "authorization",
+    "in": "header"
+   }
+  },
+  "security": [
+   {
+    "BearerToken": []
+   }
+  ]
  }

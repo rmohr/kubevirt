@@ -27,6 +27,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"kubevirt.io/kubevirt/pkg/api/v1"
 	"kubevirt.io/kubevirt/pkg/kubecli"
 	"kubevirt.io/kubevirt/tests"
 )
@@ -42,58 +43,67 @@ var _ = Describe("Console", func() {
 		tests.BeforeTestCleanup()
 	})
 
-	Context("New VM with a serial console given", func() {
+	RunVMIAndExpectConsoleOutput := func(vmi *v1.VirtualMachineInstance, expected string) {
 
-		It("should be returned that we are running cirros", func() {
-			vm := tests.NewRandomVMWithEphemeralDisk("kubevirt/cirros-registry-disk-demo:devel")
+		By("Creating a new VirtualMachineInstance")
+		Expect(virtClient.RestClient().Post().Resource("virtualmachineinstances").Namespace(tests.NamespaceTestDefault).Body(vmi).Do().Error()).To(Succeed())
+		tests.WaitForSuccessfulVMIStart(vmi)
 
-			Expect(virtClient.RestClient().Post().Resource("virtualmachines").Namespace(tests.NamespaceTestDefault).Body(vm).Do().Error()).To(Succeed())
-			tests.WaitForSuccessfulVMStart(vm)
+		By("Expecting the VirtualMachineInstance console")
+		expecter, _, err := tests.NewConsoleExpecter(virtClient, vmi, 10*time.Second)
+		defer expecter.Close()
+		Expect(err).ToNot(HaveOccurred())
 
-			expecter, _, err := tests.NewConsoleExpecter(virtClient, vm, "serial0", 10*time.Second)
-			defer expecter.Close()
-			Expect(err).ToNot(HaveOccurred())
+		By("Checking that the console output equals to expected one")
+		_, err = expecter.ExpectBatch([]expect.Batcher{
+			&expect.BExp{R: expected},
+		}, 120*time.Second)
+		Expect(err).ToNot(HaveOccurred())
+	}
 
-			_, err = expecter.ExpectBatch([]expect.Batcher{
-				&expect.BExp{R: "checking http://169.254.169.254/2009-04-04/instance-id"},
-			}, 120*time.Second)
-			Expect(err).ToNot(HaveOccurred())
+	Describe("A new VirtualMachineInstance", func() {
+		Context("with a serial console", func() {
+			Context("with a cirros image", func() {
+				It("should return that we are running cirros", func() {
+					vmi := tests.NewRandomVMIWithEphemeralDiskAndUserdata(tests.RegistryDiskFor(tests.RegistryDiskCirros), "#!/bin/bash\necho 'hello'\n")
+					RunVMIAndExpectConsoleOutput(
+						vmi,
+						"login as 'cirros' user",
+					)
+				}, 140)
+			})
+
+			Context("with a fedora image", func() {
+				It("should return that we are running fedora", func() {
+					vmi := tests.NewRandomVMIWithEphemeralDiskHighMemory(tests.RegistryDiskFor(tests.RegistryDiskFedora))
+					RunVMIAndExpectConsoleOutput(
+						vmi,
+						"Welcome to",
+					)
+				}, 140)
+			})
+
+			It("should be able to reconnect to console multiple times", func() {
+				vmi := tests.NewRandomVMIWithEphemeralDisk(tests.RegistryDiskFor(tests.RegistryDiskAlpine))
+
+				By("Creating a new VirtualMachineInstance")
+				Expect(virtClient.RestClient().Post().Resource("virtualmachineinstances").Namespace(tests.NamespaceTestDefault).Body(vmi).Do().Error()).To(Succeed())
+				tests.WaitForSuccessfulVMIStart(vmi)
+
+				for i := 0; i < 5; i++ {
+					By("Expecting a VirtualMachineInstance console")
+					expecter, _, err := tests.NewConsoleExpecter(virtClient, vmi, 10*time.Second)
+					defer expecter.Close()
+					Expect(err).ToNot(HaveOccurred())
+
+					By("Checking that the console output equals to expected one")
+					_, err = expecter.ExpectBatch([]expect.Batcher{
+						&expect.BSnd{S: "\n"},
+						&expect.BExp{R: "login"},
+					}, 160*time.Second)
+					Expect(err).ToNot(HaveOccurred())
+				}
+			}, 220)
 		})
-
-		It("should be returned that we are running fedora", func() {
-
-			vm := tests.NewRandomVMWithEphemeralDiskHighMemory("kubevirt/fedora-cloud-registry-disk-demo:devel")
-
-			Expect(virtClient.RestClient().Post().Resource("virtualmachines").Namespace(tests.NamespaceTestDefault).Body(vm).Do().Error()).To(Succeed())
-			tests.WaitForSuccessfulVMStart(vm)
-
-			expecter, _, err := tests.NewConsoleExpecter(virtClient, vm, "serial0", 10*time.Second)
-			defer expecter.Close()
-			Expect(err).ToNot(HaveOccurred())
-
-			_, err = expecter.ExpectBatch([]expect.Batcher{
-				&expect.BExp{R: "Welcome to"},
-			}, 120*time.Second)
-			Expect(err).ToNot(HaveOccurred())
-		}, 140)
-
-		It("should be able to reconnect to console multiple times", func() {
-			vm := tests.NewRandomVMWithEphemeralDisk("kubevirt/alpine-registry-disk-demo:devel")
-
-			Expect(virtClient.RestClient().Post().Resource("virtualmachines").Namespace(tests.NamespaceTestDefault).Body(vm).Do().Error()).To(Succeed())
-			tests.WaitForSuccessfulVMStart(vm)
-
-			for i := 0; i < 5; i++ {
-				expecter, _, err := tests.NewConsoleExpecter(virtClient, vm, "serial0", 10*time.Second)
-				defer expecter.Close()
-				Expect(err).ToNot(HaveOccurred())
-
-				_, err = expecter.ExpectBatch([]expect.Batcher{
-					&expect.BSnd{S: "\n"},
-					&expect.BExp{R: "login"},
-				}, 160*time.Second)
-				Expect(err).ToNot(HaveOccurred())
-			}
-		}, 220)
 	})
 })

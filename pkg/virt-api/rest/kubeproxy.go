@@ -145,7 +145,7 @@ func GenericResourceProxy(ws *restful.WebService, ctx context.Context, gvr schem
 			Returns(http.StatusUnauthorized, "Unauthorized", nil), ws,
 	))
 
-	ws.Route(
+	ws.Route(addPatchParams(
 		ws.PATCH(ResourcePath(gvr)).
 			Consumes(mime.MIME_JSON_PATCH, mime.MIME_MERGE_PATCH).
 			Produces(mime.MIME_JSON).
@@ -154,8 +154,8 @@ func GenericResourceProxy(ws *restful.WebService, ctx context.Context, gvr schem
 			Writes(objExample).Reads(metav1.Patch{}).
 			Doc("Patch a "+objKind+" object.").
 			Returns(http.StatusOK, "OK", objExample).
-			Returns(http.StatusUnauthorized, "Unauthorized", nil),
-	)
+			Returns(http.StatusUnauthorized, "Unauthorized", nil), ws,
+	))
 
 	// TODO, implement watch. For now it is here to provide swagger doc only
 	ws.Route(addWatchGetListParams(
@@ -210,7 +210,8 @@ func ResourceProxyAutodiscovery(ctx context.Context, gvr schema.GroupVersionReso
 	}
 	autodiscover := endpoints.NewHandlerBuilder().Get().Decoder(endpoints.NoopDecoder).Endpoint(NewAutodiscoveryEndpoint(virtClient.RestClient())).Build(ctx)
 	ws := new(restful.WebService)
-	ws.Route(ws.GET(GroupBasePath(gvr.GroupVersion())).
+	ws.Path(GroupBasePath(gvr.GroupVersion()))
+	ws.Route(ws.GET("/").
 		Produces(mime.MIME_JSON).Writes(metav1.APIGroup{}).
 		To(endpoints.MakeGoRestfulWrapper(autodiscover)).
 		Doc("Get a KubeVirt API group").

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Copyright 2017 Red Hat, Inc.
+ * Copyright 2017, 2018 Red Hat, Inc.
  *
  */
 
@@ -27,148 +27,45 @@ package virtwrap
 
 import (
 	"encoding/xml"
-	goerrors "errors"
 	"fmt"
 
 	"github.com/libvirt/libvirt-go"
-	kubev1 "k8s.io/api/core/v1"
 
 	k8sv1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"kubevirt.io/kubevirt/pkg/api/v1"
 	cloudinit "kubevirt.io/kubevirt/pkg/cloud-init"
+	"kubevirt.io/kubevirt/pkg/emptydisk"
+	"kubevirt.io/kubevirt/pkg/ephemeral-disk"
 	"kubevirt.io/kubevirt/pkg/log"
 	"kubevirt.io/kubevirt/pkg/registry-disk"
 	"kubevirt.io/kubevirt/pkg/virt-launcher/virtwrap/api"
 	"kubevirt.io/kubevirt/pkg/virt-launcher/virtwrap/cli"
 	domainerrors "kubevirt.io/kubevirt/pkg/virt-launcher/virtwrap/errors"
+	"kubevirt.io/kubevirt/pkg/virt-launcher/virtwrap/network"
 	"kubevirt.io/kubevirt/pkg/virt-launcher/virtwrap/util"
 )
 
 type DomainManager interface {
-	SyncVMSecret(vm *v1.VirtualMachine, usageType string, usageID string, secretValue string) error
-	RemoveVMSecrets(*v1.VirtualMachine) error
-	SyncVM(*v1.VirtualMachine, map[string]*kubev1.Secret) (*api.DomainSpec, error)
-	KillVM(*v1.VirtualMachine) error
-	SignalShutdownVM(*v1.VirtualMachine) error
+	SyncVMI(*v1.VirtualMachineInstance, bool) (*api.DomainSpec, error)
+	KillVMI(*v1.VirtualMachineInstance) error
+	SignalShutdownVMI(*v1.VirtualMachineInstance) error
 	ListAllDomains() ([]*api.Domain, error)
 }
 
 type LibvirtDomainManager struct {
-	virConn     cli.Connection
-	secretCache map[string][]string
-}
-
-func (l *LibvirtDomainManager) initiateSecretCache() error {
-	secrets, err := l.virConn.ListSecrets()
-	if err != nil {
-		if err.(libvirt.Error).Code == libvirt.ERR_NO_SECRET {
-			return nil
-		} else {
-			return err
-		}
-	}
-
-	for _, secretUUID := range secrets {
-		var secretSpec api.SecretSpec
-
-		secret, err := l.virConn.LookupSecretByUUIDString(secretUUID)
-		if err != nil {
-			return err
-		}
-		defer secret.Free()
-
-		xmlstr, err := secret.GetXMLDesc(0)
-		if err != nil {
-			return err
-		}
-
-		err = xml.Unmarshal([]byte(xmlstr), &secretSpec)
-		if err != nil {
-			return err
-		}
-
-		if secretSpec.Description == "" {
-			continue
-		}
-		domName := secretSpec.Description
-		l.secretCache[domName] = append(l.secretCache[domName], secretUUID)
-	}
-
-	return nil
+	virConn cli.Connection
 }
 
 func NewLibvirtDomainManager(connection cli.Connection) (DomainManager, error) {
 	manager := LibvirtDomainManager{
-		virConn:     connection,
-		secretCache: make(map[string][]string),
+		virConn: connection,
 	}
 
-	err := manager.initiateSecretCache()
-	if err != nil {
-		return nil, err
-	}
 	return &manager, nil
 }
 
-func (l *LibvirtDomainManager) SyncVMSecret(vm *v1.VirtualMachine, usageType string, usageID string, secretValue string) error {
-
-	domName := api.VMNamespaceKeyFunc(vm)
-
-	switch usageType {
-	case "iscsi":
-		libvirtSecret, err := l.virConn.LookupSecretByUsage(libvirt.SECRET_USAGE_TYPE_ISCSI, usageID)
-
-		// If the secret doesn't exist, make it
-		if err != nil {
-			if err.(libvirt.Error).Code != libvirt.ERR_NO_SECRET {
-				log.Log.Object(vm).Reason(err).Error("Failed to get libvirt secret.")
-				return err
-
-			}
-			secretSpec := &api.SecretSpec{
-				Ephemeral:   "no",
-				Private:     "yes",
-				Description: domName,
-				Usage: api.SecretUsage{
-					Type:   usageType,
-					Target: usageID,
-				},
-			}
-
-			xmlStr, err := xml.Marshal(&secretSpec)
-			libvirtSecret, err = l.virConn.SecretDefineXML(string(xmlStr))
-			if err != nil {
-				log.Log.Reason(err).Error("Defining the VM secret failed.")
-				return err
-			}
-
-			secretUUID, err := libvirtSecret.GetUUIDString()
-			if err != nil {
-				// This error really shouldn't occur. The UUID should be known
-				// locally by the libvirt client. If this fails, we make a best
-				// effort attempt at removing the secret from libvirt.
-				libvirtSecret.Undefine()
-				libvirtSecret.Free()
-				return err
-			}
-			l.secretCache[domName] = append(l.secretCache[domName], secretUUID)
-		}
-		defer libvirtSecret.Free()
-
-		err = libvirtSecret.SetValue([]byte(secretValue), 0)
-		if err != nil {
-			log.Log.Reason(err).Error("Setting secret value for the VM failed.")
-			return err
-		}
-
-	default:
-		return goerrors.New(fmt.Sprintf("unsupported disk auth usage type %s", usageType))
-	}
-	return nil
-}
-
-// All local environment setup that needs to occur before VM starts
+// All local environment setup that needs to occur before VirtualMachineInstance starts
 // can be done in this function. This includes things like...
 //
 // - storage prep
@@ -177,42 +74,63 @@ func (l *LibvirtDomainManager) SyncVMSecret(vm *v1.VirtualMachine, usageType str
 //
 // The Domain.Spec can be alterned in this function and any changes
 // made to the domain will get set in libvirt after this function exits.
-func (l *LibvirtDomainManager) preStartHook(vm *v1.VirtualMachine, domain *api.Domain) (*api.Domain, error) {
+func (l *LibvirtDomainManager) preStartHook(vmi *v1.VirtualMachineInstance, domain *api.Domain) (*api.Domain, error) {
 
 	// ensure registry disk files have correct ownership privileges
-	err := registrydisk.SetFilePermissions(vm)
+	err := registrydisk.SetFilePermissions(vmi)
 	if err != nil {
 		return domain, err
 	}
 
 	// generate cloud-init data
-	cloudInitData := cloudinit.GetCloudInitNoCloudSource(vm)
+	cloudInitData := cloudinit.GetCloudInitNoCloudSource(vmi)
 	if cloudInitData != nil {
-		err := cloudinit.GenerateLocalData(vm.Name, vm.Namespace, cloudInitData)
+		hostname := vmi.Name
+		if vmi.Spec.Hostname != "" {
+			hostname = vmi.Spec.Hostname
+		}
+
+		err := cloudinit.GenerateLocalData(vmi.Name, hostname, vmi.Namespace, cloudInitData)
 		if err != nil {
 			return domain, err
 		}
 	}
 
+	// setup networking
+	err = network.SetupPodNetwork(vmi, domain)
+	if err != nil {
+		return domain, err
+	}
+
+	// Create images for volumes that are marked ephemeral.
+	err = ephemeraldisk.CreateEphemeralImages(vmi)
+	if err != nil {
+		return domain, err
+	}
+	// create empty disks if they exist
+	if err := emptydisk.CreateTemporaryDisks(vmi); err != nil {
+		return domain, fmt.Errorf("creating empty disks failed: %v", err)
+	}
+
 	return domain, err
 }
 
-func (l *LibvirtDomainManager) SyncVM(vm *v1.VirtualMachine, secrets map[string]*kubev1.Secret) (*api.DomainSpec, error) {
-	logger := log.Log.Object(vm)
+func (l *LibvirtDomainManager) SyncVMI(vmi *v1.VirtualMachineInstance, allowEmulation bool) (*api.DomainSpec, error) {
+	logger := log.Log.Object(vmi)
 
 	domain := &api.Domain{}
 
-	// Map the VirtualMachine to the Domain
+	// Map the VirtualMachineInstance to the Domain
 	c := &api.ConverterContext{
-		VirtualMachine: vm,
-		Secrets:        secrets,
+		VirtualMachine: vmi,
+		AllowEmulation: allowEmulation,
 	}
-	if err := api.Convert_v1_VirtualMachine_To_api_Domain(vm, domain, c); err != nil {
+	if err := api.Convert_v1_VirtualMachine_To_api_Domain(vmi, domain, c); err != nil {
 		logger.Error("Conversion failed.")
 		return nil, err
 	}
 
-	// Set defaults which are not comming from the cluster
+	// Set defaults which are not coming from the cluster
 	api.SetObjectDefaults_Domain(domain)
 
 	dom, err := l.virConn.LookupDomainByName(domain.Spec.Name)
@@ -221,12 +139,12 @@ func (l *LibvirtDomainManager) SyncVM(vm *v1.VirtualMachine, secrets map[string]
 		// We need the domain but it does not exist, so create it
 		if domainerrors.IsNotFound(err) {
 			newDomain = true
-			domain, err = l.preStartHook(vm, domain)
+			domain, err = l.preStartHook(vmi, domain)
 			if err != nil {
-				logger.Reason(err).Error("pre start setup for VM failed.")
+				logger.Reason(err).Error("pre start setup for VirtualMachineInstance failed.")
 				return nil, err
 			}
-			dom, err = util.SetDomainSpec(l.virConn, vm, domain.Spec)
+			dom, err = util.SetDomainSpec(l.virConn, vmi, domain.Spec)
 			if err != nil {
 				return nil, err
 			}
@@ -244,9 +162,9 @@ func (l *LibvirtDomainManager) SyncVM(vm *v1.VirtualMachine, secrets map[string]
 	}
 
 	// To make sure, that we set the right qemu wrapper arguments,
-	// we update the domain XML whenever a VM was already defined but not running
+	// we update the domain XML whenever a VirtualMachineInstance was already defined but not running
 	if !newDomain && cli.IsDown(domState) {
-		dom, err = util.SetDomainSpec(l.virConn, vm, domain.Spec)
+		dom, err = util.SetDomainSpec(l.virConn, vmi, domain.Spec)
 		if err != nil {
 			return nil, err
 		}
@@ -258,7 +176,7 @@ func (l *LibvirtDomainManager) SyncVM(vm *v1.VirtualMachine, secrets map[string]
 	if cli.IsDown(domState) {
 		err = dom.Create()
 		if err != nil {
-			logger.Reason(err).Error("Starting the VM failed.")
+			logger.Reason(err).Error("Starting the VirtualMachineInstance failed.")
 			return nil, err
 		}
 		logger.Info("Domain started.")
@@ -266,7 +184,7 @@ func (l *LibvirtDomainManager) SyncVM(vm *v1.VirtualMachine, secrets map[string]
 		// TODO: if state change reason indicates a system error, we could try something smarter
 		err := dom.Resume()
 		if err != nil {
-			logger.Reason(err).Error("Resuming the VM failed.")
+			logger.Reason(err).Error("Resuming the VirtualMachineInstance failed.")
 			return nil, err
 		}
 		logger.Info("Domain resumed.")
@@ -286,52 +204,23 @@ func (l *LibvirtDomainManager) SyncVM(vm *v1.VirtualMachine, secrets map[string]
 		return nil, err
 	}
 
-	// TODO: check if VM Spec and Domain Spec are equal or if we have to sync
+	// TODO: check if VirtualMachineInstance Spec and Domain Spec are equal or if we have to sync
 	return &newSpec, nil
-}
-
-func (l *LibvirtDomainManager) RemoveVMSecrets(vm *v1.VirtualMachine) error {
-	domName := api.VMNamespaceKeyFunc(vm)
-
-	secretUUIDs, ok := l.secretCache[domName]
-	if ok == false {
-		return nil
-	}
-
-	for _, secretUUID := range secretUUIDs {
-		secret, err := l.virConn.LookupSecretByUUIDString(secretUUID)
-		if err != nil {
-			if err.(libvirt.Error).Code != libvirt.ERR_NO_SECRET {
-				log.Log.Object(vm).Reason(err).Errorf("Failed to lookup secret with UUID %s.", secretUUID)
-				return err
-			}
-			continue
-		}
-		defer secret.Free()
-
-		err = secret.Undefine()
-		if err != nil {
-			return err
-		}
-	}
-
-	delete(l.secretCache, domName)
-	return nil
 }
 
 func (l *LibvirtDomainManager) getDomainSpec(dom cli.VirDomain) (*api.DomainSpec, error) {
 	return util.GetDomainSpec(dom)
 }
 
-func (l *LibvirtDomainManager) SignalShutdownVM(vm *v1.VirtualMachine) error {
-	domName := util.VMNamespaceKeyFunc(vm)
+func (l *LibvirtDomainManager) SignalShutdownVMI(vmi *v1.VirtualMachineInstance) error {
+	domName := util.VMINamespaceKeyFunc(vmi)
 	dom, err := l.virConn.LookupDomainByName(domName)
 	if err != nil {
-		// If the VM does not exist, we are done
+		// If the VirtualMachineInstance does not exist, we are done
 		if domainerrors.IsNotFound(err) {
 			return nil
 		} else {
-			log.Log.Object(vm).Reason(err).Error("Getting the domain failed during graceful shutdown.")
+			log.Log.Object(vmi).Reason(err).Error("Getting the domain failed during graceful shutdown.")
 			return err
 		}
 	}
@@ -339,30 +228,30 @@ func (l *LibvirtDomainManager) SignalShutdownVM(vm *v1.VirtualMachine) error {
 
 	domState, _, err := dom.GetState()
 	if err != nil {
-		log.Log.Object(vm).Reason(err).Error("Getting the domain state failed.")
+		log.Log.Object(vmi).Reason(err).Error("Getting the domain state failed.")
 		return err
 	}
 
 	if domState == libvirt.DOMAIN_RUNNING || domState == libvirt.DOMAIN_PAUSED {
 		domSpec, err := l.getDomainSpec(dom)
 		if err != nil {
-			log.Log.Object(vm).Reason(err).Error("Unable to retrieve domain xml")
+			log.Log.Object(vmi).Reason(err).Error("Unable to retrieve domain xml")
 			return err
 		}
 
 		if domSpec.Metadata.KubeVirt.GracePeriod.DeletionTimestamp == nil {
 			err = dom.Shutdown()
 			if err != nil {
-				log.Log.Object(vm).Reason(err).Error("Signalling graceful shutdown failed.")
+				log.Log.Object(vmi).Reason(err).Error("Signalling graceful shutdown failed.")
 				return err
 			}
-			log.Log.Object(vm).Infof("Signaled graceful shutdown for %s", vm.GetObjectMeta().GetName())
+			log.Log.Object(vmi).Infof("Signaled graceful shutdown for %s", vmi.GetObjectMeta().GetName())
 
 			now := k8sv1.Now()
 			domSpec.Metadata.KubeVirt.GracePeriod.DeletionTimestamp = &now
-			_, err = util.SetDomainSpec(l.virConn, vm, *domSpec)
+			_, err = util.SetDomainSpec(l.virConn, vmi, *domSpec)
 			if err != nil {
-				log.Log.Object(vm).Reason(err).Error("Unable to update grace period start time on domain xml")
+				log.Log.Object(vmi).Reason(err).Error("Unable to update grace period start time on domain xml")
 				return err
 			}
 		}
@@ -371,15 +260,15 @@ func (l *LibvirtDomainManager) SignalShutdownVM(vm *v1.VirtualMachine) error {
 	return nil
 }
 
-func (l *LibvirtDomainManager) KillVM(vm *v1.VirtualMachine) error {
-	domName := api.VMNamespaceKeyFunc(vm)
+func (l *LibvirtDomainManager) KillVMI(vmi *v1.VirtualMachineInstance) error {
+	domName := api.VMINamespaceKeyFunc(vmi)
 	dom, err := l.virConn.LookupDomainByName(domName)
 	if err != nil {
-		// If the VM does not exist, we are done
+		// If the VirtualMachineInstance does not exist, we are done
 		if domainerrors.IsNotFound(err) {
 			return nil
 		} else {
-			log.Log.Object(vm).Reason(err).Error("Getting the domain failed.")
+			log.Log.Object(vmi).Reason(err).Error("Getting the domain failed.")
 			return err
 		}
 	}
@@ -387,25 +276,34 @@ func (l *LibvirtDomainManager) KillVM(vm *v1.VirtualMachine) error {
 	// TODO: Graceful shutdown
 	domState, _, err := dom.GetState()
 	if err != nil {
-		log.Log.Object(vm).Reason(err).Error("Getting the domain state failed.")
+		if domainerrors.IsNotFound(err) {
+			return nil
+		}
+		log.Log.Object(vmi).Reason(err).Error("Getting the domain state failed.")
 		return err
 	}
 
 	if domState == libvirt.DOMAIN_RUNNING || domState == libvirt.DOMAIN_PAUSED {
 		err = dom.Destroy()
 		if err != nil {
-			log.Log.Object(vm).Reason(err).Error("Destroying the domain state failed.")
+			if domainerrors.IsNotFound(err) {
+				return nil
+			}
+			log.Log.Object(vmi).Reason(err).Error("Destroying the domain state failed.")
 			return err
 		}
-		log.Log.Object(vm).Info("Domain stopped.")
+		log.Log.Object(vmi).Info("Domain stopped.")
 	}
 
 	err = dom.Undefine()
 	if err != nil {
-		log.Log.Object(vm).Reason(err).Error("Undefining the domain state failed.")
+		if domainerrors.IsNotFound(err) {
+			return nil
+		}
+		log.Log.Object(vmi).Reason(err).Error("Undefining the domain state failed.")
 		return err
 	}
-	log.Log.Object(vm).Info("Domain undefined.")
+	log.Log.Object(vmi).Info("Domain undefined.")
 	return nil
 }
 

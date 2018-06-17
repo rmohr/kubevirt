@@ -22,6 +22,7 @@ package v1
 //go:generate swagger-doc
 //go:generate deepcopy-gen -i . --go-header-file ../../../hack/boilerplate/boilerplate.go.txt
 //go:generate defaulter-gen -i . --go-header-file ../../../hack/boilerplate/boilerplate.go.txt
+//go:generate openapi-gen -i . --output-package=kubevirt.io/kubevirt/pkg/api/v1  --go-header-file ../../../hack/boilerplate/boilerplate.go.txt
 
 /*
  ATTENTION: Rerun code generators when comments on structs or fields are modified.
@@ -46,16 +47,24 @@ import (
 
 // GroupName is the group name use in this package
 const GroupName = "kubevirt.io"
+const SubresourceGroupName = "subresources.kubevirt.io"
 
 const DefaultGracePeriodSeconds int64 = 30
 
 // GroupVersion is group version used to register these objects
-var GroupVersion = schema.GroupVersion{Group: GroupName, Version: "v1alpha1"}
+var GroupVersion = schema.GroupVersion{Group: GroupName, Version: "v1alpha2"}
+
+// GroupVersion is group version used to register these objects
+var SubresourceGroupVersion = schema.GroupVersion{Group: SubresourceGroupName, Version: "v1alpha2"}
 
 // GroupVersionKind
-var VirtualMachineGroupVersionKind = schema.GroupVersionKind{Group: GroupName, Version: GroupVersion.Version, Kind: "VirtualMachine"}
+var VirtualMachineInstanceGroupVersionKind = schema.GroupVersionKind{Group: GroupName, Version: GroupVersion.Version, Kind: "VirtualMachineInstance"}
 
-var VMReplicaSetGroupVersionKind = schema.GroupVersionKind{Group: GroupName, Version: GroupVersion.Version, Kind: "VirtualMachineReplicaSet"}
+var VirtualMachineInstanceReplicaSetGroupVersionKind = schema.GroupVersionKind{Group: GroupName, Version: GroupVersion.Version, Kind: "VirtualMachineInstanceReplicaSet"}
+
+var VirtualMachineInstancePresetGroupVersionKind = schema.GroupVersionKind{Group: GroupName, Version: GroupVersion.Version, Kind: "VirtualMachineInstancePreset"}
+
+var VirtualMachineGroupVersionKind = schema.GroupVersionKind{Group: GroupName, Version: GroupVersion.Version, Kind: "VirtualMachine"}
 
 var (
 	groupFactoryRegistry = make(announced.APIGroupFactoryRegistry)
@@ -65,14 +74,17 @@ var (
 // Adds the list of known types to api.Scheme.
 func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(GroupVersion,
-		&VirtualMachine{},
-		&VirtualMachineList{},
+		&VirtualMachineInstance{},
+		&VirtualMachineInstanceList{},
 		&metav1.ListOptions{},
 		&metav1.DeleteOptions{},
-		&VirtualMachineReplicaSet{},
-		&VirtualMachineReplicaSetList{},
+		&VirtualMachineInstanceReplicaSet{},
+		&VirtualMachineInstanceReplicaSetList{},
+		&VirtualMachineInstancePreset{},
+		&VirtualMachineInstancePresetList{},
 		&metav1.GetOptions{},
-		&Spice{},
+		&VirtualMachine{},
+		&VirtualMachineList{},
 	)
 	return nil
 }
@@ -92,203 +104,271 @@ func init() {
 	}
 }
 
-// VirtualMachine is *the* VM Definition. It represents a virtual machine in the runtime environment of kubernetes.
+// VirtualMachineInstance is *the* VirtualMachineInstance Definition. It represents a virtual machine in the runtime environment of kubernetes.
+// ---
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-type VirtualMachine struct {
+// +k8s:openapi-gen=true
+type VirtualMachineInstance struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	// VM Spec contains the VM specification.
-	Spec VirtualMachineSpec `json:"spec,omitempty" valid:"required"`
-	// Status is the high level overview of how the VM is doing. It contains information available to controllers and users.
-	Status VirtualMachineStatus `json:"status,omitempty"`
+	// VirtualMachineInstance Spec contains the VirtualMachineInstance specification.
+	Spec VirtualMachineInstanceSpec `json:"spec,omitempty" valid:"required"`
+	// Status is the high level overview of how the VirtualMachineInstance is doing. It contains information available to controllers and users.
+	Status VirtualMachineInstanceStatus `json:"status,omitempty"`
 }
 
-// VirtualMachineList is a list of VirtualMachines
+// VirtualMachineInstanceList is a list of VirtualMachines
+// ---
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-type VirtualMachineList struct {
+// +k8s:openapi-gen=true
+type VirtualMachineInstanceList struct {
 	metav1.TypeMeta `json:",inline"`
-	ListMeta        metav1.ListMeta  `json:"metadata,omitempty"`
-	Items           []VirtualMachine `json:"items"`
+	ListMeta        metav1.ListMeta          `json:"metadata,omitempty"`
+	Items           []VirtualMachineInstance `json:"items"`
 }
 
-// VirtualMachineSpec is a description of a VirtualMachine.
-type VirtualMachineSpec struct {
-	// Specification of the desired behavior of the VirtualMachine on the host.
+// VirtualMachineInstanceSpec is a description of a VirtualMachineInstance.
+// ---
+// +k8s:openapi-gen=true
+type VirtualMachineInstanceSpec struct {
+	// Specification of the desired behavior of the VirtualMachineInstance on the host.
 	Domain DomainSpec `json:"domain"`
-	// NodeSelector is a selector which must be true for the vm to fit on a node.
-	// Selector which must match a node's labels for the vm to be scheduled on that node.
+	// NodeSelector is a selector which must be true for the vmi to fit on a node.
+	// Selector which must match a node's labels for the vmi to be scheduled on that node.
 	// More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
 	// +optional
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 	// If affinity is specifies, obey all the affinity rules
 	Affinity *Affinity `json:"affinity,omitempty"`
-	// Grace period observed after signalling a VM to stop after which the VM is force terminated.
+	// Grace period observed after signalling a VirtualMachineInstance to stop after which the VirtualMachineInstance is force terminated.
 	TerminationGracePeriodSeconds *int64 `json:"terminationGracePeriodSeconds,omitempty"`
-	// List of volumes that can be mounted by disks belonging to the vm.
+	// List of volumes that can be mounted by disks belonging to the vmi.
 	Volumes []Volume `json:"volumes,omitempty"`
+	// Specifies the hostname of the vmi
+	// If not specified, the hostname will be set to the name of the vmi, if dhcp or cloud-init is configured properly.
+	// +optional
+	Hostname string `json:"hostname,omitempty"`
+	// If specified, the fully qualified vmi hostname will be "<hostname>.<subdomain>.<pod namespace>.svc.<cluster domain>".
+	// If not specified, the vmi will not have a domainname at all. The DNS entry will resolve to the vmi,
+	// no matter if the vmi itself can pick up a hostname.
+	// +optional
+	Subdomain string `json:"subdomain,omitempty"`
+	// List of networks that can be attached to a vm's virtual interface.
+	Networks []Network `json:"networks,omitempty"`
 }
 
-// Affinity groups all the affinity rules related to a VM
+// Affinity groups all the affinity rules related to a VirtualMachineInstance
+// ---
+// +k8s:openapi-gen=true
 type Affinity struct {
 	// Node affinity support
 	NodeAffinity *k8sv1.NodeAffinity `json:"nodeAffinity,omitempty"`
+
+	// Pod affinity support
+	PodAffinity *k8sv1.PodAffinity `json:"podAffinity,omitempty"`
+
+	// Pod anti-affinity support
+	PodAntiAffinity *k8sv1.PodAntiAffinity `json:"podAntiAffinity,omitempty"`
 }
 
-// VirtualMachineStatus represents information about the status of a VM. Status may trail the actual
+// VirtualMachineInstanceStatus represents information about the status of a VirtualMachineInstance. Status may trail the actual
 // state of a system.
-type VirtualMachineStatus struct {
-	// NodeName is the name where the VM is currently running.
+// ---
+// +k8s:openapi-gen=true
+type VirtualMachineInstanceStatus struct {
+	// NodeName is the name where the VirtualMachineInstance is currently running.
 	NodeName string `json:"nodeName,omitempty"`
-	// Conditions are specific points in VM's pod runtime.
-	Conditions []VirtualMachineCondition `json:"conditions,omitempty"`
-	// Phase is the status of the VM in kubernetes world. It is not the VM status, but partially correlates to it.
-	Phase VMPhase `json:"phase,omitempty"`
+	// Conditions are specific points in VirtualMachineInstance's pod runtime.
+	Conditions []VirtualMachineInstanceCondition `json:"conditions,omitempty"`
+	// Phase is the status of the VirtualMachineInstance in kubernetes world. It is not the VirtualMachineInstance status, but partially correlates to it.
+	Phase VirtualMachineInstancePhase `json:"phase,omitempty"`
+	// Interfaces represent the details of available network interfaces.
+	Interfaces []VirtualMachineInstanceNetworkInterface `json:"interfaces,omitempty"`
 }
 
 // Required to satisfy Object interface
-func (v *VirtualMachine) GetObjectKind() schema.ObjectKind {
+func (v *VirtualMachineInstance) GetObjectKind() schema.ObjectKind {
 	return &v.TypeMeta
 }
 
 // Required to satisfy ObjectMetaAccessor interface
-func (v *VirtualMachine) GetObjectMeta() metav1.Object {
+func (v *VirtualMachineInstance) GetObjectMeta() metav1.Object {
 	return &v.ObjectMeta
 }
 
-func (v *VirtualMachine) IsReady() bool {
+func (v *VirtualMachineInstance) IsReady() bool {
 	// TODO once we support a ready condition, use it instead
 	return v.IsRunning()
 }
 
-func (v *VirtualMachine) IsRunning() bool {
-	return v.Status.Phase == Running || v.Status.Phase == Migrating
+func (v *VirtualMachineInstance) IsScheduling() bool {
+	return v.Status.Phase == Scheduling
 }
 
-func (v *VirtualMachine) IsFinal() bool {
+func (v *VirtualMachineInstance) IsScheduled() bool {
+	return v.Status.Phase == Scheduled
+}
+
+func (v *VirtualMachineInstance) IsRunning() bool {
+	return v.Status.Phase == Running
+}
+
+func (v *VirtualMachineInstance) IsFinal() bool {
 	return v.Status.Phase == Failed || v.Status.Phase == Succeeded
 }
 
+func (v *VirtualMachineInstance) IsUnknown() bool {
+	return v.Status.Phase == Unknown
+}
+
+func (v *VirtualMachineInstance) IsUnprocessed() bool {
+	return v.Status.Phase == Pending || v.Status.Phase == VmPhaseUnset
+}
+
 // Required to satisfy Object interface
-func (vl *VirtualMachineList) GetObjectKind() schema.ObjectKind {
+func (vl *VirtualMachineInstanceList) GetObjectKind() schema.ObjectKind {
 	return &vl.TypeMeta
 }
 
 // Required to satisfy ListMetaAccessor interface
-func (vl *VirtualMachineList) GetListMeta() meta.List {
+func (vl *VirtualMachineInstanceList) GetListMeta() meta.List {
 	return &vl.ListMeta
 }
 
-func (v *VirtualMachine) UnmarshalJSON(data []byte) error {
-	type VMCopy VirtualMachine
-	tmp := VMCopy{}
+func (v *VirtualMachineInstance) UnmarshalJSON(data []byte) error {
+	type VMICopy VirtualMachineInstance
+	tmp := VMICopy{}
 	err := json.Unmarshal(data, &tmp)
 	if err != nil {
 		return err
 	}
-	tmp2 := VirtualMachine(tmp)
+	tmp2 := VirtualMachineInstance(tmp)
 	*v = tmp2
 	return nil
 }
 
-func (vl *VirtualMachineList) UnmarshalJSON(data []byte) error {
-	type VMListCopy VirtualMachineList
-	tmp := VMListCopy{}
+func (vl *VirtualMachineInstanceList) UnmarshalJSON(data []byte) error {
+	type VMIListCopy VirtualMachineInstanceList
+	tmp := VMIListCopy{}
 	err := json.Unmarshal(data, &tmp)
 	if err != nil {
 		return err
 	}
-	tmp2 := VirtualMachineList(tmp)
+	tmp2 := VirtualMachineInstanceList(tmp)
 	*vl = tmp2
 	return nil
 }
 
-func (v *VirtualMachine) MarshalBinary() (data []byte, err error) {
+func (v *VirtualMachineInstance) MarshalBinary() (data []byte, err error) {
 	return json.Marshal(*v)
 }
 
-func (v *VirtualMachine) UnmarshalBinary(data []byte) error {
+func (v *VirtualMachineInstance) UnmarshalBinary(data []byte) error {
 	return v.UnmarshalJSON(data)
 }
 
-type VirtualMachineConditionType string
+// ---
+// +k8s:openapi-gen=true
+type VirtualMachineInstanceConditionType string
 
-// These are valid conditions of VMs.
+// These are valid conditions of VMIs.
 const (
-	// VMReady means the pod is able to service requests and should be added to the
+	// VMIReady means the pod is able to service requests and should be added to the
 	// load balancing pools of all matching services.
-	VirtualMachineReady VirtualMachineConditionType = "Ready"
+	VirtualMachineInstanceReady VirtualMachineInstanceConditionType = "Ready"
 
-	// If there happens any error while trying to synchronize the VM with the Domain,
+	// If there happens any error while trying to synchronize the VirtualMachineInstance with the Domain,
 	// this is reported as false.
-	VirtualMachineSynchronized VirtualMachineConditionType = "Synchronized"
+	VirtualMachineInstanceSynchronized VirtualMachineInstanceConditionType = "Synchronized"
 )
 
-type VirtualMachineCondition struct {
-	Type               VirtualMachineConditionType `json:"type"`
-	Status             k8sv1.ConditionStatus       `json:"status"`
-	LastProbeTime      metav1.Time                 `json:"lastProbeTime,omitempty"`
-	LastTransitionTime metav1.Time                 `json:"lastTransitionTime,omitempty"`
-	Reason             string                      `json:"reason,omitempty"`
-	Message            string                      `json:"message,omitempty"`
+// ---
+// +k8s:openapi-gen=true
+type VirtualMachineInstanceCondition struct {
+	Type               VirtualMachineInstanceConditionType `json:"type"`
+	Status             k8sv1.ConditionStatus               `json:"status"`
+	LastProbeTime      metav1.Time                         `json:"lastProbeTime,omitempty"`
+	LastTransitionTime metav1.Time                         `json:"lastTransitionTime,omitempty"`
+	Reason             string                              `json:"reason,omitempty"`
+	Message            string                              `json:"message,omitempty"`
 }
 
-// VMPhase is a label for the condition of a VM at the current time.
-type VMPhase string
+// ---
+// +k8s:openapi-gen=true
+type VirtualMachineInstanceNetworkInterface struct {
+	// IP address of a Virtual Machine interface
+	IP string `json:"ipAddress,omitempty"`
+	// Hardware address of a Virtual Machine interface
+	MAC string `json:"mac,omitempty"`
+}
+
+// VirtualMachineInstancePhase is a label for the condition of a VirtualMachineInstance at the current time.
+// ---
+// +k8s:openapi-gen=true
+type VirtualMachineInstancePhase string
 
 // These are the valid statuses of pods.
 const (
-	//When a VM Object is first initialized and no phase, or Pending is present.
-	VmPhaseUnset VMPhase = ""
-	// Pending means the VM has been accepted by the system.
-	Pending VMPhase = "Pending"
-	// Either a target pod does not yet exist or a target Pod exists but is not yet scheduled and in running state.
-	Scheduling VMPhase = "Scheduling"
+	//When a VirtualMachineInstance Object is first initialized and no phase, or Pending is present.
+	VmPhaseUnset VirtualMachineInstancePhase = ""
+	// Pending means the VirtualMachineInstance has been accepted by the system.
+	Pending VirtualMachineInstancePhase = "Pending"
+	// A target Pod exists but is not yet scheduled and in running state.
+	Scheduling VirtualMachineInstancePhase = "Scheduling"
 	// A target pod was scheduled and the system saw that Pod in runnig state.
 	// Here is where the responsibility of virt-controller ends and virt-handler takes over.
-	Scheduled VMPhase = "Scheduled"
-	// VMRunning means the pod has been bound to a node and the VM is started.
-	Running VMPhase = "Running"
-	// VMMigrating means the VM is currently migrated by a controller.
-	Migrating VMPhase = "Migrating"
-	// VMSucceeded means that the VM stopped voluntarily, e.g. reacted to SIGTERM or shutdown was invoked from
-	// inside the VM.
-	Succeeded VMPhase = "Succeeded"
-	// VMFailed means that associated Pod is in failure state (exited with a non-zero exit code or was stopped by
-	// the system).
-	Failed VMPhase = "Failed"
-	// VMUnknown means that for some reason the state of the VM could not be obtained, typically due
-	// to an error in communicating with the host of the VM.
-	Unknown VMPhase = "Unknown"
+	Scheduled VirtualMachineInstancePhase = "Scheduled"
+	// Running means the pod has been bound to a node and the VirtualMachineInstance is started.
+	Running VirtualMachineInstancePhase = "Running"
+	// Succeeded means that the VirtualMachineInstance stopped voluntarily, e.g. reacted to SIGTERM or shutdown was invoked from
+	// inside the VirtualMachineInstance.
+	Succeeded VirtualMachineInstancePhase = "Succeeded"
+	// Failed means that the vmi crashed, disappeared unexpectedly or got deleted from the cluster before it was ever started.
+	Failed VirtualMachineInstancePhase = "Failed"
+	// Unknown means that for some reason the state of the VirtualMachineInstance could not be obtained, typically due
+	// to an error in communicating with the host of the VirtualMachineInstance.
+	Unknown VirtualMachineInstancePhase = "Unknown"
 )
 
 const (
-	AppLabel      string = "kubevirt.io"
-	DomainLabel   string = "kubevirt.io/domain"
-	VMUIDLabel    string = "kubevirt.io/vmUID"
-	NodeNameLabel string = "kubevirt.io/nodeName"
+	AppLabel             string = "kubevirt.io"
+	DomainLabel          string = "kubevirt.io/domain"
+	CreatedByAnnotation  string = "kubevirt.io/created-by"
+	OwnedByAnnotation    string = "kubevirt.io/owned-by"
+	NodeNameLabel        string = "kubevirt.io/nodeName"
+	NodeSchedulable      string = "kubevirt.io/schedulable"
+	VirtHandlerHeartbeat string = "kubevirt.io/heartbeat"
+	InterfaceModel       string = "alpha.kubevirt.io/interface-model"
+	// TODO remove InterfaceModel when we have proper api for network models
+
+	VirtualMachineInstanceFinalizer string = "foregroundDeleteVirtualMachine"
 )
 
-func NewVM(name string, uid types.UID) *VirtualMachine {
-	return &VirtualMachine{
-		Spec: VirtualMachineSpec{},
+func NewVMI(name string, uid types.UID) *VirtualMachineInstance {
+	return &VirtualMachineInstance{
+		Spec: VirtualMachineInstanceSpec{},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			UID:       uid,
 			Namespace: k8sv1.NamespaceDefault,
 		},
-		Status: VirtualMachineStatus{},
+		Status: VirtualMachineInstanceStatus{},
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: GroupVersion.String(),
-			Kind:       VirtualMachineGroupVersionKind.Kind,
+			Kind:       VirtualMachineInstanceGroupVersionKind.Kind,
 		},
 	}
 }
 
+// ---
+// +k8s:openapi-gen=true
 type SyncEvent string
 
 const (
 	Created      SyncEvent = "Created"
 	Deleted      SyncEvent = "Deleted"
+	PresetFailed SyncEvent = "PresetFailed"
+	Override     SyncEvent = "Override"
 	Started      SyncEvent = "Started"
 	ShuttingDown SyncEvent = "ShuttingDown"
 	Stopped      SyncEvent = "Stopped"
@@ -300,75 +380,47 @@ func (s SyncEvent) String() string {
 	return string(s)
 }
 
-func NewMinimalVM(vmName string) *VirtualMachine {
-	return NewMinimalVMWithNS(k8sv1.NamespaceDefault, vmName)
+func NewMinimalVMI(vmiName string) *VirtualMachineInstance {
+	return NewMinimalVMIWithNS(k8sv1.NamespaceDefault, vmiName)
 }
 
-func NewMinimalVMWithNS(namespace string, vmName string) *VirtualMachine {
-	precond.CheckNotEmpty(vmName)
-	vm := NewVMReferenceFromNameWithNS(namespace, vmName)
-	vm.Spec = VirtualMachineSpec{Domain: NewMinimalDomainSpec()}
-	vm.TypeMeta = metav1.TypeMeta{
+func NewMinimalVMIWithNS(namespace string, vmiName string) *VirtualMachineInstance {
+	precond.CheckNotEmpty(vmiName)
+	vmi := NewVMIReferenceFromNameWithNS(namespace, vmiName)
+	vmi.Spec = VirtualMachineInstanceSpec{Domain: NewMinimalDomainSpec()}
+	vmi.TypeMeta = metav1.TypeMeta{
 		APIVersion: GroupVersion.String(),
-		Kind:       "VirtualMachine",
+		Kind:       "VirtualMachineInstance",
 	}
-	return vm
+	return vmi
 }
 
 // TODO Namespace could be different, also store it somewhere in the domain, so that we can report deletes on handler startup properly
-func NewVMReferenceFromName(name string) *VirtualMachine {
-	return NewVMReferenceFromNameWithNS(k8sv1.NamespaceDefault, name)
+func NewVMIReferenceFromName(name string) *VirtualMachineInstance {
+	return NewVMIReferenceFromNameWithNS(k8sv1.NamespaceDefault, name)
 }
 
-func NewVMReferenceFromNameWithNS(namespace string, name string) *VirtualMachine {
-	vm := &VirtualMachine{
+func NewVMIReferenceFromNameWithNS(namespace string, name string) *VirtualMachineInstance {
+	vmi := &VirtualMachineInstance{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
-			SelfLink:  fmt.Sprintf("/apis/%s/namespaces/%s/virtualmachines/%s", GroupVersion.String(), namespace, name),
+			SelfLink:  fmt.Sprintf("/apis/%s/namespaces/%s/virtualmachineinstances/%s", GroupVersion.String(), namespace, name),
 		},
 	}
-	vm.SetGroupVersionKind(schema.GroupVersionKind{Group: GroupVersion.Group, Kind: "VM", Version: GroupVersion.Version})
-	return vm
+	vmi.SetGroupVersionKind(schema.GroupVersionKind{Group: GroupVersion.Group, Kind: "VirtualMachineInstance", Version: GroupVersion.Version})
+	return vmi
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-type Spice struct {
-	metav1.TypeMeta `json:",inline" ini:"-"`
-	ObjectMeta      metav1.ObjectMeta `json:"metadata,omitempty" ini:"-"`
-	Info            SpiceInfo         `json:"info,omitempty" valid:"required" ini:"virt-viewer"`
-}
-
-type SpiceInfo struct {
-	Type  string `json:"type" ini:"type"`
-	Host  string `json:"host" ini:"host"`
-	Port  int32  `json:"port" ini:"port"`
-	Proxy string `json:"proxy,omitempty" ini:"proxy,omitempty"`
-}
-
-func NewSpice(namespace string, vmName string) *Spice {
-	return &Spice{
-		Info: SpiceInfo{},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      vmName,
-			Namespace: namespace,
-		},
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: GroupVersion.String(),
-			Kind:       "Spice",
-		},
-	}
-}
-
-type VMSelector struct {
-	// Name of the VM to migrate
+type VMISelector struct {
+	// Name of the VirtualMachineInstance to migrate
 	Name string `json:"name" valid:"required"`
 }
 
-// Given a VM, update all NodeSelectorTerms with anti-affinity for that VM's node.
+// Given a VirtualMachineInstance, update all NodeSelectorTerms with anti-affinity for that VirtualMachineInstance's node.
 // This is useful for the case when a migration away from a node must occur.
 // This method returns the full Affinity structure updated the anti affinity terms
-func UpdateAntiAffinityFromVMNode(pod *k8sv1.Pod, vm *VirtualMachine) *k8sv1.Affinity {
+func UpdateAntiAffinityFromVMINode(pod *k8sv1.Pod, vmi *VirtualMachineInstance) *k8sv1.Affinity {
 	if pod.Spec.Affinity == nil {
 		pod.Spec.Affinity = &k8sv1.Affinity{}
 	}
@@ -394,43 +446,49 @@ func UpdateAntiAffinityFromVMNode(pod *k8sv1.Pod, vm *VirtualMachine) *k8sv1.Aff
 			term.MatchExpressions = []k8sv1.NodeSelectorRequirement{}
 		}
 
-		term.MatchExpressions = append(term.MatchExpressions, PrepareVMNodeAntiAffinitySelectorRequirement(vm))
+		term.MatchExpressions = append(term.MatchExpressions, PrepareVMINodeAntiAffinitySelectorRequirement(vmi))
 		selector.NodeSelectorTerms[idx] = term
 	}
 
 	return pod.Spec.Affinity
 }
 
-// Given a VM, create a NodeSelectorTerm with anti-affinity for that VM's node.
+// Given a VirtualMachineInstance, create a NodeSelectorTerm with anti-affinity for that VirtualMachineInstance's node.
 // This is useful for the case when a migration away from a node must occur.
-func PrepareVMNodeAntiAffinitySelectorRequirement(vm *VirtualMachine) k8sv1.NodeSelectorRequirement {
+func PrepareVMINodeAntiAffinitySelectorRequirement(vmi *VirtualMachineInstance) k8sv1.NodeSelectorRequirement {
 	return k8sv1.NodeSelectorRequirement{
 		Key:      "kubernetes.io/hostname",
 		Operator: k8sv1.NodeSelectorOpNotIn,
-		Values:   []string{vm.Status.NodeName},
+		Values:   []string{vmi.Status.NodeName},
 	}
 }
 
-// VM is *the* VM Definition. It represents a virtual machine in the runtime environment of kubernetes.
+// VirtualMachineInstance is *the* VirtualMachineInstance Definition. It represents a virtual machine in the runtime environment of kubernetes.
+// ---
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-type VirtualMachineReplicaSet struct {
+// +k8s:openapi-gen=true
+type VirtualMachineInstanceReplicaSet struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	// VM Spec contains the VM specification.
-	Spec VMReplicaSetSpec `json:"spec,omitempty" valid:"required"`
-	// Status is the high level overview of how the VM is doing. It contains information available to controllers and users.
-	Status VMReplicaSetStatus `json:"status,omitempty"`
+	// VirtualMachineInstance Spec contains the VirtualMachineInstance specification.
+	Spec VirtualMachineInstanceReplicaSetSpec `json:"spec,omitempty" valid:"required"`
+	// Status is the high level overview of how the VirtualMachineInstance is doing. It contains information available to controllers and users.
+	Status VirtualMachineInstanceReplicaSetStatus `json:"status,omitempty"`
 }
 
-// VMList is a list of VMs
+// VMIList is a list of VMIs
+// ---
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-type VirtualMachineReplicaSetList struct {
+// +k8s:openapi-gen=true
+type VirtualMachineInstanceReplicaSetList struct {
 	metav1.TypeMeta `json:",inline"`
-	ListMeta        metav1.ListMeta            `json:"metadata,omitempty"`
-	Items           []VirtualMachineReplicaSet `json:"items"`
+	ListMeta        metav1.ListMeta                    `json:"metadata,omitempty"`
+	Items           []VirtualMachineInstanceReplicaSet `json:"items"`
 }
 
-type VMReplicaSetSpec struct {
+// ---
+// +k8s:openapi-gen=true
+type VirtualMachineInstanceReplicaSetSpec struct {
 	// Number of desired pods. This is a pointer to distinguish between explicit
 	// zero and not specified. Defaults to 1.
 	// +optional
@@ -438,18 +496,19 @@ type VMReplicaSetSpec struct {
 
 	// Label selector for pods. Existing ReplicaSets whose pods are
 	// selected by this will be the ones affected by this deployment.
-	// +optional
-	Selector *metav1.LabelSelector `json:"selector,omitempty" valid:"required"`
+	Selector *metav1.LabelSelector `json:"selector" valid:"required"`
 
 	// Template describes the pods that will be created.
-	Template *VMTemplateSpec `json:"template" valid:"required"`
+	Template *VirtualMachineInstanceTemplateSpec `json:"template" valid:"required"`
 
 	// Indicates that the replica set is paused.
 	// +optional
 	Paused bool `json:"paused,omitempty" protobuf:"varint,7,opt,name=paused"`
 }
 
-type VMReplicaSetStatus struct {
+// ---
+// +k8s:openapi-gen=true
+type VirtualMachineInstanceReplicaSetStatus struct {
 	// Total number of non-terminated pods targeted by this deployment (their labels match the selector).
 	// +optional
 	Replicas int32 `json:"replicas,omitempty" protobuf:"varint,2,opt,name=replicas"`
@@ -458,77 +517,251 @@ type VMReplicaSetStatus struct {
 	// +optional
 	ReadyReplicas int32 `json:"readyReplicas,omitempty" protobuf:"varint,4,opt,name=readyReplicas"`
 
-	Conditions []VMReplicaSetCondition `json:"conditions" optional:"true"`
+	Conditions []VirtualMachineInstanceReplicaSetCondition `json:"conditions,omitempty" optional:"true"`
 }
 
-type VMReplicaSetCondition struct {
-	Type               VMReplicaSetConditionType `json:"type"`
-	Status             k8sv1.ConditionStatus     `json:"status"`
-	LastProbeTime      metav1.Time               `json:"lastProbeTime,omitempty"`
-	LastTransitionTime metav1.Time               `json:"lastTransitionTime,omitempty"`
-	Reason             string                    `json:"reason,omitempty"`
-	Message            string                    `json:"message,omitempty"`
+// ---
+// +k8s:openapi-gen=true
+type VirtualMachineInstanceReplicaSetCondition struct {
+	Type               VirtualMachineInstanceReplicaSetConditionType `json:"type"`
+	Status             k8sv1.ConditionStatus                         `json:"status"`
+	LastProbeTime      metav1.Time                                   `json:"lastProbeTime,omitempty"`
+	LastTransitionTime metav1.Time                                   `json:"lastTransitionTime,omitempty"`
+	Reason             string                                        `json:"reason,omitempty"`
+	Message            string                                        `json:"message,omitempty"`
 }
 
-type VMReplicaSetConditionType string
+// ---
+// +k8s:openapi-gen=true
+type VirtualMachineInstanceReplicaSetConditionType string
 
 const (
-	// VMReplicaSetReplicaFailure is added in a replica set when one of its vms
+	// VirtualMachineInstanceReplicaSetReplicaFailure is added in a replica set when one of its vmis
 	// fails to be created due to insufficient quota, limit ranges, pod security policy, node selectors,
 	// etc. or deleted due to kubelet being down or finalizers are failing.
-	VMReplicaSetReplicaFailure VMReplicaSetConditionType = "ReplicaFailure"
+	VirtualMachineInstanceReplicaSetReplicaFailure VirtualMachineInstanceReplicaSetConditionType = "ReplicaFailure"
 
-	// VMReplicaSetReplicaPaused is added in a replica set when the replica set got paused by the controller.
-	// After this condition was added, it is safe to remove or add vms by hand and adjust the replica count by hand.
-	VMReplicaSetReplicaPaused VMReplicaSetConditionType = "ReplicaPaused"
+	// VirtualMachineInstanceReplicaSetReplicaPaused is added in a replica set when the replica set got paused by the controller.
+	// After this condition was added, it is safe to remove or add vmis by hand and adjust the replica count by hand.
+	VirtualMachineInstanceReplicaSetReplicaPaused VirtualMachineInstanceReplicaSetConditionType = "ReplicaPaused"
 )
 
-type VMTemplateSpec struct {
+// ---
+// +k8s:openapi-gen=true
+type VirtualMachineInstanceTemplateSpec struct {
 	ObjectMeta metav1.ObjectMeta `json:"metadata,omitempty"`
-	// VM Spec contains the VM specification.
-	Spec VirtualMachineSpec `json:"spec,omitempty" valid:"required"`
+	// VirtualMachineInstance Spec contains the VirtualMachineInstance specification.
+	Spec VirtualMachineInstanceSpec `json:"spec,omitempty" valid:"required"`
 }
 
 // Required to satisfy Object interface
-func (v *VirtualMachineReplicaSet) GetObjectKind() schema.ObjectKind {
+func (v *VirtualMachineInstanceReplicaSet) GetObjectKind() schema.ObjectKind {
 	return &v.TypeMeta
 }
 
 // Required to satisfy ObjectMetaAccessor interface
-func (v *VirtualMachineReplicaSet) GetObjectMeta() metav1.Object {
+func (v *VirtualMachineInstanceReplicaSet) GetObjectMeta() metav1.Object {
 	return &v.ObjectMeta
 }
 
-func (v *VirtualMachineReplicaSet) UnmarshalJSON(data []byte) error {
-	type VMReplicaSetCopy VirtualMachineReplicaSet
-	tmp := VMReplicaSetCopy{}
+func (v *VirtualMachineInstanceReplicaSet) UnmarshalJSON(data []byte) error {
+	type VMIReplicaSetCopy VirtualMachineInstanceReplicaSet
+	tmp := VMIReplicaSetCopy{}
 	err := json.Unmarshal(data, &tmp)
 	if err != nil {
 		return err
 	}
-	tmp2 := VirtualMachineReplicaSet(tmp)
+	tmp2 := VirtualMachineInstanceReplicaSet(tmp)
 	*v = tmp2
 	return nil
 }
 
-func (vl *VirtualMachineReplicaSetList) UnmarshalJSON(data []byte) error {
-	type VMReplicaSetListCopy VirtualMachineReplicaSetList
-	tmp := VMReplicaSetListCopy{}
+func (vl *VirtualMachineInstanceReplicaSetList) UnmarshalJSON(data []byte) error {
+	type VMIReplicaSetListCopy VirtualMachineInstanceReplicaSetList
+	tmp := VMIReplicaSetListCopy{}
 	err := json.Unmarshal(data, &tmp)
 	if err != nil {
 		return err
 	}
-	tmp2 := VirtualMachineReplicaSetList(tmp)
+	tmp2 := VirtualMachineInstanceReplicaSetList(tmp)
 	*vl = tmp2
 	return nil
 }
 
 // Required to satisfy Object interface
-func (vl *VirtualMachineReplicaSetList) GetObjectKind() schema.ObjectKind {
+func (vl *VirtualMachineInstanceReplicaSetList) GetObjectKind() schema.ObjectKind {
 	return &vl.TypeMeta
 }
 
 // Required to satisfy ListMetaAccessor interface
-func (vl *VirtualMachineReplicaSetList) GetListMeta() meta.List {
+func (vl *VirtualMachineInstanceReplicaSetList) GetListMeta() meta.List {
 	return &vl.ListMeta
 }
+
+// ---
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +k8s:openapi-gen=true
+type VirtualMachineInstancePreset struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+	// VirtualMachineInstance Spec contains the VirtualMachineInstance specification.
+	Spec VirtualMachineInstancePresetSpec `json:"spec,omitempty" valid:"required"`
+}
+
+// Required to satisfy Object interface
+func (v *VirtualMachineInstancePreset) GetObjectKind() schema.ObjectKind {
+	return &v.TypeMeta
+}
+
+// Required to satisfy ObjectMetaAccessor interface
+func (v *VirtualMachineInstancePreset) GetObjectMeta() metav1.Object {
+	return &v.ObjectMeta
+}
+
+// VirtualMachineInstancePresetList is a list of VirtualMachinePresets
+// ---
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +k8s:openapi-gen=true
+type VirtualMachineInstancePresetList struct {
+	metav1.TypeMeta `json:",inline"`
+	ListMeta        metav1.ListMeta                `json:"metadata,omitempty"`
+	Items           []VirtualMachineInstancePreset `json:"items"`
+}
+
+// ---
+// +k8s:openapi-gen=true
+type VirtualMachineInstancePresetSpec struct {
+	// Selector is a label query over a set of VMIs.
+	// Required.
+	Selector metav1.LabelSelector `json:"selector"`
+	// Domain is the same object type as contained in VirtualMachineInstanceSpec
+	Domain *DomainSpec `json:"domain,omitempty"`
+}
+
+func NewVirtualMachinePreset(name string, selector metav1.LabelSelector) *VirtualMachineInstancePreset {
+	return &VirtualMachineInstancePreset{
+		Spec: VirtualMachineInstancePresetSpec{
+			Selector: selector,
+			Domain:   &DomainSpec{},
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: k8sv1.NamespaceDefault,
+		},
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: GroupVersion.String(),
+			Kind:       VirtualMachineInstancePresetGroupVersionKind.Kind,
+		},
+	}
+}
+
+func (vl *VirtualMachineInstancePresetList) UnmarshalJSON(data []byte) error {
+	type VirtualMachinePresetListCopy VirtualMachineInstancePresetList
+	tmp := VirtualMachinePresetListCopy{}
+	err := json.Unmarshal(data, &tmp)
+	if err != nil {
+		return err
+	}
+	tmp2 := VirtualMachineInstancePresetList(tmp)
+	*vl = tmp2
+	return nil
+}
+
+// Required to satisfy Object interface
+func (vl *VirtualMachineInstancePresetList) GetObjectKind() schema.ObjectKind {
+	return &vl.TypeMeta
+}
+
+// Required to satisfy ListMetaAccessor interface
+func (vl *VirtualMachineInstancePresetList) GetListMeta() meta.List {
+	return &vl.ListMeta
+}
+
+// VirtualMachine handles the VirtualMachines that are not running
+// or are in a stopped state
+// The VirtualMachine contains the template to create the
+// VirtualMachineInstance. It also mirrors the running state of the created
+// VirtualMachineInstance in its status.
+// ---
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +k8s:openapi-gen=true
+type VirtualMachine struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	// Spec contains the specification of VirtualMachineInstance created
+	Spec VirtualMachineSpec `json:"spec,omitempty"`
+	// Status holds the current state of the controller and brief information
+	// about its associated VirtualMachineInstance
+	Status VirtualMachineStatus `json:"status,omitempty"`
+}
+
+// VirtualMachineList is a list of virtualmachines
+// ---
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +k8s:openapi-gen=true
+type VirtualMachineList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata"`
+
+	// Items is a list of VirtualMachines
+	Items []VirtualMachine `json:"items"`
+}
+
+// VirtualMachineSpec describes how the proper VirtualMachine
+// should look like
+// ---
+// +k8s:openapi-gen=true
+type VirtualMachineSpec struct {
+	// Running controls whether the associatied VirtualMachineInstance is created or not
+	Running bool `json:"running"`
+
+	// Template is the direct specification of VirtualMachineInstance
+	Template *VirtualMachineInstanceTemplateSpec `json:"template"`
+}
+
+// VirtualMachineStatus represents the status returned by the
+// controller to describe how the VirtualMachine is doing
+// ---
+// +k8s:openapi-gen=true
+type VirtualMachineStatus struct {
+	// Created indicates if the virtual machine is created in the cluster
+	Created bool `json:"created,omitempty"`
+	// Ready indicates if the virtual machine is running and ready
+	Ready bool `json:"ready,omitempty"`
+	// Hold the state information of the VirtualMachine and its VirtualMachineInstance
+	Conditions []VirtualMachineCondition `json:"conditions,omitempty" optional:"true"`
+}
+
+// GetObjectKind is required to satisfy Object interface
+func (v *VirtualMachine) GetObjectKind() schema.ObjectKind {
+	return &v.TypeMeta
+}
+
+// GetObjectMeta is required to satisfy ObjectMetaAccessor interface
+func (v *VirtualMachine) GetObjectMeta() metav1.Object {
+	return &v.ObjectMeta
+}
+
+// VirtualMachineCondition represents the state of VirtualMachine
+// ---
+// +k8s:openapi-gen=true
+type VirtualMachineCondition struct {
+	Type               VirtualMachineConditionType `json:"type"`
+	Status             k8sv1.ConditionStatus       `json:"status"`
+	LastProbeTime      metav1.Time                 `json:"lastProbeTime,omitempty"`
+	LastTransitionTime metav1.Time                 `json:"lastTransitionTime,omitempty"`
+	Reason             string                      `json:"reason,omitempty"`
+	Message            string                      `json:"message,omitempty"`
+}
+
+// ---
+// +k8s:openapi-gen=true
+type VirtualMachineConditionType string
+
+const (
+	// VirtualMachineFailure is added in a offline virtual machine when its vmi
+	// fails to be created due to insufficient quota, limit ranges, pod security policy, node selectors,
+	// etc. or deleted due to kubelet being down or finalizers are failing.
+	VirtualMachineFailure VirtualMachineConditionType = "Failure"
+)

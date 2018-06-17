@@ -1,9 +1,31 @@
+/*
+ * This file is part of the KubeVirt project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Copyright 2017, 2018 Red Hat, Inc.
+ *
+ */
+
 package watch
 
 import (
+	"io/ioutil"
 	golog "log"
 	"net/http"
 	"os"
+	"strings"
+	"time"
 
 	"github.com/emicklei/go-restful"
 	flag "github.com/spf13/pflag"
@@ -34,9 +56,15 @@ const (
 
 	launcherImage = "virt-launcher"
 
+	imagePullSecret = ""
+
 	virtShareDir = "/var/run/kubevirt"
 
 	ephemeralDiskDir = "/var/run/libvirt/kubevirt-ephemeral-disk"
+
+	resyncPeriod = 30 * time.Second
+
+	controllerThreads = 3
 )
 
 type VirtControllerApp struct {
@@ -45,21 +73,36 @@ type VirtControllerApp struct {
 	clientSet       kubecli.KubevirtClient
 	templateService services.TemplateService
 	restClient      *clientrest.RESTClient
-	vmService       services.VMService
 	informerFactory controller.KubeInformerFactory
 	podInformer     cache.SharedIndexInformer
 
-	vmCache      cache.Store
+	nodeInformer   cache.SharedIndexInformer
+	nodeController *NodeController
+
+	vmiCache      cache.Store
+	vmiController *VMIController
+	vmiInformer   cache.SharedIndexInformer
+
+	vmiPresetCache      cache.Store
+	vmiPresetController *VirtualMachinePresetController
+	vmiPresetQueue      workqueue.RateLimitingInterface
+	vmiPresetInformer   cache.SharedIndexInformer
+	vmiPresetRecorder   record.EventRecorder
+	vmiRecorder         record.EventRecorder
+
+	configMapCache    cache.Store
+	configMapInformer cache.SharedIndexInformer
+
+	rsController *VMIReplicaSet
+	rsInformer   cache.SharedIndexInformer
+
 	vmController *VMController
 	vmInformer   cache.SharedIndexInformer
-	vmQueue      workqueue.RateLimitingInterface
-
-	rsController *VMReplicaSet
-	rsInformer   cache.SharedIndexInformer
 
 	LeaderElection leaderelectionconfig.Configuration
 
 	launcherImage    string
+	imagePullSecret  string
 	virtShareDir     string
 	ephemeralDiskDir string
 	readyChan        chan bool
@@ -88,27 +131,40 @@ func Execute() {
 	app.restClient = app.clientSet.RestClient()
 
 	webService := rest.WebService
-	webService.Route(webService.GET("/leader").To(app.readinessProbe).Doc("Leader endpoint"))
+	webService.Route(webService.GET("/leader").To(app.leaderProbe).Doc("Leader endpoint"))
 	restful.Add(webService)
 
 	// Bootstrapping. From here on the initialization order is important
 
 	app.informerFactory = controller.NewKubeInformerFactory(app.restClient, app.clientSet)
 
-	app.vmInformer = app.informerFactory.VM()
+	app.vmiInformer = app.informerFactory.VMI()
 	app.podInformer = app.informerFactory.KubeVirtPod()
+	app.nodeInformer = app.informerFactory.KubeVirtNode()
 
-	app.vmQueue = workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter())
-	app.vmCache = app.vmInformer.GetStore()
-	app.vmInformer.AddEventHandler(controller.NewResourceEventHandlerFuncsForWorkqueue(app.vmQueue))
-	app.podInformer.AddEventHandler(controller.NewResourceEventHandlerFuncsForFunc(vmLabelHandler(app.vmQueue)))
+	app.vmiCache = app.vmiInformer.GetStore()
+	app.vmiRecorder = app.getNewRecorder(k8sv1.NamespaceAll, "virtualmachine-controller")
 
-	app.rsInformer = app.informerFactory.VMReplicaSet()
+	app.vmiPresetQueue = workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter())
+	app.vmiPresetCache = app.vmiInformer.GetStore()
+	app.vmiInformer.AddEventHandler(controller.NewResourceEventHandlerFuncsForWorkqueue(app.vmiPresetQueue))
+
+	app.vmiPresetInformer = app.informerFactory.VirtualMachinePreset()
+
+	app.rsInformer = app.informerFactory.VMIReplicaSet()
+	app.vmiPresetRecorder = app.getNewRecorder(k8sv1.NamespaceAll, "virtualmachine-preset-controller")
+
+	app.configMapInformer = app.informerFactory.ConfigMap()
+	app.configMapCache = app.configMapInformer.GetStore()
+
+	app.vmInformer = app.informerFactory.VirtualMachine()
 
 	app.initCommon()
 	app.initReplicaSet()
+	app.initVirtualMachines()
 	app.Run()
 }
+
 func (vca *VirtControllerApp) Run() {
 	logger := log.Log
 	stop := make(chan struct{})
@@ -128,8 +184,20 @@ func (vca *VirtControllerApp) Run() {
 		golog.Fatalf("unable to get hostname: %v", err)
 	}
 
+	var namespace string
+	if data, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace"); err == nil {
+		if ns := strings.TrimSpace(string(data)); len(ns) > 0 {
+			namespace = ns
+		}
+	} else if os.IsNotExist(err) {
+		// TODO: Replace leaderelectionconfig.DefaultNamespace with a flag
+		namespace = leaderelectionconfig.DefaultNamespace
+	} else {
+		golog.Fatalf("Error searching for namespace in /var/run/secrets/kubernetes.io/serviceaccount/namespace: %v", err)
+	}
+
 	rl, err := resourcelock.New(vca.LeaderElection.ResourceLock,
-		leaderelectionconfig.DefaultNamespace,
+		namespace,
 		leaderelectionconfig.DefaultEndpointName,
 		vca.clientSet.CoreV1(),
 		resourcelock.ResourceLockConfig{
@@ -149,8 +217,12 @@ func (vca *VirtControllerApp) Run() {
 			Callbacks: leaderelection.LeaderCallbacks{
 				OnStartedLeading: func(stopCh <-chan struct{}) {
 					vca.informerFactory.Start(stop)
-					go vca.vmController.Run(3, stop)
-					go vca.rsController.Run(3, stop)
+					go vca.nodeController.Run(controllerThreads, stop)
+					go vca.vmiController.Run(controllerThreads, stop)
+					go vca.rsController.Run(controllerThreads, stop)
+					go vca.vmiPresetController.Run(controllerThreads, stop)
+					go vca.vmController.Run(controllerThreads, stop)
+					go vca.configMapInformer.Run(stop)
 					close(vca.readyChan)
 				},
 				OnStoppedLeading: func() {
@@ -179,20 +251,23 @@ func (vca *VirtControllerApp) initCommon() {
 	if err != nil {
 		golog.Fatal(err)
 	}
-	vca.templateService, err = services.NewTemplateService(vca.launcherImage, vca.virtShareDir)
-	if err != nil {
-		golog.Fatal(err)
-	}
-	vca.vmService = services.NewVMService(vca.clientSet, vca.restClient, vca.templateService)
-	vca.vmController = NewVMController(vca.restClient, vca.vmService, vca.vmQueue, vca.vmCache, vca.vmInformer, vca.podInformer, nil, vca.clientSet)
+	vca.templateService = services.NewTemplateService(vca.launcherImage, vca.virtShareDir, vca.imagePullSecret, vca.configMapCache)
+	vca.vmiController = NewVMIController(vca.templateService, vca.vmiInformer, vca.podInformer, vca.vmiRecorder, vca.clientSet, vca.configMapInformer)
+	vca.vmiPresetController = NewVirtualMachinePresetController(vca.vmiPresetInformer, vca.vmiInformer, vca.vmiPresetQueue, vca.vmiPresetCache, vca.clientSet, vca.vmiPresetRecorder)
+	vca.nodeController = NewNodeController(vca.clientSet, vca.nodeInformer, vca.vmiInformer, nil)
 }
 
 func (vca *VirtControllerApp) initReplicaSet() {
 	recorder := vca.getNewRecorder(k8sv1.NamespaceAll, "virtualmachinereplicaset-controller")
-	vca.rsController = NewVMReplicaSet(vca.vmInformer, vca.rsInformer, recorder, vca.clientSet, controller.BurstReplicas)
+	vca.rsController = NewVMIReplicaSet(vca.vmiInformer, vca.rsInformer, recorder, vca.clientSet, controller.BurstReplicas)
 }
 
-func (vca *VirtControllerApp) readinessProbe(_ *restful.Request, response *restful.Response) {
+func (vca *VirtControllerApp) initVirtualMachines() {
+	recorder := vca.getNewRecorder(k8sv1.NamespaceAll, "virtualmachine-controller")
+	vca.vmController = NewVMController(vca.vmiInformer, vca.vmInformer, recorder, vca.clientSet)
+}
+
+func (vca *VirtControllerApp) leaderProbe(_ *restful.Request, response *restful.Response) {
 	res := map[string]interface{}{}
 
 	select {
@@ -204,8 +279,8 @@ func (vca *VirtControllerApp) readinessProbe(_ *restful.Request, response *restf
 		}
 	default:
 	}
-	res["apiserver"] = map[string]interface{}{"leader": "false", "error": "current pod is not leader"}
-	response.WriteHeaderAndJson(http.StatusServiceUnavailable, res, restful.MIME_JSON)
+	res["apiserver"] = map[string]interface{}{"leader": "false"}
+	response.WriteHeaderAndJson(http.StatusOK, res, restful.MIME_JSON)
 }
 
 func (vca *VirtControllerApp) AddFlags() {
@@ -219,7 +294,10 @@ func (vca *VirtControllerApp) AddFlags() {
 	vca.AddCommonFlags()
 
 	flag.StringVar(&vca.launcherImage, "launcher-image", launcherImage,
-		"Shim container for containerized VMs")
+		"Shim container for containerized VMIs")
+
+	flag.StringVar(&vca.imagePullSecret, "image-pull-secret", imagePullSecret,
+		"Secret to use for pulling virt-launcher and/or registry disks")
 
 	flag.StringVar(&vca.virtShareDir, "kubevirt-share-dir", virtShareDir,
 		"Shared directory between virt-handler and virt-launcher")

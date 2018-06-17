@@ -1,8 +1,28 @@
+/*
+ * This file is part of the KubeVirt project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Copyright 2017, 2018 Red Hat, Inc.
+ *
+ */
+
 package api
 
 import (
 	"fmt"
-	"strings"
+	"os"
+	"path/filepath"
 
 	k8sv1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -11,14 +31,17 @@ import (
 
 	"kubevirt.io/kubevirt/pkg/api/v1"
 	"kubevirt.io/kubevirt/pkg/cloud-init"
+	"kubevirt.io/kubevirt/pkg/emptydisk"
+	"kubevirt.io/kubevirt/pkg/ephemeral-disk"
 	"kubevirt.io/kubevirt/pkg/log"
 	"kubevirt.io/kubevirt/pkg/precond"
 	"kubevirt.io/kubevirt/pkg/registry-disk"
 )
 
 type ConverterContext struct {
+	AllowEmulation bool
 	Secrets        map[string]*k8sv1.Secret
-	VirtualMachine *v1.VirtualMachine
+	VirtualMachine *v1.VirtualMachineInstance
 }
 
 func Convert_v1_Disk_To_api_Disk(diskDevice *v1.Disk, disk *Disk, devicePerBus map[string]int) error {
@@ -44,12 +67,20 @@ func Convert_v1_Disk_To_api_Disk(diskDevice *v1.Disk, disk *Disk, devicePerBus m
 		disk.Target.Tray = string(diskDevice.CDRom.Tray)
 		disk.Target.Bus = diskDevice.CDRom.Bus
 		disk.Target.Device = makeDeviceName(diskDevice.CDRom.Bus, devicePerBus)
-		disk.ReadOnly = toApiReadOnly(*diskDevice.CDRom.ReadOnly)
+		if diskDevice.CDRom.ReadOnly != nil {
+			disk.ReadOnly = toApiReadOnly(*diskDevice.CDRom.ReadOnly)
+		} else {
+			disk.ReadOnly = toApiReadOnly(true)
+		}
 	}
 	disk.Driver = &DiskDriver{
 		Name: "qemu",
 	}
 	disk.Alias = &Alias{Name: diskDevice.Name}
+	if diskDevice.BootOrder != nil {
+		disk.BootOrder = &BootOrder{Order: *diskDevice.BootOrder}
+	}
+
 	return nil
 }
 
@@ -103,49 +134,29 @@ func Convert_v1_Volume_To_api_Disk(source *v1.Volume, disk *Disk, c *ConverterCo
 		return Convert_v1_CloudInitNoCloudSource_To_api_Disk(source.CloudInitNoCloud, disk, c)
 	}
 
-	if source.ISCSI != nil {
-		return Convert_v1_ISCSIVolumeSource_To_api_Disk(source.ISCSI, disk, c)
+	if source.PersistentVolumeClaim != nil {
+		return Covert_v1_FilesystemVolumeSource_To_api_Disk(source.Name, disk, c)
+	}
+
+	if source.Ephemeral != nil {
+		return Convert_v1_EphemeralVolumeSource_To_api_Disk(source.Name, source.Ephemeral, disk, c)
+	}
+	if source.EmptyDisk != nil {
+		return Convert_v1_EmptyDiskSource_To_api_Disk(source.Name, source.EmptyDisk, disk, c)
 	}
 
 	return fmt.Errorf("disk %s references an unsupported source", disk.Alias.Name)
 }
-func Convert_v1_ISCSIVolumeSource_To_api_Disk(source *k8sv1.ISCSIVolumeSource, disk *Disk, c *ConverterContext) error {
 
-	disk.Type = "network"
+func Covert_v1_FilesystemVolumeSource_To_api_Disk(volumeName string, disk *Disk, c *ConverterContext) error {
+
+	disk.Type = "file"
 	disk.Driver.Type = "raw"
-	disk.Driver.Cache = "none"
-
-	disk.Source.Name = fmt.Sprintf("%s/%d", source.IQN, source.Lun)
-	disk.Source.Protocol = "iscsi"
-
-	hostPort := strings.Split(source.TargetPortal, ":")
-
-	disk.Source.Host = &DiskSourceHost{}
-	disk.Source.Host.Name = hostPort[0]
-	if len(hostPort) > 1 {
-		disk.Source.Host.Port = hostPort[1]
-	}
-
-	// This iscsi device has auth associated with it.
-	if source.SecretRef != nil && source.SecretRef.Name != "" {
-
-		secret := c.Secrets[source.SecretRef.Name]
-		if secret == nil {
-			return fmt.Errorf("failed to find secret for disk auth %s", source.SecretRef.Name)
-		}
-		userValue, ok := secret.Data["node.session.auth.username"]
-		if ok == false {
-			return fmt.Errorf("failed to find username for disk auth %s", source.SecretRef.Name)
-		}
-
-		disk.Auth = &DiskAuth{
-			Secret: &DiskSecret{
-				Type:  "iscsi",
-				Usage: SecretToLibvirtSecret(c.VirtualMachine, source.SecretRef.Name),
-			},
-			Username: string(userValue),
-		}
-	}
+	disk.Source.File = filepath.Join(
+		"/var/run/kubevirt-private",
+		"vmi-disks",
+		volumeName,
+		"disk.img")
 	return nil
 }
 
@@ -157,6 +168,18 @@ func Convert_v1_CloudInitNoCloudSource_To_api_Disk(source *v1.CloudInitNoCloudSo
 	disk.Source.File = fmt.Sprintf("%s/%s", cloudinit.GetDomainBasePath(c.VirtualMachine.Name, c.VirtualMachine.Namespace), cloudinit.NoCloudFile)
 	disk.Type = "file"
 	disk.Driver.Type = "raw"
+	return nil
+}
+
+func Convert_v1_EmptyDiskSource_To_api_Disk(volumeName string, _ *v1.EmptyDiskSource, disk *Disk, c *ConverterContext) error {
+	if disk.Type == "lun" {
+		return fmt.Errorf("device %s is of type lun. Not compatible with a file based disk", disk.Alias.Name)
+	}
+
+	disk.Type = "file"
+	disk.Driver.Type = "qcow2"
+	disk.Source.File = emptydisk.FilePathForVolumeName(volumeName)
+
 	return nil
 }
 
@@ -172,6 +195,25 @@ func Convert_v1_RegistryDiskSource_To_api_Disk(volumeName string, _ *v1.Registry
 	}
 	disk.Driver.Type = diskType
 	disk.Source.File = diskPath
+	return nil
+}
+
+func Convert_v1_EphemeralVolumeSource_To_api_Disk(volumeName string, source *v1.EphemeralVolumeSource, disk *Disk, c *ConverterContext) error {
+	disk.Type = "file"
+	disk.Driver.Type = "qcow2"
+	disk.Source.File = ephemeraldisk.GetFilePath(volumeName)
+	disk.BackingStore = &BackingStore{}
+
+	backingDisk := &Disk{Driver: &DiskDriver{}}
+	err := Covert_v1_FilesystemVolumeSource_To_api_Disk(volumeName, backingDisk, c)
+	if err != nil {
+		return err
+	}
+
+	disk.BackingStore.Format.Type = backingDisk.Driver.Type
+	disk.BackingStore.Source = &backingDisk.Source
+	disk.BackingStore.Type = backingDisk.Type
+
 	return nil
 }
 
@@ -291,42 +333,62 @@ func Convert_v1_FeatureHyperv_To_api_FeatureHyperv(source *v1.FeatureHyperv, hyp
 	return nil
 }
 
-func Convert_v1_VirtualMachine_To_api_Domain(vm *v1.VirtualMachine, domain *Domain, c *ConverterContext) (err error) {
-	precond.MustNotBeNil(vm)
+func Convert_v1_VirtualMachine_To_api_Domain(vmi *v1.VirtualMachineInstance, domain *Domain, c *ConverterContext) (err error) {
+	precond.MustNotBeNil(vmi)
 	precond.MustNotBeNil(domain)
 	precond.MustNotBeNil(c)
 
-	domain.Spec.Name = VMNamespaceKeyFunc(vm)
-	domain.ObjectMeta.Name = vm.ObjectMeta.Name
-	domain.ObjectMeta.Namespace = vm.ObjectMeta.Namespace
+	domain.Spec.Name = VMINamespaceKeyFunc(vmi)
+	domain.ObjectMeta.Name = vmi.ObjectMeta.Name
+	domain.ObjectMeta.Namespace = vmi.ObjectMeta.Namespace
+
+	if _, err := os.Stat("/dev/kvm"); os.IsNotExist(err) {
+		if c.AllowEmulation {
+			logger := log.DefaultLogger()
+			logger.Infof("Hardware emulation device '/dev/kvm' not present. Using software emulation.")
+			domain.Spec.Type = "qemu"
+		} else {
+			return fmt.Errorf("hardware emulation device '/dev/kvm' not present")
+		}
+	} else if err != nil {
+		return err
+	}
 
 	// Spec metadata
-	domain.Spec.Metadata.KubeVirt.UID = vm.UID
-	if vm.Spec.TerminationGracePeriodSeconds != nil {
-		domain.Spec.Metadata.KubeVirt.GracePeriod.DeletionGracePeriodSeconds = *vm.Spec.TerminationGracePeriodSeconds
+	domain.Spec.Metadata.KubeVirt.UID = vmi.UID
+	if vmi.Spec.TerminationGracePeriodSeconds != nil {
+		domain.Spec.Metadata.KubeVirt.GracePeriod.DeletionGracePeriodSeconds = *vmi.Spec.TerminationGracePeriodSeconds
 	}
 
 	domain.Spec.SysInfo = &SysInfo{}
-	if vm.Spec.Domain.Firmware != nil {
+	if vmi.Spec.Domain.Firmware != nil {
 		domain.Spec.SysInfo.System = []Entry{
 			{
 				Name:  "uuid",
-				Value: string(vm.Spec.Domain.Firmware.UUID),
+				Value: string(vmi.Spec.Domain.Firmware.UUID),
 			},
 		}
 	}
 
-	if v, ok := vm.Spec.Domain.Resources.Requests[k8sv1.ResourceMemory]; ok {
-		domain.Spec.Memory = QuantityToMegaByte(v)
+	if v, ok := vmi.Spec.Domain.Resources.Requests[k8sv1.ResourceMemory]; ok {
+		if domain.Spec.Memory, err = QuantityToByte(v); err != nil {
+			return err
+		}
+	}
+
+	if vmi.Spec.Domain.Memory != nil && vmi.Spec.Domain.Memory.Hugepages != nil {
+		domain.Spec.MemoryBacking = &MemoryBacking{
+			HugePages: &HugePages{},
+		}
 	}
 
 	volumes := map[string]*v1.Volume{}
-	for _, volume := range vm.Spec.Volumes {
+	for _, volume := range vmi.Spec.Volumes {
 		volumes[volume.Name] = volume.DeepCopy()
 	}
 
 	devicePerBus := make(map[string]int)
-	for _, disk := range vm.Spec.Domain.Devices.Disks {
+	for _, disk := range vmi.Spec.Domain.Devices.Disks {
 		newDisk := Disk{}
 
 		err := Convert_v1_Disk_To_api_Disk(&disk, &newDisk, devicePerBus)
@@ -344,17 +406,17 @@ func Convert_v1_VirtualMachine_To_api_Domain(vm *v1.VirtualMachine, domain *Doma
 		domain.Spec.Devices.Disks = append(domain.Spec.Devices.Disks, newDisk)
 	}
 
-	if vm.Spec.Domain.Devices.Watchdog != nil {
+	if vmi.Spec.Domain.Devices.Watchdog != nil {
 		newWatchdog := &Watchdog{}
-		err := Convert_v1_Watchdog_To_api_Watchdog(vm.Spec.Domain.Devices.Watchdog, newWatchdog, c)
+		err := Convert_v1_Watchdog_To_api_Watchdog(vmi.Spec.Domain.Devices.Watchdog, newWatchdog, c)
 		if err != nil {
 			return err
 		}
 		domain.Spec.Devices.Watchdog = newWatchdog
 	}
 
-	if vm.Spec.Domain.Clock != nil {
-		clock := vm.Spec.Domain.Clock
+	if vmi.Spec.Domain.Clock != nil {
+		clock := vmi.Spec.Domain.Clock
 		newClock := &Clock{}
 		err := Convert_v1_Clock_To_api_Clock(clock, newClock, c)
 		if err != nil {
@@ -363,28 +425,28 @@ func Convert_v1_VirtualMachine_To_api_Domain(vm *v1.VirtualMachine, domain *Doma
 		domain.Spec.Clock = newClock
 	}
 
-	if vm.Spec.Domain.Features != nil {
+	if vmi.Spec.Domain.Features != nil {
 		domain.Spec.Features = &Features{}
-		err := Convert_v1_Features_To_api_Features(vm.Spec.Domain.Features, domain.Spec.Features, c)
+		err := Convert_v1_Features_To_api_Features(vmi.Spec.Domain.Features, domain.Spec.Features, c)
 		if err != nil {
 			return err
 		}
 	}
-	apiOst := &vm.Spec.Domain.Machine
+	apiOst := &vmi.Spec.Domain.Machine
 	err = Convert_v1_Machine_To_api_OSType(apiOst, &domain.Spec.OS.Type, c)
 	if err != nil {
 		return err
 	}
 
-	if vm.Spec.Domain.CPU != nil {
+	if vmi.Spec.Domain.CPU != nil {
 		domain.Spec.CPU.Topology = &CPUTopology{
 			Sockets: 1,
-			Cores:   vm.Spec.Domain.CPU.Cores,
+			Cores:   vmi.Spec.Domain.CPU.Cores,
 			Threads: 1,
 		}
 		domain.Spec.VCPU = &VCPU{
 			Placement: "static",
-			CPUs:      vm.Spec.Domain.CPU.Cores,
+			CPUs:      vmi.Spec.Domain.CPU.Cores,
 		}
 	}
 
@@ -409,7 +471,7 @@ func Convert_v1_VirtualMachine_To_api_Domain(vm *v1.VirtualMachine, domain *Doma
 			},
 			Source: &SerialSource{
 				Mode: "bind",
-				Path: fmt.Sprintf("/var/run/kubevirt-private/%s/%s/virt-serial%d", vm.ObjectMeta.Namespace, vm.ObjectMeta.Name, serialPort),
+				Path: fmt.Sprintf("/var/run/kubevirt-private/%s/%s/virt-serial%d", vmi.ObjectMeta.Namespace, vmi.ObjectMeta.Name, serialPort),
 			},
 		},
 	}
@@ -419,24 +481,70 @@ func Convert_v1_VirtualMachine_To_api_Domain(vm *v1.VirtualMachine, domain *Doma
 		{
 			Listen: &GraphicsListen{
 				Type:   "socket",
-				Socket: fmt.Sprintf("/var/run/kubevirt-private/%s/%s/virt-vnc", vm.ObjectMeta.Namespace, vm.ObjectMeta.Name),
+				Socket: fmt.Sprintf("/var/run/kubevirt-private/%s/%s/virt-vnc", vmi.ObjectMeta.Namespace, vmi.ObjectMeta.Name),
 			},
 			Type: "vnc",
 		},
 	}
 
+	// Add mandatory interface
+	interfaceType := "virtio"
+
+	_, ok := vmi.ObjectMeta.Annotations[v1.InterfaceModel]
+	if ok {
+		interfaceType = vmi.ObjectMeta.Annotations[v1.InterfaceModel]
+	}
+
+	findNetwork := func(nets []v1.Network, name string) (*v1.Network, error) {
+		for _, net := range nets {
+			if net.Name == name {
+				return &net, nil
+			}
+		}
+		return nil, fmt.Errorf("failed to find network %s", name)
+	}
+
+	for _, iface := range vmi.Spec.Domain.Devices.Interfaces {
+		net, err := findNetwork(vmi.Spec.Networks, iface.Name)
+		if err != nil {
+			return err
+		}
+		if net.Pod == nil {
+			return fmt.Errorf("network interface type not supported for %s", iface.Name)
+		}
+		// TODO:(ihar) consider abstracting interface type conversion /
+		// detection into drivers
+		domainIface := Interface{
+			Model: &Model{
+				Type: interfaceType,
+			},
+			Type: "bridge",
+			Source: InterfaceSource{
+				Bridge: DefaultBridgeName,
+			},
+			Alias: &Alias{
+				Name: iface.Name,
+			},
+		}
+		domain.Spec.Devices.Interfaces = append(domain.Spec.Devices.Interfaces, domainIface)
+	}
+
 	return nil
 }
 
-func SecretToLibvirtSecret(vm *v1.VirtualMachine, secretName string) string {
-	return fmt.Sprintf("%s-%s-%s---", secretName, vm.Namespace, vm.Name)
+func SecretToLibvirtSecret(vmi *v1.VirtualMachineInstance, secretName string) string {
+	return fmt.Sprintf("%s-%s-%s---", secretName, vmi.Namespace, vmi.Name)
 }
 
-func QuantityToMegaByte(quantity resource.Quantity) Memory {
-	return Memory{
-		Value: uint(quantity.ToDec().ScaledValue(6)),
-		Unit:  "MB",
+func QuantityToByte(quantity resource.Quantity) (Memory, error) {
+	memorySize, _ := quantity.AsInt64()
+	if memorySize < 0 {
+		return Memory{Unit: "B"}, fmt.Errorf("Memory size '%s' must be greater than or equal to 0", quantity.String())
 	}
+	return Memory{
+		Value: uint64(memorySize),
+		Unit:  "B",
+	}, nil
 }
 
 func boolToOnOff(value *bool, defaultOn bool) string {

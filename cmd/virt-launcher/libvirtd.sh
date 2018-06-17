@@ -19,33 +19,6 @@
 
 set -xe
 
-# HACK
-# Use hosts's /dev to see new devices and allow macvtap
-mkdir -p /dev.container && {
-    mount --rbind /dev /dev.container
-    mount --rbind /host-dev /dev
-
-    # Keep some devices from the containerinal /dev
-    keep() { mount --rbind /dev.container/$1 /dev/$1; }
-    keep shm || :
-    keep mqueue
-    # Keep ptmx/pts for pty creation
-    keep pts
-    mount --rbind /dev/pts/ptmx /dev/ptmx
-    # Use the container /dev/kvm if available
-    [[ -e /dev.container/kvm ]] && keep kvm
-}
-
-mkdir -p /sys.net.container && {
-    mount --rbind /sys/class/net /sys.net.container
-    mount --rbind /host-sys/class/net /sys/class/net
-}
-
-mkdir -p /sys.devices.container && {
-    mount --rbind /sys/devices /sys.devices.container
-    mount --rbind /host-sys/devices /sys/devices
-}
-
 mkdir -p /var/log/kubevirt
 touch /var/log/kubevirt/qemu-kube.log
 chown qemu:qemu /var/log/kubevirt/qemu-kube.log
@@ -74,5 +47,10 @@ EOX
 fi
 
 echo "cgroup_controllers = [ ]" >>/etc/libvirt/qemu.conf
+
+# Be sure that libvirt always will be look the same directory for hugepages mount
+if [ -d "/dev/hugepages" ]; then
+    echo 'hugetlbfs_mount = "/dev/hugepages"' >>/etc/libvirt/qemu.conf
+fi
 
 /usr/sbin/libvirtd 

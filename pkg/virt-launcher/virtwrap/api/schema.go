@@ -95,22 +95,23 @@ type DomainList struct {
 // tagged, and they must correspond to the libvirt domain as described in
 // https://libvirt.org/formatdomain.html.
 type DomainSpec struct {
-	XMLName  xml.Name     `xml:"domain"`
-	Type     string       `xml:"type,attr"`
-	XmlNS    string       `xml:"xmlns:qemu,attr,omitempty"`
-	Name     string       `xml:"name"`
-	UUID     string       `xml:"uuid,omitempty"`
-	Memory   Memory       `xml:"memory"`
-	OS       OS           `xml:"os"`
-	SysInfo  *SysInfo     `xml:"sysinfo,omitempty"`
-	Devices  Devices      `xml:"devices"`
-	Clock    *Clock       `xml:"clock,omitempty"`
-	Resource *Resource    `xml:"resource,omitempty"`
-	QEMUCmd  *Commandline `xml:"qemu:commandline,omitempty"`
-	Metadata Metadata     `xml:"metadata,omitempty"`
-	Features *Features    `xml:"features,omitempty"`
-	CPU      CPU          `xml:"cpu"`
-	VCPU     *VCPU        `xml:"vcpu"`
+	XMLName       xml.Name       `xml:"domain"`
+	Type          string         `xml:"type,attr"`
+	XmlNS         string         `xml:"xmlns:qemu,attr,omitempty"`
+	Name          string         `xml:"name"`
+	UUID          string         `xml:"uuid,omitempty"`
+	Memory        Memory         `xml:"memory"`
+	MemoryBacking *MemoryBacking `xml:"memoryBacking,omitempty"`
+	OS            OS             `xml:"os"`
+	SysInfo       *SysInfo       `xml:"sysinfo,omitempty"`
+	Devices       Devices        `xml:"devices"`
+	Clock         *Clock         `xml:"clock,omitempty"`
+	Resource      *Resource      `xml:"resource,omitempty"`
+	QEMUCmd       *Commandline   `xml:"qemu:commandline,omitempty"`
+	Metadata      Metadata       `xml:"metadata,omitempty"`
+	Features      *Features      `xml:"features,omitempty"`
+	CPU           CPU            `xml:"cpu"`
+	VCPU          *VCPU          `xml:"vcpu"`
 }
 
 type VCPU struct {
@@ -194,8 +195,24 @@ type Resource struct {
 }
 
 type Memory struct {
-	Value uint   `xml:",chardata"`
+	Value uint64 `xml:",chardata"`
 	Unit  string `xml:"unit,attr"`
+}
+
+// MemoryBacking mirroring libvirt XML under https://libvirt.org/formatdomain.html#elementsMemoryBacking
+type MemoryBacking struct {
+	HugePages *HugePages `xml:"hugepages,omitempty"`
+}
+
+// HugePages mirroring libvirt XML under memoryBacking
+type HugePages struct {
+	HugePage []HugePage `xml:"page,omitempty"`
+}
+
+// HugePage mirroring libvirt XML under hugepages
+type HugePage struct {
+	Size string `xml:"size,attr"`
+	Unit string `xml:"unit,attr"`
 }
 
 type Devices struct {
@@ -214,16 +231,18 @@ type Devices struct {
 // BEGIN Disk -----------------------------
 
 type Disk struct {
-	Device   string      `xml:"device,attr"`
-	Snapshot string      `xml:"snapshot,attr,omitempty"`
-	Type     string      `xml:"type,attr"`
-	Source   DiskSource  `xml:"source"`
-	Target   DiskTarget  `xml:"target"`
-	Serial   string      `xml:"serial,omitempty"`
-	Driver   *DiskDriver `xml:"driver,omitempty"`
-	ReadOnly *ReadOnly   `xml:"readonly,omitempty"`
-	Auth     *DiskAuth   `xml:"auth,omitempty"`
-	Alias    *Alias      `xml:"alias,omitmepty"`
+	Device       string        `xml:"device,attr"`
+	Snapshot     string        `xml:"snapshot,attr,omitempty"`
+	Type         string        `xml:"type,attr"`
+	Source       DiskSource    `xml:"source"`
+	Target       DiskTarget    `xml:"target"`
+	Serial       string        `xml:"serial,omitempty"`
+	Driver       *DiskDriver   `xml:"driver,omitempty"`
+	ReadOnly     *ReadOnly     `xml:"readonly,omitempty"`
+	Auth         *DiskAuth     `xml:"auth,omitempty"`
+	Alias        *Alias        `xml:"alias,omitempty"`
+	BackingStore *BackingStore `xml:"backingStore,omitempty"`
+	BootOrder    *BootOrder    `xml:"boot,omitempty"`
 }
 
 type DiskAuth struct {
@@ -265,6 +284,16 @@ type DiskSourceHost struct {
 	Port string `xml:"port,attr,omitempty"`
 }
 
+type BackingStore struct {
+	Type   string             `xml:"type,attr"`
+	Format BackingStoreFormat `xml:"format"`
+	Source *DiskSource        `xml:"source"`
+}
+
+type BackingStoreFormat struct {
+	Type string `xml:"type,attr"`
+}
+
 // END Disk -----------------------------
 
 // BEGIN Serial -----------------------------
@@ -273,7 +302,7 @@ type Serial struct {
 	Type   string        `xml:"type,attr"`
 	Target *SerialTarget `xml:"target,omitempty"`
 	Source *SerialSource `xml:"source,omitempty"`
-	Alias  *Alias        `xml:"alias,omitmepty"`
+	Alias  *Alias        `xml:"alias,omitempty"`
 }
 
 type SerialTarget struct {
@@ -293,7 +322,7 @@ type Console struct {
 	Type   string         `xml:"type,attr"`
 	Target *ConsoleTarget `xml:"target,omitempty"`
 	Source *ConsoleSource `xml:"source,omitempty"`
-	Alias  *Alias         `xml:"alias,omitmepty"`
+	Alias  *Alias         `xml:"alias,omitempty"`
 }
 
 type ConsoleTarget struct {
@@ -311,17 +340,18 @@ type ConsoleSource struct {
 // BEGIN Inteface -----------------------------
 
 type Interface struct {
-	Address   *Address         `xml:"address,omitempty"`
-	Type      string           `xml:"type,attr"`
-	Source    InterfaceSource  `xml:"source"`
-	Target    *InterfaceTarget `xml:"target,omitempty"`
-	Model     *Model           `xml:"model,omitempty"`
-	MAC       *MAC             `xml:"mac,omitempty"`
-	BandWidth *BandWidth       `xml:"bandwidth,omitempty"`
-	BootOrder *BootOrder       `xml:"boot,omitempty"`
-	LinkState *LinkState       `xml:"link,omitempty"`
-	FilterRef *FilterRef       `xml:"filterref,omitempty"`
-	Alias     *Alias           `xml:"alias,omitempty"`
+	Address             *Address         `xml:"address,omitempty"`
+	Type                string           `xml:"type,attr"`
+	TrustGuestRxFilters string           `xml:"trustGuestRxFilters,attr,omitempty"`
+	Source              InterfaceSource  `xml:"source"`
+	Target              *InterfaceTarget `xml:"target,omitempty"`
+	Model               *Model           `xml:"model,omitempty"`
+	MAC                 *MAC             `xml:"mac,omitempty"`
+	BandWidth           *BandWidth       `xml:"bandwidth,omitempty"`
+	BootOrder           *BootOrder       `xml:"boot,omitempty"`
+	LinkState           *LinkState       `xml:"link,omitempty"`
+	FilterRef           *FilterRef       `xml:"filterref,omitempty"`
+	Alias               *Alias           `xml:"alias,omitempty"`
 }
 
 type LinkState struct {
@@ -347,6 +377,7 @@ type InterfaceSource struct {
 	Network string `xml:"network,attr,omitempty"`
 	Device  string `xml:"dev,attr,omitempty"`
 	Bridge  string `xml:"bridge,attr,omitempty"`
+	Mode    string `xml:"mode,attr,omitempty"`
 }
 
 type Model struct {
@@ -514,7 +545,7 @@ type RandomGenerator struct {
 type Watchdog struct {
 	Model  string `xml:"model,attr"`
 	Action string `xml:"action,attr"`
-	Alias  *Alias `xml:"alias,omitmepty"`
+	Alias  *Alias `xml:"alias,omitempty"`
 }
 
 // TODO ballooning, rng, cpu ...
@@ -532,15 +563,12 @@ type SecretSpec struct {
 	Usage       SecretUsage `xml:"usage,omitempty"`
 }
 
-func NewMinimalDomainSpec(vmName string) *DomainSpec {
-	precond.MustNotBeEmpty(vmName)
+func NewMinimalDomainSpec(vmiName string) *DomainSpec {
+	precond.MustNotBeEmpty(vmiName)
 	domain := &DomainSpec{}
-	domain.Name = vmName
+	domain.Name = vmiName
 	domain.Memory = Memory{Unit: "MB", Value: 9}
 	domain.Devices = Devices{}
-	domain.Devices.Interfaces = []Interface{
-		{Type: "network", Source: InterfaceSource{Network: "default"}},
-	}
 	return domain
 }
 
@@ -594,9 +622,9 @@ func (dl *DomainList) GetListMeta() meta.List {
 	return &dl.ListMeta
 }
 
-// VMNamespaceKeyFunc constructs the domain name with a namespace prefix i.g.
+// VMINamespaceKeyFunc constructs the domain name with a namespace prefix i.g.
 // namespace_name.
-func VMNamespaceKeyFunc(vm *v1.VirtualMachine) string {
-	domName := fmt.Sprintf("%s_%s", vm.Namespace, vm.Name)
+func VMINamespaceKeyFunc(vmi *v1.VirtualMachineInstance) string {
+	domName := fmt.Sprintf("%s_%s", vmi.Namespace, vmi.Name)
 	return domName
 }

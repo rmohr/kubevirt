@@ -65,9 +65,9 @@ func GracefulShutdownTriggerFromNamespaceName(baseDir string, namespace string, 
 	return filepath.Join(baseDir, "graceful-shutdown-trigger", triggerFile)
 }
 
-func VmGracefulShutdownTriggerClear(baseDir string, vm *v1.VirtualMachine) error {
-	namespace := precond.MustNotBeEmpty(vm.GetObjectMeta().GetNamespace())
-	domain := precond.MustNotBeEmpty(vm.GetObjectMeta().GetName())
+func VmGracefulShutdownTriggerClear(baseDir string, vmi *v1.VirtualMachineInstance) error {
+	namespace := precond.MustNotBeEmpty(vmi.GetObjectMeta().GetNamespace())
+	domain := precond.MustNotBeEmpty(vmi.GetObjectMeta().GetName())
 
 	triggerFile := GracefulShutdownTriggerFromNamespaceName(baseDir, namespace, domain)
 
@@ -78,9 +78,9 @@ func GracefulShutdownTriggerClear(triggerFile string) error {
 	return diskutils.RemoveFile(triggerFile)
 }
 
-func VmHasGracefulShutdownTrigger(baseDir string, vm *v1.VirtualMachine) (bool, error) {
-	namespace := precond.MustNotBeEmpty(vm.GetObjectMeta().GetNamespace())
-	domain := precond.MustNotBeEmpty(vm.GetObjectMeta().GetName())
+func VmHasGracefulShutdownTrigger(baseDir string, vmi *v1.VirtualMachineInstance) (bool, error) {
+	namespace := precond.MustNotBeEmpty(vmi.GetObjectMeta().GetNamespace())
+	domain := precond.MustNotBeEmpty(vmi.GetObjectMeta().GetName())
 
 	return hasGracefulShutdownTrigger(baseDir, namespace, domain)
 }
@@ -133,6 +133,23 @@ func InitializePrivateDirectories(baseDir string) error {
 	return nil
 }
 
+func InitializeDisksDirectories(baseDir string) error {
+	err := os.MkdirAll(baseDir, 0755)
+	if err != nil {
+		return err
+	}
+
+	err = os.Chmod(baseDir, 0755)
+	if err != nil {
+		return err
+	}
+	err = diskutils.SetFileOwnership("qemu", baseDir)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func InitializeSharedDirectories(baseDir string) error {
 	err := os.MkdirAll(watchdog.WatchdogFileDirectory(baseDir), 0755)
 	if err != nil {
@@ -162,13 +179,25 @@ func NewProcessMonitor(commandPrefix string,
 	}
 }
 
+func (mon *monitor) isGracePeriodExpired() bool {
+	if mon.gracePeriodStartTime != 0 {
+		now := time.Now().UTC().Unix()
+		if (now - mon.gracePeriodStartTime) > int64(mon.gracePeriod) {
+			return true
+		}
+	}
+	return false
+}
+
 func (mon *monitor) refresh() {
 	if mon.isDone {
 		log.Log.Error("Called refresh after done!")
 		return
 	}
 
-	log.Log.Debugf("Refreshing. CommandPrefix %s pid %d", mon.commandPrefix, mon.pid)
+	log.Log.V(4).Infof("Refreshing. CommandPrefix %s pid %d", mon.commandPrefix, mon.pid)
+
+	expired := mon.isGracePeriodExpired()
 
 	// is the process there?
 	if mon.pid == 0 {
@@ -182,6 +211,9 @@ func (mon *monitor) refresh() {
 			elapsed := time.Since(mon.start)
 			if mon.timeout > 0 && elapsed >= mon.timeout {
 				log.Log.Infof("%s not found after timeout", mon.commandPrefix)
+				mon.isDone = true
+			} else if expired {
+				log.Log.Infof("%s not found after grace period expired", mon.commandPrefix)
 				mon.isDone = true
 			}
 			return
@@ -202,12 +234,9 @@ func (mon *monitor) refresh() {
 		return
 	}
 
-	if mon.gracePeriodStartTime != 0 {
-		now := time.Now().UTC().Unix()
-		if (now - mon.gracePeriodStartTime) > int64(mon.gracePeriod) {
-			log.Log.Infof("Grace Period expired, shutting down.")
-			mon.shutdownCallback(mon.pid)
-		}
+	if expired {
+		log.Log.Infof("Grace Period expired, shutting down.")
+		mon.shutdownCallback(mon.pid)
 	}
 
 	return
@@ -235,9 +264,6 @@ func (mon *monitor) monitorLoop(startTimeout time.Duration, signalChan chan os.S
 			mon.refresh()
 		case s := <-signalChan:
 			log.Log.Infof("Received signal %d.", s)
-			if mon.pid == 0 {
-				continue
-			}
 
 			if mon.gracePeriodStartTime != 0 {
 				continue
@@ -245,7 +271,7 @@ func (mon *monitor) monitorLoop(startTimeout time.Duration, signalChan chan os.S
 
 			err := GracefulShutdownTriggerInitiate(mon.gracefulShutdownTriggerFile)
 			if err != nil {
-				log.Log.Reason(err).Errorf("Error detected attempting to initalize graceful shutdown using trigger file %s.", mon.gracefulShutdownTriggerFile)
+				log.Log.Reason(err).Errorf("Error detected attempting to initialize graceful shutdown using trigger file %s.", mon.gracefulShutdownTriggerFile)
 			}
 			mon.gracePeriodStartTime = time.Now().UTC().Unix()
 		}

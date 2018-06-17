@@ -35,6 +35,7 @@ import (
 	"github.com/go-kit/kit/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/cache"
 )
 
 var lock sync.Mutex
@@ -42,15 +43,13 @@ var lock sync.Mutex
 type logLevel int
 
 const (
-	DEBUG logLevel = iota
-	INFO
+	INFO logLevel = iota
 	WARNING
 	ERROR
 	CRITICAL
 )
 
 var logLevelNames = map[logLevel]string{
-	DEBUG:    "debug",
 	INFO:     "info",
 	WARNING:  "warning",
 	ERROR:    "error",
@@ -86,15 +85,21 @@ func MakeLogger(logger log.Logger) *FilteredLogger {
 	if verbosityFlag := flag.Lookup("v"); verbosityFlag != nil {
 		defaultVerbosity, _ = strconv.Atoi(verbosityFlag.Value.String())
 	} else {
-		defaultVerbosity = 0
+		// "the practical default level is V(2)"
+		// see https://github.com/kubernetes/community/blob/master/contributors/devel/logging.md
+		defaultVerbosity = 2
 	}
+
+	// This verbosity will be used for info logs without setting a custom verbosity level
+	defaultCurrentVerbosity := 2
+
 	return &FilteredLogger{
 		logContext:            log.NewContext(logger),
 		component:             defaultComponent,
 		filterLevel:           defaultLogLevel,
 		currentLogLevel:       defaultLogLevel,
 		verbosityLevel:        defaultVerbosity,
-		currentVerbosityLevel: defaultVerbosity,
+		currentVerbosityLevel: defaultCurrentVerbosity,
 	}
 }
 
@@ -161,12 +166,9 @@ func (l FilteredLogger) Log(params ...interface{}) error {
 
 func (l FilteredLogger) log(skipFrames int, params ...interface{}) error {
 	// messages should be logged if any of these conditions are met:
-	// The log filtering level is debug
 	// The log filtering level is info and verbosity checks match
 	// The log message priority is warning or higher
-	force := (l.filterLevel == DEBUG) || (l.currentLogLevel >= WARNING)
-
-	if force || (l.filterLevel == INFO &&
+	if l.currentLogLevel >= WARNING || (l.filterLevel == INFO &&
 		(l.currentLogLevel == l.filterLevel) &&
 		(l.currentVerbosityLevel <= l.verbosityLevel)) {
 		now := time.Now().UTC()
@@ -186,6 +188,24 @@ func (l FilteredLogger) log(skipFrames int, params ...interface{}) error {
 	}
 	return nil
 }
+func (l FilteredLogger) Key(key string, kind string) *FilteredLogger {
+	if key == "" {
+		return &l
+
+	}
+	name, namespace, err := cache.SplitMetaNamespaceKey(key)
+	if err != nil {
+		return &l
+	}
+	logParams := make([]interface{}, 0)
+	if namespace != "" {
+		logParams = append(logParams, "namespace", namespace)
+	}
+	logParams = append(logParams, "name", name)
+	logParams = append(logParams, "kind", kind)
+	l.With(logParams...)
+	return &l
+}
 
 func (l FilteredLogger) Object(obj LoggableObject) *FilteredLogger {
 
@@ -195,7 +215,9 @@ func (l FilteredLogger) Object(obj LoggableObject) *FilteredLogger {
 	kind := obj.GetObjectKind().GroupVersionKind().Kind
 
 	logParams := make([]interface{}, 0)
-	logParams = append(logParams, "namespace", namespace)
+	if namespace != "" {
+		logParams = append(logParams, "namespace", namespace)
+	}
 	logParams = append(logParams, "name", name)
 	logParams = append(logParams, "kind", kind)
 	logParams = append(logParams, "uid", uid)
@@ -215,7 +237,7 @@ func (l *FilteredLogger) WithPrefix(obj ...interface{}) *FilteredLogger {
 }
 
 func (l *FilteredLogger) SetLogLevel(filterLevel logLevel) error {
-	if (filterLevel >= DEBUG) && (filterLevel <= CRITICAL) {
+	if (filterLevel >= INFO) && (filterLevel <= CRITICAL) {
 		l.filterLevel = filterLevel
 		return nil
 	}
@@ -248,14 +270,6 @@ func (l FilteredLogger) Reason(err error) *FilteredLogger {
 func (l FilteredLogger) Level(level logLevel) *FilteredLogger {
 	l.currentLogLevel = level
 	return &l
-}
-
-func (l FilteredLogger) Debug(msg string) {
-	l.Level(DEBUG).msg(msg)
-}
-
-func (l FilteredLogger) Debugf(msg string, args ...interface{}) {
-	l.Level(DEBUG).msgf(msg, args...)
 }
 
 func (l FilteredLogger) Info(msg string) {

@@ -17,147 +17,124 @@
 # Copyright 2017 Red Hat, Inc.
 #
 
-# CI considerations: $TARGET is used by the jenkins vagrant build, to distinguish what to test
+# CI considerations: $TARGET is used by the jenkins build, to distinguish what to test
 # Currently considered $TARGET values:
-#     vagrant-dev: Runs all functional tests on a development vagrant setup
-#     vagrant-release: Runs all possible functional tests on a release deployment in vagrant
+#     vagrant-dev: Runs all functional tests on a development vagrant setup (deprecated)
+#     vagrant-release: Runs all possible functional tests on a release deployment in vagrant (deprecated)
+#     kubernetes-dev: Runs all functional tests on a development kubernetes setup
+#     kubernetes-release: Runs all functional tests on a release kubernetes setup
+#     openshift-release: Runs all functional tests on a release openshift setup
 #     TODO: vagrant-tagged-release: Runs all possible functional tests on a release deployment in vagrant on a tagged release
 
 set -ex
 
 export WORKSPACE="${WORKSPACE:-$PWD}"
 
+if [[ $TARGET =~ openshift-.* ]]; then
+  if [[ $TARGET =~ .*-crio-.* ]]; then
+    export KUBEVIRT_PROVIDER="os-3.9.0-crio"
+  else
+    export KUBEVIRT_PROVIDER="os-3.9.0"
+  fi
+elif [[ $TARGET =~ .*-1.9.3-.* ]]; then
+  export KUBEVIRT_PROVIDER="k8s-1.9.3"
+else
+  export KUBEVIRT_PROVIDER="k8s-1.10.3"
+fi
+
+export KUBEVIRT_NUM_NODES=2
+export NFS_WINDOWS_DIR=${NFS_WINDOWS_DIR:-/home/nfs/images/windows2016}
+
 kubectl() { cluster/kubectl.sh "$@"; }
 
-export BUILDER_NAME=$TARGET
-
-if [ "$TARGET" = "vagrant-dev"  ]; then
-cat > hack/config-local.sh <<EOF
-master_ip=192.168.1.2
-EOF
-export RSYNCD_PORT=${RSYNCD_PORT:-10874}
-elif [ "$TARGET" = "vagrant-release"  ]; then
-cat > hack/config-local.sh <<EOF
-master_ip=192.168.2.2
-EOF
-export RSYNCD_PORT=${RSYNCD_PORT:-10875}
-fi
-
-export VAGRANT_PREFIX=${VARIABLE:-kubevirt}
-export VAGRANT_NUM_NODES="${VAGRANT_NUM_NODES:-1}"
-# Keep .vagrant files between builds
-export VAGRANT_DOTFILE_PATH="${VAGRANT_DOTFILE_PATH:-$WORKSPACE/.vagrant}"
-
-# Install dockerize
-export DOCKERIZE_VERSION=v0.3.0
-curl -LO https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz \
-    && tar -C $WORKSPACE -xzvf dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz \
-    && rm dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz
+export NAMESPACE="${NAMESPACE:-kube-system}"
 
 # Make sure that the VM is properly shut down on exit
-trap '{ make cluster-down; }' EXIT
+trap '{ make cluster-down; }' EXIT SIGINT SIGTERM SIGSTOP
 
-# TODO handle complete workspace removal on CI
-set +e
+make cluster-down
 make cluster-up
-if [ $? -ne 0 ]; then
-  vagrant destroy
-  set -e
-  make cluster-up
-fi
-set -e
-
-# Build KubeVirt
-make
-
-# Make sure we can connect to kubernetes
-export APISERVER=$(cat cluster/vagrant-kubernetes/.kubeconfig | grep server | sed -e 's# \+server: https://##' | sed -e 's/\r//')
-$WORKSPACE/dockerize -wait tcp://$APISERVER -timeout 300s
-# Make sure we don't try to talk to Vagrant host via a proxy
-export no_proxy="${APISERVER%:*}"
 
 # Wait for nodes to become ready
-while [ -n "$(kubectl get nodes --no-headers | grep -v Ready)" ]; do
-   echo "Waiting for all nodes to become ready ..."
-   kubectl get nodes --no-headers | >&2 grep -v Ready || true
-   sleep 10
+set +e
+kubectl get nodes --no-headers
+kubectl_rc=$?
+while [ $kubectl_rc -ne 0 ] || [ -n "$(kubectl get nodes --no-headers | grep NotReady)" ]; do
+    echo "Waiting for all nodes to become ready ..."
+    kubectl get nodes --no-headers
+    kubectl_rc=$?
+    sleep 10
 done
+set -e
+
 echo "Nodes are ready:"
 kubectl get nodes
 
-# Wait for all kubernetes pods to become ready (dont't wait for kubevirt pods from previous deployments)
-sleep 10
-while [ -n "$(kubectl get pods -n kube-system -l '!kubevirt.io' --no-headers | grep -v Running)" ]; do
-    echo "Waiting for kubernetes pods to become ready ..."
-    kubectl get pods -n kube-system --no-headers | >&2 grep -v Running || true
-    sleep 10
-done
+make cluster-sync
 
-echo "Kubernetes is ready:"
-kubectl get pods -n kube-system -l '!kubevirt.io'
-echo ""
-echo ""
-
-# Delete traces from old deployments
-# TODO remove this soon, kept for backward compatibility right now
-namespaces=(default kube-system)
-for i in ${namespaces[@]}; do
-    kubectl -n ${i} delete deployment -l 'app'
-    kubectl -n ${i} delete services -l '!k8s-app,!provider'
-    kubectl -n ${i} delete pv --all
-    kubectl -n ${i} delete pvc --all
-    kubectl -n ${i} delete ds -l 'daemon'
-    kubectl -n ${i} delete crd --all
-    kubectl -n ${i} delete serviceaccounts -l 'name in (kubevirt, kubevirt-admin)'
-    kubectl -n ${i} delete clusterrolebinding -l 'name=kubevirt'
-    kubectl -n ${i} delete pods -l 'app'
-done
-
-# This is the new and cleaner way of removing kubevirt with harmonized labels
-namespaces=(default kube-system)
-for i in ${namespaces[@]}; do
-    kubectl -n ${i} delete deployment -l 'kubevirt.io'
-    kubectl -n ${i} delete services -l 'kubevirt.io'
-    kubectl -n ${i} delete pv -l 'kubevirt.io'
-    kubectl -n ${i} delete pvc -l 'kubevirt.io'
-    kubectl -n ${i} delete ds -l 'kubevirt.io'
-    kubectl -n ${i} delete crd -l 'kubevirt.io'
-    kubectl -n ${i} delete serviceaccounts -l 'kubevirt.io'
-    kubectl -n ${i} delete clusterrolebinding -l 'kubevirt.io'
-    kubectl -n ${i} delete pods -l 'kubevirt.io'
-done
-
-if [ -z "$TARGET" ] || [ "$TARGET" = "vagrant-dev"  ]; then
-    make cluster-sync
-elif [ "$TARGET" = "vagrant-release"  ]; then
-    make cluster-sync
+# OpenShift is running important containers under default namespace
+namespaces=(kube-system default)
+if [[ $NAMESPACE != "kube-system" ]]; then
+  namespaces+=($NAMESPACE)
 fi
 
-# Wait until kubevirt pods are running
-while [ -n "$(kubectl get pods -n kube-system --no-headers | grep -v Running)" ]; do
+timeout=300
+sample=30
+
+for i in ${namespaces[@]}; do
+  # Wait until kubevirt pods are running
+  current_time=0
+  while [ -n "$(kubectl get pods -n $i --no-headers | grep -v Running)" ]; do
     echo "Waiting for kubevirt pods to enter the Running state ..."
-    kubectl get pods -n kube-system --no-headers | >&2 grep -v Running || true
-    sleep 10
-done
+    kubectl get pods -n $i --no-headers | >&2 grep -v Running || true
+    sleep $sample
 
-# Make sure all containers except virt-controller are ready
-while [ -n "$(kubectl get pods -n kube-system -o'custom-columns=status:status.containerStatuses[*].ready,metadata:metadata.name' --no-headers | awk '!/virt-controller/ && /false/')" ]; do
+    current_time=$((current_time + sample))
+    if [ $current_time -gt $timeout ]; then
+      exit 1
+    fi
+  done
+
+  # Make sure all containers are ready
+  current_time=0
+  while [ -n "$(kubectl get pods -n $i -o'custom-columns=status:status.containerStatuses[*].ready' --no-headers | grep false)" ]; do
     echo "Waiting for KubeVirt containers to become ready ..."
-    kubectl get pods -n kube-system -o'custom-columns=status:status.containerStatuses[*].ready,metadata:metadata.name' --no-headers | awk '!/virt-controller/ && /false/' || true
-    sleep 10
+    kubectl get pods -n $i -o'custom-columns=status:status.containerStatuses[*].ready' --no-headers | grep false || true
+    sleep $sample
+
+    current_time=$((current_time + sample))
+    if [ $current_time -gt $timeout ]; then
+      exit 1
+    fi
+  done
+  kubectl get pods -n $i
 done
 
-# Make sure that at least one virt-controller container is ready
-while [ "$(kubectl get pods -n kube-system -o'custom-columns=status:status.containerStatuses[*].ready,metadata:metadata.name' --no-headers | awk '/virt-controller/ && /true/' | wc -l)" -lt "1" ]; do
-    echo "Waiting for KubeVirt virt-controller container to become ready ..."
-    kubectl get pods -n kube-system -o'custom-columns=status:status.containerStatuses[*].ready,metadata:metadata.name' --no-headers | awk '/virt-controller/ && /true/' | wc -l
-    sleep 10
-done
-
-kubectl get pods -n kube-system
 kubectl version
 
-# Disable proxy configuration since it causes test issues
-export -n http_proxy
+ginko_params="--ginkgo.noColor --junit-output=$WORKSPACE/junit.xml"
+
+# Prepare PV for windows testing
+if [[ -d $NFS_WINDOWS_DIR ]] && [[ $TARGET =~ windows.* ]]; then
+  kubectl create -f - <<EOF
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: disk-windows
+  labels:
+    kubevirt.io/test: "windows"
+spec:
+  capacity:
+    storage: 30Gi
+  accessModes:
+    - ReadWriteOnce
+  nfs:
+    server: "nfs"
+    path: /
+EOF
+  ginko_params="$ginko_params --ginkgo.focus=Windows"
+fi
+
 # Run functional tests
-FUNC_TEST_ARGS="--ginkgo.noColor" make functest
+FUNC_TEST_ARGS=$ginko_params make functest

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Copyright 2017 Red Hat, Inc.
+ * Copyright 2017, 2018 Red Hat, Inc.
  *
  */
 
@@ -22,41 +22,74 @@ package vnc
 import (
 	"fmt"
 	"io"
-	"log"
 	"net"
 	"os"
 	"os/exec"
 	"os/signal"
+	"time"
 
-	flag "github.com/spf13/pflag"
-	kubev1 "k8s.io/api/core/v1"
+	"github.com/golang/glog"
+	"github.com/spf13/cobra"
+	"k8s.io/client-go/tools/clientcmd"
 
 	"kubevirt.io/kubevirt/pkg/kubecli"
+	"kubevirt.io/kubevirt/pkg/virtctl/templates"
 )
+
+const LISTEN_TIMEOUT = 60 * time.Second
 
 const FLAG = "vnc"
 
-type VNC struct{}
-
-func (o *VNC) Run(flags *flag.FlagSet) int {
-	server, _ := flags.GetString("server")
-	kubeconfig, _ := flags.GetString("kubeconfig")
-	namespace, _ := flags.GetString("namespace")
-	if namespace == "" {
-		namespace = kubev1.NamespaceDefault
+func NewCommand(clientConfig clientcmd.ClientConfig) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "vnc (vmi)",
+		Short:   "Open a vnc connection to a virtual machine.",
+		Example: usage(),
+		Args:    cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			c := VNC{clientConfig: clientConfig}
+			return c.Run(cmd, args)
+		},
 	}
+	cmd.SetUsageTemplate(templates.UsageTemplate())
+	return cmd
+}
 
-	if len(flags.Args()) != 2 {
-		log.Println("VM name is missing")
-		return 1
-	}
-	vm := flags.Arg(1)
+type VNC struct {
+	clientConfig clientcmd.ClientConfig
+}
 
-	virtCli, err := kubecli.GetKubevirtClientFromFlags(server, kubeconfig)
+func (o *VNC) Run(cmd *cobra.Command, args []string) error {
+	namespace, _, err := o.clientConfig.Namespace()
 	if err != nil {
-		log.Println(err)
-		return 1
+		return err
 	}
+
+	vmi := args[0]
+
+	virtCli, err := kubecli.GetKubevirtClientFromClientConfig(o.clientConfig)
+	if err != nil {
+		return err
+	}
+
+	// setup connection with VM
+	vnc, err := virtCli.VirtualMachineInstance(namespace).VNC(vmi)
+	if err != nil {
+		return fmt.Errorf("Can't access VMI %s: %s", vmi, err.Error())
+	}
+
+	lnAddr, err := net.ResolveTCPAddr("tcp", "127.0.0.1:0")
+	if err != nil {
+		return fmt.Errorf("Can't resolve the address: %s", err.Error())
+	}
+
+	// The local tcp server is used to proxy the podExec websock connection to remote-viewer
+	ln, err := net.ListenTCP("tcp", lnAddr)
+	if err != nil {
+		return fmt.Errorf("Can't listen on unix socket: %s", err.Error())
+	}
+	// End of pre-flight checks. Everything looks good, we can start
+	// the goroutines and let the data flow
 
 	//                                       -> pipeInWriter  -> pipeInReader
 	// remote-viewer -> unix sock connection
@@ -65,62 +98,80 @@ func (o *VNC) Run(flags *flag.FlagSet) int {
 	pipeOutReader, pipeOutWriter := io.Pipe()
 
 	k8ResChan := make(chan error)
+	listenResChan := make(chan error)
 	viewResChan := make(chan error)
 	stopChan := make(chan struct{}, 1)
+	doneChan := make(chan struct{}, 1)
 	writeStop := make(chan error)
 	readStop := make(chan error)
 
-	// The local tcp server is used to proxy the podExec websock connection to remote-viewer
-	ln, err := net.Listen("tcp", "127.0.0.1:0")
-	if err != nil {
-		log.Printf("Can't listen on unix socket: %s", err.Error())
-		return 1
-	}
-
-	port := ln.Addr().(*net.TCPAddr).Port
-
-	// setup connection with VM
 	go func() {
-		err := virtCli.VM(namespace).VNC(vm, pipeInReader, pipeOutWriter)
-		k8ResChan <- err
+		// transfer data from/to the VM
+		k8ResChan <- vnc.Stream(kubecli.StreamOptions{
+			In:  pipeInReader,
+			Out: pipeOutWriter,
+		})
+	}()
+
+	// wait for remote-viewer to connect to our local proxy server
+	go func() {
+		start := time.Now()
+		glog.Infof("connection timeout: %v", LISTEN_TIMEOUT)
+		// exit early if spawning remote-viewer fails
+		ln.SetDeadline(time.Now().Add(LISTEN_TIMEOUT))
+
+		fd, err := ln.Accept()
+		if err != nil {
+			glog.V(2).Infof("Failed to accept unix sock connection. %s", err.Error())
+			listenResChan <- err
+		}
+		defer fd.Close()
+
+		glog.V(2).Infof("remote-viewer connected in %v", time.Now().Sub(start))
+
+		// write to FD <- pipeOutReader
+		go func() {
+			_, err := io.Copy(fd, pipeOutReader)
+			readStop <- err
+		}()
+
+		// read from FD -> pipeInWriter
+		go func() {
+			_, err := io.Copy(pipeInWriter, fd)
+			writeStop <- err
+		}()
+
+		// don't terminate until remote-viewer is done
+		<-doneChan
+		listenResChan <- err
 	}()
 
 	// execute remote viewer
 	go func() {
-		cmnd := exec.Command("remote-viewer", fmt.Sprintf("vnc://127.0.0.1:%d", port))
-		err := cmnd.Run()
+		port := ln.Addr().(*net.TCPAddr).Port
+		args := []string{fmt.Sprintf("vnc://127.0.0.1:%d", port)}
+		if glog.V(4) {
+			args = append(args, "--debug")
+			glog.Infof("remote-viewer commandline: %v", args)
+		}
+
+		cmnd := exec.Command("remote-viewer", args...)
+
+		output, err := cmnd.CombinedOutput()
 		if err != nil {
-			log.Println(err)
+			glog.Errorf("remote-viewer execution failed: %v, output: %v", err, string(output))
+		} else {
+			glog.V(2).Infof("remote-viewer output: %v", string(output))
 		}
 		viewResChan <- err
+		close(doneChan)
 	}()
 
-	// wait for remote-viewer to connect to our local proxy server
-	fd, err := ln.Accept()
-	if err != nil {
-		log.Printf("Failed to accept unix sock connection. %s", err.Error())
-		return 1
-	}
-	defer fd.Close()
-
-	log.Printf("remote-viewer connected")
 	go func() {
 		interrupt := make(chan os.Signal, 1)
 		signal.Notify(interrupt, os.Interrupt)
 		<-interrupt
 		close(stopChan)
-	}()
-
-	// write to FD <- pipeOutReader
-	go func() {
-		_, err := io.Copy(fd, pipeOutReader)
-		readStop <- err
-	}()
-
-	// read from FD -> pipeInWriter
-	go func() {
-		_, err := io.Copy(pipeInWriter, fd)
-		writeStop <- err
 	}()
 
 	select {
@@ -129,22 +180,17 @@ func (o *VNC) Run(flags *flag.FlagSet) int {
 	case err = <-writeStop:
 	case err = <-k8ResChan:
 	case err = <-viewResChan:
+	case err = <-listenResChan:
 	}
 
 	if err != nil {
-		log.Printf("Error encountered: %s", err.Error())
-		return 1
+		return fmt.Errorf("Error encountered: %s", err.Error())
 	}
-	return 0
+	return nil
 }
 
-func (o *VNC) Usage() string {
-	usage := "virtctl can connect via remote-viewer to a VM\n\n"
-	usage += "Examples:\n"
-	usage += "# Connect to testvm via remote-viewer\n"
-	usage += "./virtctl vnc testvm\n\n"
+func usage() string {
+	usage := "# Connect to testvmi via remote-viewer:\n"
+	usage += "./virtctl vnc testvmi"
 	return usage
-}
-func (o *VNC) FlagSet() *flag.FlagSet {
-	return flag.NewFlagSet(FLAG, flag.ExitOnError)
 }

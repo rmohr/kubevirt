@@ -1,5 +1,5 @@
 #!/bin/bash
 
-PROVIDER=${PROVIDER:-vagrant-kubernetes}
-source cluster/$PROVIDER/provider.sh
+source hack/common.sh
+source cluster/$KUBEVIRT_PROVIDER/provider.sh
 up

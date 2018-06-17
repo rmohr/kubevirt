@@ -103,7 +103,7 @@ func SetLocalDataOwner(user string) {
 func SetLocalDirectory(dir string) error {
 	err := os.MkdirAll(dir, 0755)
 	if err != nil {
-		return errors.New(fmt.Sprintf("Unable to initalize cloudInit local cache directory (%s). %v", dir, err))
+		return errors.New(fmt.Sprintf("Unable to initialize cloudInit local cache directory (%s). %v", dir, err))
 	}
 
 	exists, err := diskutils.FileExists(dir)
@@ -141,11 +141,11 @@ func RemoveLocalData(domain string, namespace string) error {
 	return err
 }
 
-func GetCloudInitNoCloudSource(vm *v1.VirtualMachine) *v1.CloudInitNoCloudSource {
-	precond.MustNotBeNil(vm)
+func GetCloudInitNoCloudSource(vmi *v1.VirtualMachineInstance) *v1.CloudInitNoCloudSource {
+	precond.MustNotBeNil(vmi)
 	// search various places cloud init spec may live.
 	// at the moment, cloud init only exists on disks.
-	for _, volume := range vm.Spec.Volumes {
+	for _, volume := range vmi.Spec.Volumes {
 		if volume.CloudInitNoCloud != nil {
 			return volume.CloudInitNoCloud
 		}
@@ -168,25 +168,21 @@ func ResolveSecrets(source *v1.CloudInitNoCloudSource, namespace string, clients
 		return err
 	}
 
-	userDataBase64, ok := secret.Data["userdata"]
+	userData, ok := secret.Data["userdata"]
 	if ok == false {
-		return errors.New(fmt.Sprintf("No password value found in k8s secret %s %v", secretID, err))
+		return errors.New(fmt.Sprintf("no user-data value found in k8s secret %s %v", secretID, err))
 	}
-	source.UserDataBase64 = string(userDataBase64)
+
+	source.UserData = string(userData)
 	return nil
 }
 
-func GenerateLocalData(vmName string, namespace string, source *v1.CloudInitNoCloudSource) error {
-	precond.MustNotBeEmpty(vmName)
+func GenerateLocalData(vmiName string, hostname string, namespace string, source *v1.CloudInitNoCloudSource) error {
+	precond.MustNotBeEmpty(vmiName)
 	precond.MustNotBeNil(source)
 
-	err := validateArgs(source)
-	if err != nil {
-		return err
-	}
-
-	domainBasePath := GetDomainBasePath(vmName, namespace)
-	err = os.MkdirAll(domainBasePath, 0755)
+	domainBasePath := GetDomainBasePath(vmiName, namespace)
+	err := os.MkdirAll(domainBasePath, 0755)
 	if err != nil {
 		log.Log.V(2).Reason(err).Errorf("unable to create cloud-init base path %s", domainBasePath)
 		return err
@@ -196,28 +192,28 @@ func GenerateLocalData(vmName string, namespace string, source *v1.CloudInitNoCl
 	userFile := fmt.Sprintf("%s/%s", domainBasePath, "user-data")
 	iso := fmt.Sprintf("%s/%s", domainBasePath, NoCloudFile)
 	isoStaging := fmt.Sprintf("%s/%s.staging", domainBasePath, NoCloudFile)
-	userData64 := source.UserDataBase64
-	metaData := fmt.Sprintf("{ \"instance-id\": \"%s.%s\" }\n", vmName, namespace)
-	metaData64 := base64.StdEncoding.EncodeToString([]byte(metaData))
+	var userData []byte
+	if source.UserData != "" {
+		userData = []byte(source.UserData)
+	} else if source.UserDataBase64 != "" {
+		userData, err = base64.StdEncoding.DecodeString(source.UserDataBase64)
+		if err != nil {
+			return err
+		}
+	} else {
+		return errors.New(fmt.Sprintf("userDataBase64 or userData is required for no-cloud data source"))
+	}
+	metaData := []byte(fmt.Sprintf("{ \"instance-id\": \"%s.%s\", \"local-hostname\": \"%s\" }\n", vmiName, namespace, hostname))
 
 	diskutils.RemoveFile(userFile)
 	diskutils.RemoveFile(metaFile)
 	diskutils.RemoveFile(isoStaging)
 
-	userDataBytes, err := base64.StdEncoding.DecodeString(userData64)
+	err = ioutil.WriteFile(userFile, userData, 0644)
 	if err != nil {
 		return err
 	}
-	metaDataBytes, err := base64.StdEncoding.DecodeString(metaData64)
-	if err != nil {
-		return err
-	}
-
-	err = ioutil.WriteFile(userFile, userDataBytes, 0644)
-	if err != nil {
-		return err
-	}
-	err = ioutil.WriteFile(metaFile, metaDataBytes, 0644)
+	err = ioutil.WriteFile(metaFile, metaData, 0644)
 	if err != nil {
 		return err
 	}
@@ -259,7 +255,7 @@ func GenerateLocalData(vmName string, namespace string, source *v1.CloudInitNoCl
 	return nil
 }
 
-// Lists all vms cloud-init has local data for
-func ListVmWithLocalData() ([]*v1.VirtualMachine, error) {
+// Lists all vmis cloud-init has local data for
+func ListVmWithLocalData() ([]*v1.VirtualMachineInstance, error) {
 	return diskutils.ListVmWithEphemeralDisk(cloudInitLocalDir)
 }
