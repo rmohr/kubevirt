@@ -1,0 +1,11 @@
+FROM centos:7 as builder
+RUN yum install -y golang
+COPY . /go/src/kubevirt.io/kubevirt
+# osbs multistage squashes everything to one layer and right now only this first stage is supported
+RUN export GOPATH=/go && cd /go/src/kubevirt.io/kubevirt/cmd/virt-controller && go build . && mv virt-controller /usr/bin/
+RUN yum remove -y golang && rm -rf /go
+ENTRYPOINT [ "/usr/bin/virt-controller" ]
+# Create non-root user
+RUN useradd -u 1001 --create-home -s /bin/bash virt-controller
+WORKDIR /home/virt-controller
+USER 1001
