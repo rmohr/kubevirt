@@ -478,7 +478,7 @@ var _ = Describe("Networking", func() {
 			Expect(err).ToNot(HaveOccurred())
 		})
 
-		It("should not request a tun device", func() {
+		It("should not request NET_ADMIN", func() {
 			By("Creating random VirtualMachineInstance")
 			autoAttach := false
 			vmi := tests.NewRandomVMIWithEphemeralDisk(tests.RegistryDiskFor(tests.RegistryDiskAlpine))
