@@ -93,7 +93,8 @@ const (
 )
 
 const (
-	AlpineHttpUrl = "http://cdi-http-import-server.kube-system/images/alpine.iso"
+	AlpineHttpUrl     = "http://cdi-http-import-server.kube-system/images/alpine.iso"
+	GuestAgentHttpUrl = "http://cdi-http-import-server.kube-system/qemu-ga"
 )
 
 const (
@@ -1749,32 +1750,10 @@ func GetRunningVirtualMachineInstanceDomainXML(virtClient kubecli.KubevirtClient
 		virtClient,
 		vmiPod,
 		vmiPod.Spec.Containers[containerIdx].Name,
-		[]string{"ls", "/etc/libvirt/qemu/"},
+		[]string{"virsh", "dumpxml", vmi.Namespace + "_" + vmi.Name},
 	)
 	if err != nil {
-		return "", fmt.Errorf("unable to list domain xml files (remotely on pod): %v", err)
-	}
-	Expect(err).ToNot(HaveOccurred())
-
-	fn := ""
-	for _, line := range strings.Split(stdout, "\n") {
-		if strings.Contains(line, vmi.Name) {
-			fn = line
-		}
-	}
-	if fn == "" {
-		return "", fmt.Errorf("libvirt domxml file not found")
-	}
-	fn = fmt.Sprintf("/etc/libvirt/qemu/%s", fn)
-
-	stdout, _, err = ExecuteCommandOnPodV2(
-		virtClient,
-		vmiPod,
-		vmiPod.Spec.Containers[containerIdx].Name,
-		[]string{"cat", fn},
-	)
-	if err != nil {
-		return "", fmt.Errorf("could not cat libvirt domxml (remotely on pod): %v", err)
+		return "", fmt.Errorf("could not dump libvirt domxml (remotely on pod): %v", err)
 	}
 	return stdout, err
 }

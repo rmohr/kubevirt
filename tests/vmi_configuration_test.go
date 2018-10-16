@@ -107,6 +107,29 @@ var _ = Describe("Configurations", func() {
 				Expect(err).ToNot(HaveOccurred())
 			}, 300)
 
+			FIt("should report on the domain xml that the guest is connected", func() {
+				vmi := tests.NewRandomVMIWithEphemeralDiskAndUserdata(tests.RegistryDiskFor(tests.RegistryDiskFedora), fmt.Sprintf(`#!/bin/bash
+					echo "fedora" |passwd fedora --stdin
+					mkdir -p /usr/local/bin
+					curl %s > /usr/local/bin/qemu-ga
+					chmod +x /usr/local/bin/qemu-ga
+					setenforce 0
+					systemd-run /usr/local/bin/qemu-ga
+					`, tests.GuestAgentHttpUrl))
+				vmi.Spec.Domain.Resources.Requests[kubev1.ResourceMemory] = resource.MustParse("512M")
+
+				By("Starting a VirtualMachineInstance")
+				vmi, err = virtClient.VirtualMachineInstance(tests.NamespaceTestDefault).Create(vmi)
+				Expect(err).ToNot(HaveOccurred())
+				tests.WaitForSuccessfulVMIStart(vmi)
+
+				Eventually(func() string {
+					domXml, err := tests.GetRunningVirtualMachineInstanceDomainXML(virtClient, vmi)
+					Expect(err).ToNot(HaveOccurred())
+					return domXml
+				}, 180*time.Second, 2*time.Second).Should(ContainSubstring(`<target type='virtio' name='org.qemu.guest_agent.0' state='connected'/>`))
+			})
+
 			It("should map cores to queues", func() {
 				_true := true
 				vmi.Spec.Domain.Resources = v1.ResourceRequirements{
