@@ -53,7 +53,7 @@ func Create(kv *v1.KubeVirt, config util.KubeVirtDeploymentConfig, stores util.S
 		return objectsAdded, err
 	}
 
-	err = rbac.CreateScc(clientset, kv)
+	err = util.UpdateScc(clientset, kv, true)
 	if err != nil {
 		log.Log.Errorf("Failed to update SCC: %v", err)
 		return objectsAdded, err
@@ -72,8 +72,6 @@ func Create(kv *v1.KubeVirt, config util.KubeVirtDeploymentConfig, stores util.S
 		log.Log.Errorf("Failed to create controllers: %v", err)
 		return objectsAdded, err
 	}
-
-	log.Log.Infof("Successfully deployed %+v", kv)
 
 	return objectsAdded, nil
 }
