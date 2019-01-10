@@ -53,10 +53,10 @@ func Create(kv *v1.KubeVirt, config util.KubeVirtDeploymentConfig, stores util.S
 		return objectsAdded, err
 	}
 
-  err = rbac.CreateScc(clientset, kv)
+	err = rbac.CreateScc(clientset, kv)
 	if err != nil {
 		log.Log.Errorf("Failed to update SCC: %v", err)
-		return err
+		return objectsAdded, err
 	}
 
 	added, err = components.CreateCRDs(clientset, stores)
