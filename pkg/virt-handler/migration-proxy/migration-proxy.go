@@ -319,8 +319,10 @@ func (m *migrationProxy) createTcpListener() error {
 	var err error
 	if m.tlsConfig != nil {
 		listener, err = tls.Listen("tcp", fmt.Sprintf("%s:%d", m.tcpBindAddress, m.tcpBindPort), m.tlsConfig)
-	} else {
+	} else if strings.Contains(m.tcpBindAddress, "127.0.0.1") {
 		listener, err = net.Listen("tcp", fmt.Sprintf("%s:%d", m.tcpBindAddress, m.tcpBindPort))
+	} else {
+		return fmt.Errorf("Unsecured tcp migration proxy listeners are not permitted")
 	}
 	if err != nil {
 		log.Log.Reason(err).Error("failed to create unix socket for proxy service")

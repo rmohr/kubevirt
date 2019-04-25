@@ -20,6 +20,7 @@
 package virthandler
 
 import (
+	"crypto/tls"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -106,6 +107,13 @@ var _ = Describe("VirtualMachineInstance", func() {
 		mockWatchdog = &MockWatchdog{shareDir}
 		mockGracefulShutdown = &MockGracefulShutdown{shareDir}
 
+		tlsConfig := &tls.Config{
+
+			GetCertificate: func(info *tls.ClientHelloInfo) (i *tls.Certificate, e error) {
+				return nil, fmt.Errorf("this isn't meant to be connected to")
+			},
+		}
+
 		controller = NewController(recorder,
 			virtClient,
 			host,
@@ -118,7 +126,7 @@ var _ = Describe("VirtualMachineInstance", func() {
 			1,
 			10,
 			testutils.MakeFakeClusterConfig(nil, stop),
-			nil,
+			tlsConfig,
 		)
 
 		testUUID = uuid.NewUUID()
