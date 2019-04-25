@@ -81,11 +81,10 @@ const (
 	// This value is derived from default MaxPods in Kubelet Config
 	maxDevices = 110
 
-	serverCertBytesValue  = "server-cert-bytes"
-	serverKeyBytesValue   = "server-key-bytes"
-	clientCertBytesValue  = "client-cert-bytes"
-	clientKeyBytesValue   = "client-key-bytes"
-	signingCertBytesValue = "signing-cert-bytes"
+	serverCertBytesValue = "server-cert-bytes"
+	serverKeyBytesValue  = "server-key-bytes"
+	clientCertBytesValue = "client-cert-bytes"
+	clientKeyBytesValue  = "client-key-bytes"
 
 	// selfsigned cert secret name
 	virtHandlerCertSecretName = "kubevirt-virt-handler-certs"
@@ -99,11 +98,10 @@ type virtHandlerApp struct {
 	WatchdogTimeoutDuration time.Duration
 	MaxDevices              int
 
-	signingCertBytes []byte
-	serverCertBytes  []byte
-	serverKeyBytes   []byte
-	clientCertBytes  []byte
-	clientKeyBytes   []byte
+	serverCertBytes []byte
+	serverKeyBytes  []byte
+	clientCertBytes []byte
+	clientKeyBytes  []byte
 
 	virtCli   kubecli.KubevirtClient
 	namespace string
@@ -148,7 +146,6 @@ func (app *virtHandlerApp) getSelfSignedCert() error {
 		app.serverCertBytes = cert.EncodeCertPEM(serverKeyPair.Cert)
 		app.clientKeyBytes = cert.EncodePrivateKeyPEM(clientKeyPair.Key)
 		app.clientCertBytes = cert.EncodeCertPEM(clientKeyPair.Cert)
-		app.signingCertBytes = cert.EncodeCertPEM(caKeyPair.Cert)
 
 		secret := k8sv1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
@@ -160,11 +157,10 @@ func (app *virtHandlerApp) getSelfSignedCert() error {
 			},
 			Type: "Opaque",
 			Data: map[string][]byte{
-				serverCertBytesValue:  app.serverCertBytes,
-				serverKeyBytesValue:   app.serverKeyBytes,
-				clientCertBytesValue:  app.clientCertBytes,
-				clientKeyBytesValue:   app.clientKeyBytes,
-				signingCertBytesValue: app.signingCertBytes,
+				serverCertBytesValue: app.serverCertBytes,
+				serverKeyBytesValue:  app.serverKeyBytes,
+				clientCertBytesValue: app.clientCertBytes,
+				clientKeyBytesValue:  app.clientKeyBytes,
 			},
 		}
 		_, err := app.virtCli.CoreV1().Secrets(app.namespace).Create(&secret)
@@ -189,10 +185,6 @@ func (app *virtHandlerApp) getSelfSignedCert() error {
 		app.clientKeyBytes, ok = secret.Data[clientKeyBytesValue]
 		if !ok {
 			return fmt.Errorf("%s value not found in %s virt-api secret", clientKeyBytesValue, virtHandlerCertSecretName)
-		}
-		app.signingCertBytes, ok = secret.Data[signingCertBytesValue]
-		if !ok {
-			return fmt.Errorf("%s value not found in %s virt-api secret", signingCertBytesValue, virtHandlerCertSecretName)
 		}
 	}
 	return nil
