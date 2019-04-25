@@ -187,7 +187,7 @@ func newHandlerClusterRole() *rbacv1.ClusterRole {
 					"secrets",
 				},
 				Verbs: []string{
-					"get", "create", "update",
+					"get", "create",
 				},
 			},
 			{
