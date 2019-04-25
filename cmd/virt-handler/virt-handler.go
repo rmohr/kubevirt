@@ -368,19 +368,29 @@ func (app *virtHandlerApp) setupTLS() error {
 		return err
 	}
 
-	caCert, err := cert.ParseCertsPEM(app.serverCertBytes)
+	serverCACert, err := cert.ParseCertsPEM(app.serverCertBytes)
 	if err != nil {
 		return err
 	}
 
-	certPool := x509.NewCertPool()
+	clientCACert, err := cert.ParseCertsPEM(app.clientCertBytes)
+	if err != nil {
+		return err
+	}
 
-	for _, crt := range caCert {
-		certPool.AddCert(crt)
+	serverCertPool := x509.NewCertPool()
+	for _, crt := range serverCACert {
+		serverCertPool.AddCert(crt)
+	}
+
+	clientCertPool := x509.NewCertPool()
+	for _, crt := range clientCACert {
+		clientCertPool.AddCert(crt)
 	}
 
 	app.migrationTLSConfig = &tls.Config{
-		RootCAs: certPool,
+		RootCAs:   serverCertPool,
+		ClientCAs: clientCertPool,
 		GetClientCertificate: func(info *tls.CertificateRequestInfo) (certificate *tls.Certificate, e error) {
 			return &clientCert, nil
 		},
