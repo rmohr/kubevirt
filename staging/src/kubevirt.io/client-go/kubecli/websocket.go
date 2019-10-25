@@ -30,7 +30,7 @@ import (
 )
 
 const (
-	WebsocketMessageBufferSize = 10240
+	WebsocketMessageBufferSize = 20480
 	wsFrameHeaderSize          = 2 + 8 + 4 // Fixed header + length + mask (RFC 6455)
 )
 
@@ -68,10 +68,7 @@ func CopyTo(dst *websocket.Conn, src io.Reader) (written int64, err error) {
 }
 
 func copy(dst io.Writer, src io.Reader) (written int64, err error) {
-	// our websocket package has an issue where it truncates messages
-	// when the message+header is greater than the buffer size we allocate.
-	// thus, we copy in chunks of WebsocketMessageBufferSize-wsFrameHeaderSize
-	buf := make([]byte, WebsocketMessageBufferSize-wsFrameHeaderSize)
+	buf := make([]byte, WebsocketMessageBufferSize)
 	return io.CopyBuffer(dst, src, buf)
 }
 
@@ -80,12 +77,32 @@ type binaryWriter struct {
 }
 
 func (s *binaryWriter) Write(p []byte) (int, error) {
-	w, err := s.conn.NextWriter(websocket.BinaryMessage)
-	if err != nil {
-		return 0, convert(err)
+	wsFrameHeaderSize := 2 + 8 + 4 // Fixed header + length + mask (RFC 6455)
+	// our websocket package has an issue where it truncates messages
+	// when the message+header is greater than the buffer size we allocate.
+	// because of this, we have to chunk messages
+	chunkSize := WebsocketMessageBufferSize - wsFrameHeaderSize
+	bytesWritten := 0
+
+	for i := 0; i < len(p); i += chunkSize {
+		w, err := s.conn.NextWriter(websocket.BinaryMessage)
+		if err != nil {
+			return bytesWritten, convert(err)
+		}
+		defer w.Close()
+
+		end := i + chunkSize
+		if end > len(p) {
+			end = len(p)
+		}
+		n, err := w.Write(p[i:end])
+		if err != nil {
+			return bytesWritten, err
+		}
+
+		bytesWritten = n + bytesWritten
 	}
-	defer w.Close()
-	return w.Write(p)
+	return bytesWritten, nil
 }
 
 type binaryReader struct {
