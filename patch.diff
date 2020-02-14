@@ -1,0 +1,78 @@
+diff --git a/cmd/virt-handler/virt-handler.go b/cmd/virt-handler/virt-handler.go
+index 6f2c9fe1e..30c2328ab 100644
+--- a/cmd/virt-handler/virt-handler.go
++++ b/cmd/virt-handler/virt-handler.go
+@@ -328,7 +328,7 @@ func (app *virtHandlerApp) Run() {
+ 		glog.Fatalf("unable to generate certificates: %v", err)
+ 	}
+ 
+-	promvm.SetupCollector(app.virtCli, app.VirtShareDir, app.HostOverride)
++	promvm.SetupCollector(app.virtCli, app.VirtShareDir, app.HostOverride, app.MaxRequestsInFlight)
+ 
+ 	// Bootstrapping. From here on the startup order matters
+ 	stop := make(chan struct{})
+diff --git a/pkg/monitoring/vms/prometheus/collector.go b/pkg/monitoring/vms/prometheus/collector.go
+index 50ff87778..34996b9c9 100644
+--- a/pkg/monitoring/vms/prometheus/collector.go
++++ b/pkg/monitoring/vms/prometheus/collector.go
+@@ -36,13 +36,15 @@ type metricsScraper interface {
+ }
+ 
+ type concurrentCollector struct {
+-	lock     sync.Mutex
+-	busyKeys map[string]bool
++	lock             sync.Mutex
++	clientsPerKey    map[string]int
++	maxClientsPerKey int
+ }
+ 
+-func NewConcurrentCollector() *concurrentCollector {
++func NewConcurrentCollector(MaxRequestsPerKey int) *concurrentCollector {
+ 	return &concurrentCollector{
+-		busyKeys: make(map[string]bool),
++		clientsPerKey:    make(map[string]int),
++		maxClientsPerKey: MaxRequestsPerKey,
+ 	}
+ }
+ 
+@@ -95,16 +97,16 @@ func (cc *concurrentCollector) collectFromSource(scraper metricsScraper, wg *syn
+ func (cc *concurrentCollector) reserveKey(key string) bool {
+ 	cc.lock.Lock()
+ 	defer cc.lock.Unlock()
+-	busy := cc.busyKeys[key]
+-	if busy {
++	count := cc.clientsPerKey[key]
++	if count > cc.maxClientsPerKey {
+ 		return false
+ 	}
+-	cc.busyKeys[key] = true
++	cc.clientsPerKey[key] += 1
+ 	return true
+ }
+ 
+ func (cc *concurrentCollector) releaseKey(key string) {
+ 	cc.lock.Lock()
+ 	defer cc.lock.Unlock()
+-	cc.busyKeys[key] = false
++	cc.clientsPerKey[key] -= 1
+ }
+diff --git a/pkg/monitoring/vms/prometheus/prometheus.go b/pkg/monitoring/vms/prometheus/prometheus.go
+index 7ab1d0418..860fd2170 100644
+--- a/pkg/monitoring/vms/prometheus/prometheus.go
++++ b/pkg/monitoring/vms/prometheus/prometheus.go
+@@ -391,13 +391,13 @@ type Collector struct {
+ 	concCollector *concurrentCollector
+ }
+ 
+-func SetupCollector(virtCli kubecli.KubevirtClient, virtShareDir, nodeName string) *Collector {
++func SetupCollector(virtCli kubecli.KubevirtClient, virtShareDir, nodeName string, MaxRequestsInFlight int) *Collector {
+ 	log.Log.Infof("Starting collector: node name=%v", nodeName)
+ 	co := &Collector{
+ 		virtCli:       virtCli,
+ 		virtShareDir:  virtShareDir,
+ 		nodeName:      nodeName,
+-		concCollector: NewConcurrentCollector(),
++		concCollector: NewConcurrentCollector(MaxRequestsInFlight),
+ 	}
+ 	prometheus.MustRegister(co)
+ 	return co

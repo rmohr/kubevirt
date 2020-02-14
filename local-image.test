@@ -1,0 +1,115 @@
+[
+    {
+        "Id": "sha256:1631ead22df50b059e887d1fe35775bc80330ba09d9f49ab3af93e57349e61bd",
+        "RepoTags": [
+            "kubevirt/builder:30-5.5.0-test"
+        ],
+        "RepoDigests": [],
+        "Parent": "sha256:0774ad365414c2c527852023443ad603f57f84f0faa1fd6893ad8272d3559d32",
+        "Comment": "",
+        "Created": "2020-01-22T12:21:05.043658619Z",
+        "Container": "9d1ec65ac7de8920c947ab697f6216d39b6808f3fb5e7743115d61eaf0c750e8",
+        "ContainerConfig": {
+            "Hostname": "9d1ec65ac7de",
+            "Domainname": "",
+            "User": "",
+            "AttachStdin": false,
+            "AttachStdout": false,
+            "AttachStderr": false,
+            "Tty": false,
+            "OpenStdin": false,
+            "StdinOnce": false,
+            "Env": [
+                "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                "DISTTAG=f30container",
+                "FGC=f30",
+                "FBR=f30",
+                "LIBVIRT_VERSION=5.1.0",
+                "GIMME_GO_VERSION=1.12.8",
+                "GOPATH=/go",
+                "GOBIN=/usr/bin"
+            ],
+            "Cmd": [
+                "/bin/sh",
+                "-c",
+                "#(nop) ",
+                "ENTRYPOINT [\"/entrypoint.sh\"]"
+            ],
+            "ArgsEscaped": true,
+            "Image": "sha256:0774ad365414c2c527852023443ad603f57f84f0faa1fd6893ad8272d3559d32",
+            "Volumes": null,
+            "WorkingDir": "",
+            "Entrypoint": [
+                "/entrypoint.sh"
+            ],
+            "OnBuild": null,
+            "Labels": {
+                "maintainer": "Clement Verna <cverna@fedoraproject.org>"
+            }
+        },
+        "DockerVersion": "18.09.0",
+        "Author": "",
+        "Config": {
+            "Hostname": "",
+            "Domainname": "",
+            "User": "",
+            "AttachStdin": false,
+            "AttachStdout": false,
+            "AttachStderr": false,
+            "Tty": false,
+            "OpenStdin": false,
+            "StdinOnce": false,
+            "Env": [
+                "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                "DISTTAG=f30container",
+                "FGC=f30",
+                "FBR=f30",
+                "LIBVIRT_VERSION=5.1.0",
+                "GIMME_GO_VERSION=1.12.8",
+                "GOPATH=/go",
+                "GOBIN=/usr/bin"
+            ],
+            "Cmd": null,
+            "ArgsEscaped": true,
+            "Image": "sha256:0774ad365414c2c527852023443ad603f57f84f0faa1fd6893ad8272d3559d32",
+            "Volumes": null,
+            "WorkingDir": "",
+            "Entrypoint": [
+                "/entrypoint.sh"
+            ],
+            "OnBuild": null,
+            "Labels": {
+                "maintainer": "Clement Verna <cverna@fedoraproject.org>"
+            }
+        },
+        "Architecture": "amd64",
+        "Os": "linux",
+        "Size": 2087313481,
+        "VirtualSize": 2087313481,
+        "GraphDriver": {
+            "Data": {
+                "LowerDir": "/home/docker/overlay2/b321d20f8bab7d99179638612966881fd4927f97ef06ffa631d83bfe0c5e5423/diff:/home/docker/overlay2/b41b917b5f54df793748dc8526feb4ce3201e070d29e0bdbd75c6a06d9eccae0/diff:/home/docker/overlay2/acff2fd0735161172260b4a70b03d7a37a5d19d9fa511957303ce6f48f978ebc/diff:/home/docker/overlay2/ff637bbeab5d1d8cf2242d5caf7aea4785264424cd25ce191021fa7e42b781a4/diff:/home/docker/overlay2/71bd725e5b1ae62030b4892fa21a047705eed4da39a76356f96a636a08efbf61/diff:/home/docker/overlay2/215e14eac589f50a047574a81c432f540919812aa61349b60df7f473a138c358/diff:/home/docker/overlay2/ae4fe4684f2d07599cc8efdab81445b1c2667d8cee7d2e074f94bb9bcb73bfea/diff",
+                "MergedDir": "/home/docker/overlay2/8c5fb1e82c9609a0ae65209ece5e0a79d2d0eab8c3cb5a6de14cc33e8d697e6d/merged",
+                "UpperDir": "/home/docker/overlay2/8c5fb1e82c9609a0ae65209ece5e0a79d2d0eab8c3cb5a6de14cc33e8d697e6d/diff",
+                "WorkDir": "/home/docker/overlay2/8c5fb1e82c9609a0ae65209ece5e0a79d2d0eab8c3cb5a6de14cc33e8d697e6d/work"
+            },
+            "Name": "overlay2"
+        },
+        "RootFS": {
+            "Type": "layers",
+            "Layers": [
+                "sha256:4843c53b9094f182c4b6ac3412c333d8b770869e2ee2f81ba684ea507f247063",
+                "sha256:4b838ffe149d35768acf48aa28c1fdaeae0e87ad3b210a4f44788a36f8590b36",
+                "sha256:5db68b7e70ab7a4ae2654810dd67e65cb87fd0337e9b57f581b365209c59273c",
+                "sha256:5950d0a7342bb982c3b7ff87a0a523cc61afa8996231c2692d5882d4d80c6365",
+                "sha256:ce33883b61164b4b8dbd7487f2f38966be97480f0081a0e6f0322701356dcb6a",
+                "sha256:35b580856a4abf0c5dcdcae60db1c9b981663881d13c514fed80378109af49c0",
+                "sha256:74d341a49901a8c4e3e20916cd321094edd47ee926ced7c932e910ccb98bebb4",
+                "sha256:a6f396917fe77b15c606556ec977aff0a0043abe02d234057498f63472ff59ea"
+            ]
+        },
+        "Metadata": {
+            "LastTagTime": "2020-01-22T13:21:05.214182351+01:00"
+        }
+    }
+]

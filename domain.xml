@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<domain xmlns:qemu="http://libvirt.org/schemas/domain/qemu/1.0" type="kvm">
+   <name>default_vmi-nocloud</name>
+   <memory unit="B">64000000</memory>
+   <os>
+      <type arch="x86_64" machine="q35">hvm</type>
+      <smbios mode="sysinfo" />
+   </os>
+   <sysinfo type="smbios">
+      <system>
+         <entry name="uuid">2281b0ef-2306-476e-ada8-ccd3c30698a9</entry>
+         <entry name="manufacturer">KubeVirt</entry>
+         <entry name="family">KubeVirt</entry>
+         <entry name="product">None</entry>
+         <entry name="sku" />
+         <entry name="version" />
+      </system>
+      <bios />
+      <baseBoard />
+      <chassis />
+   </sysinfo>
+   <devices>
+      <interface type="bridge">
+         <source bridge="k6t-eth0" />
+         <model type="virtio" />
+         <alias name="ua-default" />
+      </interface>
+      <channel type="unix">
+         <target name="org.qemu.guest_agent.0" type="virtio" />
+      </channel>
+      <controller type="usb" index="0" model="none" />
+      <video>
+         <model type="vga" heads="1" vram="16384" />
+      </video>
+      <graphics type="vnc">
+         <listen type="socket" socket="/var/run/kubevirt-private/9cd516e6-0cfe-11ea-bc4d-525500d15501/virt-vnc" />
+      </graphics>
+      <memballoon model="none" />
+      <disk device="disk" type="file">
+         <source file="/var/run/kubevirt-ephemeral-disks/disk-data/containerdisk/disk.qcow2" />
+         <target bus="virtio" dev="vda" />
+         <driver name="qemu" type="qcow2" />
+         <alias name="ua-containerdisk" />
+         <backingStore type="file">
+            <format type="qcow2" />
+            <source file="/var/run/kubevirt/container-disks/disk_0.img" />
+         </backingStore>
+      </disk>
+      <disk device="disk" type="file">
+         <source file="/var/run/kubevirt-ephemeral-disks/cloud-init-data/default/vmi-nocloud/noCloud.iso" />
+         <target bus="virtio" dev="vdb" />
+         <driver name="qemu" type="raw" />
+         <alias name="ua-cloudinitdisk" />
+      </disk>
+      <disk device="disk" type="file">
+         <source file="/var/run/libvirt/empty-disks/emptydisk.qcow2" />
+         <target bus="virtio" dev="vdc" />
+         <driver name="qemu" type="qcow2" />
+         <alias name="ua-emptydisk" />
+      </disk>
+      <serial type="unix">
+         <target port="0" />
+         <source mode="bind" path="/var/run/kubevirt-private/9cd516e6-0cfe-11ea-bc4d-525500d15501/virt-serial0" />
+      </serial>
+      <console type="pty">
+         <target type="serial" port="0" />
+      </console>
+   </devices>
+   <metadata>
+      <kubevirt xmlns="http://kubevirt.io">
+         <uid>9cd516e6-0cfe-11ea-bc4d-525500d15501</uid>
+         <graceperiod>
+            <deletionGracePeriodSeconds>0</deletionGracePeriodSeconds>
+         </graceperiod>
+      </kubevirt>
+   </metadata>
+   <features>
+      <acpi />
+   </features>
+   <cpu mode="host-model">
+      <topology sockets="1" cores="1" threads="1" />
+   </cpu>
+   <vcpu placement="static">1</vcpu>
+   <iothreads>1</iothreads>
+</domain>

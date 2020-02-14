@@ -1,0 +1,231 @@
+[
+    {
+        "Id": "14ab0cb13fa62e7277768cf1c6774128c9347079fa370a21919e720f687cc7cf",
+        "Created": "2020-01-21T17:04:43.875720484Z",
+        "Path": "/entrypoint.sh",
+        "Args": [
+            "hack/bazel-server.sh"
+        ],
+        "State": {
+            "Status": "running",
+            "Running": true,
+            "Paused": false,
+            "Restarting": false,
+            "OOMKilled": false,
+            "Dead": false,
+            "Pid": 6224,
+            "ExitCode": 0,
+            "Error": "",
+            "StartedAt": "2020-01-21T17:04:44.070305431Z",
+            "FinishedAt": "0001-01-01T00:00:00Z"
+        },
+        "Image": "sha256:b40e0cf730cac020839943890175420fd6f6165e9635e526d7db2cc567f95782",
+        "ResolvConfPath": "/home/docker/containers/14ab0cb13fa62e7277768cf1c6774128c9347079fa370a21919e720f687cc7cf/resolv.conf",
+        "HostnamePath": "/home/docker/containers/14ab0cb13fa62e7277768cf1c6774128c9347079fa370a21919e720f687cc7cf/hostname",
+        "HostsPath": "/home/docker/containers/14ab0cb13fa62e7277768cf1c6774128c9347079fa370a21919e720f687cc7cf/hosts",
+        "LogPath": "/home/docker/containers/14ab0cb13fa62e7277768cf1c6774128c9347079fa370a21919e720f687cc7cf/14ab0cb13fa62e7277768cf1c6774128c9347079fa370a21919e720f687cc7cf-json.log",
+        "Name": "/kubevirt-bazel-server",
+        "RestartCount": 0,
+        "Driver": "overlay2",
+        "Platform": "linux",
+        "MountLabel": "",
+        "ProcessLabel": "",
+        "AppArmorProfile": "",
+        "ExecIDs": null,
+        "HostConfig": {
+            "Binds": [
+                "kubevirt:/root:rw,z",
+                "/home/rmohr/.docker:/root/.docker:ro,z"
+            ],
+            "ContainerIDFile": "",
+            "LogConfig": {
+                "Type": "json-file",
+                "Config": {}
+            },
+            "NetworkMode": "host",
+            "PortBindings": {},
+            "RestartPolicy": {
+                "Name": "no",
+                "MaximumRetryCount": 0
+            },
+            "AutoRemove": true,
+            "VolumeDriver": "",
+            "VolumesFrom": null,
+            "CapAdd": null,
+            "CapDrop": null,
+            "Dns": [],
+            "DnsOptions": [],
+            "DnsSearch": [],
+            "ExtraHosts": null,
+            "GroupAdd": null,
+            "IpcMode": "shareable",
+            "Cgroup": "",
+            "Links": null,
+            "OomScoreAdj": 0,
+            "PidMode": "",
+            "Privileged": false,
+            "PublishAllPorts": false,
+            "ReadonlyRootfs": false,
+            "SecurityOpt": [
+                "label:disable"
+            ],
+            "UTSMode": "",
+            "UsernsMode": "",
+            "ShmSize": 67108864,
+            "Runtime": "runc",
+            "ConsoleSize": [
+                0,
+                0
+            ],
+            "Isolation": "",
+            "CpuShares": 0,
+            "Memory": 0,
+            "NanoCpus": 0,
+            "CgroupParent": "",
+            "BlkioWeight": 0,
+            "BlkioWeightDevice": [],
+            "BlkioDeviceReadBps": null,
+            "BlkioDeviceWriteBps": null,
+            "BlkioDeviceReadIOps": null,
+            "BlkioDeviceWriteIOps": null,
+            "CpuPeriod": 0,
+            "CpuQuota": 0,
+            "CpuRealtimePeriod": 0,
+            "CpuRealtimeRuntime": 0,
+            "CpusetCpus": "",
+            "CpusetMems": "",
+            "Devices": [],
+            "DeviceCgroupRules": null,
+            "DiskQuota": 0,
+            "KernelMemory": 0,
+            "MemoryReservation": 0,
+            "MemorySwap": 0,
+            "MemorySwappiness": null,
+            "OomKillDisable": false,
+            "PidsLimit": 0,
+            "Ulimits": null,
+            "CpuCount": 0,
+            "CpuPercent": 0,
+            "IOMaximumIOps": 0,
+            "IOMaximumBandwidth": 0,
+            "MaskedPaths": [
+                "/proc/acpi",
+                "/proc/kcore",
+                "/proc/keys",
+                "/proc/latency_stats",
+                "/proc/timer_list",
+                "/proc/timer_stats",
+                "/proc/sched_debug",
+                "/proc/scsi",
+                "/sys/firmware"
+            ],
+            "ReadonlyPaths": [
+                "/proc/asound",
+                "/proc/bus",
+                "/proc/fs",
+                "/proc/irq",
+                "/proc/sys",
+                "/proc/sysrq-trigger"
+            ]
+        },
+        "GraphDriver": {
+            "Data": {
+                "LowerDir": "/home/docker/overlay2/6a83fb209017fa89f891b114df556d375c2aa5991b5483763a2661e21b000a12-init/diff:/home/docker/overlay2/f5380715134a6a3c7ad618d29d09363e3f399cd2b327ede6fb189af854c3ccc3/diff:/home/docker/overlay2/cdd9449bb675b95e934bcce6b3d3d7f609ef44272de26e593c81ba606dffd7cc/diff:/home/docker/overlay2/ab6250bb3108c7cfe70a891cd206805e9c8aaeea723d2c10fedaebc04c7d2703/diff:/home/docker/overlay2/1db2508bdcc2a45ab8a41e81350206583bdb1cd4d388777d04025ab44b4d512b/diff:/home/docker/overlay2/ff637bbeab5d1d8cf2242d5caf7aea4785264424cd25ce191021fa7e42b781a4/diff:/home/docker/overlay2/71bd725e5b1ae62030b4892fa21a047705eed4da39a76356f96a636a08efbf61/diff:/home/docker/overlay2/215e14eac589f50a047574a81c432f540919812aa61349b60df7f473a138c358/diff:/home/docker/overlay2/ae4fe4684f2d07599cc8efdab81445b1c2667d8cee7d2e074f94bb9bcb73bfea/diff",
+                "MergedDir": "/home/docker/overlay2/6a83fb209017fa89f891b114df556d375c2aa5991b5483763a2661e21b000a12/merged",
+                "UpperDir": "/home/docker/overlay2/6a83fb209017fa89f891b114df556d375c2aa5991b5483763a2661e21b000a12/diff",
+                "WorkDir": "/home/docker/overlay2/6a83fb209017fa89f891b114df556d375c2aa5991b5483763a2661e21b000a12/work"
+            },
+            "Name": "overlay2"
+        },
+        "Mounts": [
+            {
+                "Type": "volume",
+                "Name": "kubevirt",
+                "Source": "/home/docker/volumes/kubevirt/_data",
+                "Destination": "/root",
+                "Driver": "local",
+                "Mode": "rw,z",
+                "RW": true,
+                "Propagation": ""
+            },
+            {
+                "Type": "bind",
+                "Source": "/home/rmohr/.docker",
+                "Destination": "/root/.docker",
+                "Mode": "ro,z",
+                "RW": false,
+                "Propagation": "rprivate"
+            }
+        ],
+        "Config": {
+            "Hostname": "linux.fritz.box",
+            "Domainname": "",
+            "User": "",
+            "AttachStdin": false,
+            "AttachStdout": false,
+            "AttachStderr": false,
+            "Tty": false,
+            "OpenStdin": false,
+            "StdinOnce": false,
+            "Env": [
+                "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                "DISTTAG=f30container",
+                "FGC=f30",
+                "FBR=f30",
+                "LIBVIRT_VERSION=5.1.0",
+                "GIMME_GO_VERSION=1.12.8",
+                "GOPATH=/go",
+                "GOBIN=/usr/bin"
+            ],
+            "Cmd": [
+                "hack/bazel-server.sh"
+            ],
+            "Image": "kubevirt",
+            "Volumes": null,
+            "WorkingDir": "/root/go/src/kubevirt.io/kubevirt",
+            "Entrypoint": [
+                "/entrypoint.sh"
+            ],
+            "OnBuild": null,
+            "Labels": {
+                "maintainer": "Clement Verna <cverna@fedoraproject.org>"
+            }
+        },
+        "NetworkSettings": {
+            "Bridge": "",
+            "SandboxID": "a24df9b83ccaf9ad906fbb54ec2a2990cc32a37b04fec3fe37986cf82bcbb2d4",
+            "HairpinMode": false,
+            "LinkLocalIPv6Address": "",
+            "LinkLocalIPv6PrefixLen": 0,
+            "Ports": {},
+            "SandboxKey": "/var/run/docker/netns/default",
+            "SecondaryIPAddresses": null,
+            "SecondaryIPv6Addresses": null,
+            "EndpointID": "",
+            "Gateway": "",
+            "GlobalIPv6Address": "",
+            "GlobalIPv6PrefixLen": 0,
+            "IPAddress": "",
+            "IPPrefixLen": 0,
+            "IPv6Gateway": "",
+            "MacAddress": "",
+            "Networks": {
+                "host": {
+                    "IPAMConfig": null,
+                    "Links": null,
+                    "Aliases": null,
+                    "NetworkID": "78aac96e20d644688d39cf584d41b40685038a9fb20bff605649d3e30904593e",
+                    "EndpointID": "5712951e63c71f7b91d976b64349d21206cf5c4387e6168d6944823418bcf8f0",
+                    "Gateway": "",
+                    "IPAddress": "",
+                    "IPPrefixLen": 0,
+                    "IPv6Gateway": "",
+                    "GlobalIPv6Address": "",
+                    "GlobalIPv6PrefixLen": 0,
+                    "MacAddress": "",
+                    "DriverOpts": null
+                }
+            }
+        }
+    }
+]

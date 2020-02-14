@@ -1,0 +1,687 @@
+apiVersion: v1
+items:
+- apiVersion: apiextensions.k8s.io/v1beta1
+  kind: CustomResourceDefinition
+  metadata:
+    creationTimestamp: "2019-12-30T11:30:07Z"
+    generation: 1
+    labels:
+      cdi.kubevirt.io: ""
+    name: cdiconfigs.cdi.kubevirt.io
+    ownerReferences:
+    - apiVersion: cdi.kubevirt.io/v1alpha1
+      blockOwnerDeletion: true
+      controller: true
+      kind: CDI
+      name: cdi
+      uid: af4365f1-2af7-11ea-9cfa-525500d15501
+    resourceVersion: "993"
+    selfLink: /apis/apiextensions.k8s.io/v1beta1/customresourcedefinitions/cdiconfigs.cdi.kubevirt.io
+    uid: bb77afa0-2af7-11ea-9cfa-525500d15501
+  spec:
+    conversion:
+      strategy: None
+    group: cdi.kubevirt.io
+    names:
+      categories:
+      - all
+      kind: CDIConfig
+      listKind: CDIConfigList
+      plural: cdiconfigs
+      singular: cdiconfig
+    scope: Cluster
+    version: v1alpha1
+    versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+  status:
+    acceptedNames:
+      categories:
+      - all
+      kind: CDIConfig
+      listKind: CDIConfigList
+      plural: cdiconfigs
+      singular: cdiconfig
+    conditions:
+    - lastTransitionTime: "2019-12-30T11:30:07Z"
+      message: no conflicts found
+      reason: NoConflicts
+      status: "True"
+      type: NamesAccepted
+    - lastTransitionTime: null
+      message: the initial names have been accepted
+      reason: InitialNamesAccepted
+      status: "True"
+      type: Established
+    storedVersions:
+    - v1alpha1
+- apiVersion: apiextensions.k8s.io/v1beta1
+  kind: CustomResourceDefinition
+  metadata:
+    creationTimestamp: "2019-12-30T11:29:47Z"
+    generation: 1
+    labels:
+      operator.cdi.kubevirt.io: ""
+    name: cdis.cdi.kubevirt.io
+    resourceVersion: "706"
+    selfLink: /apis/apiextensions.k8s.io/v1beta1/customresourcedefinitions/cdis.cdi.kubevirt.io
+    uid: af07f769-2af7-11ea-9cfa-525500d15501
+  spec:
+    conversion:
+      strategy: None
+    group: cdi.kubevirt.io
+    names:
+      kind: CDI
+      listKind: CDIList
+      plural: cdis
+      singular: cdi
+    scope: Cluster
+    version: v1alpha1
+    versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+  status:
+    acceptedNames:
+      kind: CDI
+      listKind: CDIList
+      plural: cdis
+      singular: cdi
+    conditions:
+    - lastTransitionTime: "2019-12-30T11:29:47Z"
+      message: no conflicts found
+      reason: NoConflicts
+      status: "True"
+      type: NamesAccepted
+    - lastTransitionTime: null
+      message: the initial names have been accepted
+      reason: InitialNamesAccepted
+      status: "True"
+      type: Established
+    storedVersions:
+    - v1alpha1
+- apiVersion: apiextensions.k8s.io/v1beta1
+  kind: CustomResourceDefinition
+  metadata:
+    creationTimestamp: "2019-12-30T11:30:07Z"
+    generation: 1
+    labels:
+      cdi.kubevirt.io: ""
+    name: datavolumes.cdi.kubevirt.io
+    ownerReferences:
+    - apiVersion: cdi.kubevirt.io/v1alpha1
+      blockOwnerDeletion: true
+      controller: true
+      kind: CDI
+      name: cdi
+      uid: af4365f1-2af7-11ea-9cfa-525500d15501
+    resourceVersion: "989"
+    selfLink: /apis/apiextensions.k8s.io/v1beta1/customresourcedefinitions/datavolumes.cdi.kubevirt.io
+    uid: bb766c94-2af7-11ea-9cfa-525500d15501
+  spec:
+    conversion:
+      strategy: None
+    group: cdi.kubevirt.io
+    names:
+      categories:
+      - all
+      kind: DataVolume
+      listKind: DataVolumeList
+      plural: datavolumes
+      shortNames:
+      - dv
+      - dvs
+      singular: datavolume
+    scope: Namespaced
+    validation:
+      openAPIV3Schema:
+        properties:
+          apiVersion:
+            type: string
+          kind:
+            type: string
+          metadata: {}
+          spec:
+            properties:
+              pvc:
+                properties:
+                  accessModes:
+                    type: array
+                  resources:
+                    properties:
+                      requests:
+                        properties:
+                          storage:
+                            type: string
+                    required:
+                    - requests
+                  storageClassName:
+                    type: string
+                required:
+                - resources
+                - accessModes
+              source:
+                properties:
+                  blank: {}
+                  http:
+                    properties:
+                      secretRef:
+                        type: string
+                      url:
+                        type: string
+                    required:
+                    - url
+                  pvc:
+                    properties:
+                      name:
+                        type: string
+                      namespace:
+                        type: string
+                    required:
+                    - namespace
+                    - name
+                  registry:
+                    properties:
+                      secretRef:
+                        type: string
+                      url:
+                        type: string
+                    required:
+                    - url
+                  s3:
+                    properties:
+                      secretRef:
+                        type: string
+                      url:
+                        type: string
+                    required:
+                    - url
+                  upload: {}
+    version: v1alpha1
+    versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+  status:
+    acceptedNames:
+      categories:
+      - all
+      kind: DataVolume
+      listKind: DataVolumeList
+      plural: datavolumes
+      shortNames:
+      - dv
+      - dvs
+      singular: datavolume
+    conditions:
+    - lastTransitionTime: "2019-12-30T11:30:07Z"
+      message: no conflicts found
+      reason: NoConflicts
+      status: "True"
+      type: NamesAccepted
+    - lastTransitionTime: null
+      message: the initial names have been accepted
+      reason: InitialNamesAccepted
+      status: "True"
+      type: Established
+    storedVersions:
+    - v1alpha1
+- apiVersion: apiextensions.k8s.io/v1beta1
+  kind: CustomResourceDefinition
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"apiextensions.k8s.io/v1beta1","kind":"CustomResourceDefinition","metadata":{"annotations":{},"labels":{"operator.kubevirt.io":""},"name":"kubevirts.kubevirt.io"},"spec":{"additionalPrinterColumns":[{"JSONPath":".metadata.creationTimestamp","name":"Age","type":"date"},{"JSONPath":".status.phase","name":"Phase","type":"string"}],"group":"kubevirt.io","names":{"categories":["all"],"kind":"KubeVirt","plural":"kubevirts","shortNames":["kv","kvs"],"singular":"kubevirt"},"scope":"Namespaced","version":"v1alpha3","versions":[{"name":"v1alpha3","served":true,"storage":true}]}}
+    creationTimestamp: "2019-12-30T11:29:47Z"
+    generation: 1
+    labels:
+      operator.kubevirt.io: ""
+    name: kubevirts.kubevirt.io
+    resourceVersion: "755"
+    selfLink: /apis/apiextensions.k8s.io/v1beta1/customresourcedefinitions/kubevirts.kubevirt.io
+    uid: af594418-2af7-11ea-9cfa-525500d15501
+  spec:
+    additionalPrinterColumns:
+    - JSONPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    - JSONPath: .status.phase
+      name: Phase
+      type: string
+    conversion:
+      strategy: None
+    group: kubevirt.io
+    names:
+      categories:
+      - all
+      kind: KubeVirt
+      listKind: KubeVirtList
+      plural: kubevirts
+      shortNames:
+      - kv
+      - kvs
+      singular: kubevirt
+    scope: Namespaced
+    version: v1alpha3
+    versions:
+    - name: v1alpha3
+      served: true
+      storage: true
+  status:
+    acceptedNames:
+      categories:
+      - all
+      kind: KubeVirt
+      listKind: KubeVirtList
+      plural: kubevirts
+      shortNames:
+      - kv
+      - kvs
+      singular: kubevirt
+    conditions:
+    - lastTransitionTime: "2019-12-30T11:29:47Z"
+      message: no conflicts found
+      reason: NoConflicts
+      status: "True"
+      type: NamesAccepted
+    - lastTransitionTime: null
+      message: the initial names have been accepted
+      reason: InitialNamesAccepted
+      status: "True"
+      type: Established
+    storedVersions:
+    - v1alpha3
+- apiVersion: apiextensions.k8s.io/v1beta1
+  kind: CustomResourceDefinition
+  metadata:
+    annotations:
+      kubevirt.io/install-strategy-identifier: 77177fefbc3ce1fbb7700da3296665bea3a60b18
+      kubevirt.io/install-strategy-registry: registry:5000/kubevirt
+      kubevirt.io/install-strategy-version: devel
+    creationTimestamp: "2019-12-30T11:29:54Z"
+    generation: 1
+    labels:
+      app.kubernetes.io/managed-by: kubevirt-operator
+      kubevirt.io: ""
+    name: virtualmachineinstancemigrations.kubevirt.io
+    ownerReferences:
+    - apiVersion: kubevirt.io/v1alpha3
+      blockOwnerDeletion: true
+      controller: true
+      kind: KubeVirt
+      name: kubevirt
+      uid: b029119c-2af7-11ea-9cfa-525500d15501
+    resourceVersion: "849"
+    selfLink: /apis/apiextensions.k8s.io/v1beta1/customresourcedefinitions/virtualmachineinstancemigrations.kubevirt.io
+    uid: b3795a45-2af7-11ea-9cfa-525500d15501
+  spec:
+    conversion:
+      strategy: None
+    group: kubevirt.io
+    names:
+      categories:
+      - all
+      kind: VirtualMachineInstanceMigration
+      listKind: VirtualMachineInstanceMigrationList
+      plural: virtualmachineinstancemigrations
+      shortNames:
+      - vmim
+      - vmims
+      singular: virtualmachineinstancemigration
+    scope: Namespaced
+    version: v1alpha3
+    versions:
+    - name: v1alpha3
+      served: true
+      storage: true
+  status:
+    acceptedNames:
+      categories:
+      - all
+      kind: VirtualMachineInstanceMigration
+      listKind: VirtualMachineInstanceMigrationList
+      plural: virtualmachineinstancemigrations
+      shortNames:
+      - vmim
+      - vmims
+      singular: virtualmachineinstancemigration
+    conditions:
+    - lastTransitionTime: "2019-12-30T11:29:54Z"
+      message: no conflicts found
+      reason: NoConflicts
+      status: "True"
+      type: NamesAccepted
+    - lastTransitionTime: null
+      message: the initial names have been accepted
+      reason: InitialNamesAccepted
+      status: "True"
+      type: Established
+    storedVersions:
+    - v1alpha3
+- apiVersion: apiextensions.k8s.io/v1beta1
+  kind: CustomResourceDefinition
+  metadata:
+    annotations:
+      kubevirt.io/install-strategy-identifier: 77177fefbc3ce1fbb7700da3296665bea3a60b18
+      kubevirt.io/install-strategy-registry: registry:5000/kubevirt
+      kubevirt.io/install-strategy-version: devel
+    creationTimestamp: "2019-12-30T11:29:54Z"
+    generation: 1
+    labels:
+      app.kubernetes.io/managed-by: kubevirt-operator
+      kubevirt.io: ""
+    name: virtualmachineinstancepresets.kubevirt.io
+    ownerReferences:
+    - apiVersion: kubevirt.io/v1alpha3
+      blockOwnerDeletion: true
+      controller: true
+      kind: KubeVirt
+      name: kubevirt
+      uid: b029119c-2af7-11ea-9cfa-525500d15501
+    resourceVersion: "841"
+    selfLink: /apis/apiextensions.k8s.io/v1beta1/customresourcedefinitions/virtualmachineinstancepresets.kubevirt.io
+    uid: b375df23-2af7-11ea-9cfa-525500d15501
+  spec:
+    conversion:
+      strategy: None
+    group: kubevirt.io
+    names:
+      categories:
+      - all
+      kind: VirtualMachineInstancePreset
+      listKind: VirtualMachineInstancePresetList
+      plural: virtualmachineinstancepresets
+      shortNames:
+      - vmipreset
+      - vmipresets
+      singular: virtualmachineinstancepreset
+    scope: Namespaced
+    version: v1alpha3
+    versions:
+    - name: v1alpha3
+      served: true
+      storage: true
+  status:
+    acceptedNames:
+      categories:
+      - all
+      kind: VirtualMachineInstancePreset
+      listKind: VirtualMachineInstancePresetList
+      plural: virtualmachineinstancepresets
+      shortNames:
+      - vmipreset
+      - vmipresets
+      singular: virtualmachineinstancepreset
+    conditions:
+    - lastTransitionTime: "2019-12-30T11:29:54Z"
+      message: no conflicts found
+      reason: NoConflicts
+      status: "True"
+      type: NamesAccepted
+    - lastTransitionTime: null
+      message: the initial names have been accepted
+      reason: InitialNamesAccepted
+      status: "True"
+      type: Established
+    storedVersions:
+    - v1alpha3
+- apiVersion: apiextensions.k8s.io/v1beta1
+  kind: CustomResourceDefinition
+  metadata:
+    annotations:
+      kubevirt.io/install-strategy-identifier: 77177fefbc3ce1fbb7700da3296665bea3a60b18
+      kubevirt.io/install-strategy-registry: registry:5000/kubevirt
+      kubevirt.io/install-strategy-version: devel
+    creationTimestamp: "2019-12-30T11:29:54Z"
+    generation: 1
+    labels:
+      app.kubernetes.io/managed-by: kubevirt-operator
+      kubevirt.io: ""
+    name: virtualmachineinstancereplicasets.kubevirt.io
+    ownerReferences:
+    - apiVersion: kubevirt.io/v1alpha3
+      blockOwnerDeletion: true
+      controller: true
+      kind: KubeVirt
+      name: kubevirt
+      uid: b029119c-2af7-11ea-9cfa-525500d15501
+    resourceVersion: "844"
+    selfLink: /apis/apiextensions.k8s.io/v1beta1/customresourcedefinitions/virtualmachineinstancereplicasets.kubevirt.io
+    uid: b377b985-2af7-11ea-9cfa-525500d15501
+  spec:
+    additionalPrinterColumns:
+    - JSONPath: .spec.replicas
+      description: Number of desired VirtualMachineInstances
+      name: Desired
+      type: integer
+    - JSONPath: .status.replicas
+      description: Number of managed and not final or deleted VirtualMachineInstances
+      name: Current
+      type: integer
+    - JSONPath: .status.readyReplicas
+      description: Number of managed VirtualMachineInstances which are ready to receive
+        traffic
+      name: Ready
+      type: integer
+    - JSONPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    conversion:
+      strategy: None
+    group: kubevirt.io
+    names:
+      categories:
+      - all
+      kind: VirtualMachineInstanceReplicaSet
+      listKind: VirtualMachineInstanceReplicaSetList
+      plural: virtualmachineinstancereplicasets
+      shortNames:
+      - vmirs
+      - vmirss
+      singular: virtualmachineinstancereplicaset
+    scope: Namespaced
+    subresources:
+      scale:
+        labelSelectorPath: .status.labelSelector
+        specReplicasPath: .spec.replicas
+        statusReplicasPath: .status.replicas
+    version: v1alpha3
+    versions:
+    - name: v1alpha3
+      served: true
+      storage: true
+  status:
+    acceptedNames:
+      categories:
+      - all
+      kind: VirtualMachineInstanceReplicaSet
+      listKind: VirtualMachineInstanceReplicaSetList
+      plural: virtualmachineinstancereplicasets
+      shortNames:
+      - vmirs
+      - vmirss
+      singular: virtualmachineinstancereplicaset
+    conditions:
+    - lastTransitionTime: "2019-12-30T11:29:54Z"
+      message: no conflicts found
+      reason: NoConflicts
+      status: "True"
+      type: NamesAccepted
+    - lastTransitionTime: null
+      message: the initial names have been accepted
+      reason: InitialNamesAccepted
+      status: "True"
+      type: Established
+    storedVersions:
+    - v1alpha3
+- apiVersion: apiextensions.k8s.io/v1beta1
+  kind: CustomResourceDefinition
+  metadata:
+    annotations:
+      kubevirt.io/install-strategy-identifier: 77177fefbc3ce1fbb7700da3296665bea3a60b18
+      kubevirt.io/install-strategy-registry: registry:5000/kubevirt
+      kubevirt.io/install-strategy-version: devel
+    creationTimestamp: "2019-12-30T11:29:54Z"
+    generation: 1
+    labels:
+      app.kubernetes.io/managed-by: kubevirt-operator
+      kubevirt.io: ""
+    name: virtualmachineinstances.kubevirt.io
+    ownerReferences:
+    - apiVersion: kubevirt.io/v1alpha3
+      blockOwnerDeletion: true
+      controller: true
+      kind: KubeVirt
+      name: kubevirt
+      uid: b029119c-2af7-11ea-9cfa-525500d15501
+    resourceVersion: "838"
+    selfLink: /apis/apiextensions.k8s.io/v1beta1/customresourcedefinitions/virtualmachineinstances.kubevirt.io
+    uid: b374c42b-2af7-11ea-9cfa-525500d15501
+  spec:
+    additionalPrinterColumns:
+    - JSONPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    - JSONPath: .status.phase
+      name: Phase
+      type: string
+    - JSONPath: .status.interfaces[0].ipAddress
+      name: IP
+      type: string
+    - JSONPath: .status.nodeName
+      name: NodeName
+      type: string
+    - JSONPath: .status.conditions[?(@.type=='LiveMigratable')].status
+      name: Live-Migratable
+      priority: 1
+      type: string
+    conversion:
+      strategy: None
+    group: kubevirt.io
+    names:
+      categories:
+      - all
+      kind: VirtualMachineInstance
+      listKind: VirtualMachineInstanceList
+      plural: virtualmachineinstances
+      shortNames:
+      - vmi
+      - vmis
+      singular: virtualmachineinstance
+    scope: Namespaced
+    version: v1alpha3
+    versions:
+    - name: v1alpha3
+      served: true
+      storage: true
+  status:
+    acceptedNames:
+      categories:
+      - all
+      kind: VirtualMachineInstance
+      listKind: VirtualMachineInstanceList
+      plural: virtualmachineinstances
+      shortNames:
+      - vmi
+      - vmis
+      singular: virtualmachineinstance
+    conditions:
+    - lastTransitionTime: "2019-12-30T11:29:54Z"
+      message: no conflicts found
+      reason: NoConflicts
+      status: "True"
+      type: NamesAccepted
+    - lastTransitionTime: null
+      message: the initial names have been accepted
+      reason: InitialNamesAccepted
+      status: "True"
+      type: Established
+    storedVersions:
+    - v1alpha3
+- apiVersion: apiextensions.k8s.io/v1beta1
+  kind: CustomResourceDefinition
+  metadata:
+    annotations:
+      kubevirt.io/install-strategy-identifier: 77177fefbc3ce1fbb7700da3296665bea3a60b18
+      kubevirt.io/install-strategy-registry: registry:5000/kubevirt
+      kubevirt.io/install-strategy-version: devel
+    creationTimestamp: "2019-12-30T11:29:54Z"
+    generation: 1
+    labels:
+      app.kubernetes.io/managed-by: kubevirt-operator
+      kubevirt.io: ""
+    name: virtualmachines.kubevirt.io
+    ownerReferences:
+    - apiVersion: kubevirt.io/v1alpha3
+      blockOwnerDeletion: true
+      controller: true
+      kind: KubeVirt
+      name: kubevirt
+      uid: b029119c-2af7-11ea-9cfa-525500d15501
+    resourceVersion: "847"
+    selfLink: /apis/apiextensions.k8s.io/v1beta1/customresourcedefinitions/virtualmachines.kubevirt.io
+    uid: b3787388-2af7-11ea-9cfa-525500d15501
+  spec:
+    additionalPrinterColumns:
+    - JSONPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    - JSONPath: .spec.running
+      name: Running
+      type: boolean
+    - JSONPath: .spec.volumes[0].name
+      description: Primary Volume
+      name: Volume
+      type: string
+    - JSONPath: .status.created
+      name: Created
+      priority: 1
+      type: boolean
+    conversion:
+      strategy: None
+    group: kubevirt.io
+    names:
+      categories:
+      - all
+      kind: VirtualMachine
+      listKind: VirtualMachineList
+      plural: virtualmachines
+      shortNames:
+      - vm
+      - vms
+      singular: virtualmachine
+    scope: Namespaced
+    version: v1alpha3
+    versions:
+    - name: v1alpha3
+      served: true
+      storage: true
+  status:
+    acceptedNames:
+      categories:
+      - all
+      kind: VirtualMachine
+      listKind: VirtualMachineList
+      plural: virtualmachines
+      shortNames:
+      - vm
+      - vms
+      singular: virtualmachine
+    conditions:
+    - lastTransitionTime: "2019-12-30T11:29:54Z"
+      message: no conflicts found
+      reason: NoConflicts
+      status: "True"
+      type: NamesAccepted
+    - lastTransitionTime: null
+      message: the initial names have been accepted
+      reason: InitialNamesAccepted
+      status: "True"
+      type: Established
+    storedVersions:
+    - v1alpha3
+kind: List
+metadata:
+  resourceVersion: ""
+  selfLink: ""
