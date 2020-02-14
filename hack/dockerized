@@ -3,6 +3,11 @@ set -e
 
 source $(dirname "$0")/common.sh
 
+if ${KUBEVIRT_RUN_UNNESTED} == true; then
+    $@
+    exit $?
+fi
+
 KUBEVIRT_BUILDER_IMAGE="kubevirt/builder@sha256:62169456ad8bc2f3dcc7de18d1abc96d64393b359672d605da28bdfcf5d3121e"
 
 DOCKER_DIR=${KUBEVIRT_DIR}/hack/kubevirt-builder
