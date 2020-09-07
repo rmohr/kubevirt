@@ -529,7 +529,6 @@ func GenerateRESTReport() error {
 func SynchronizedAfterTestSuiteCleanup() {
 	RestoreKubeVirtResource()
 
-	cleanupServiceAccounts()
 	DeletePV(osAlpineHostPath)
 
 	if Config.ManageStorageClasses {
@@ -550,8 +549,7 @@ func AfterTestSuitCleanup() {
 	DeletePVC(osRhel)
 
 	DeletePVC(osAlpineHostPath)
-	// Make sure that the namespaces exist, to not have to check in the cleanup code for existing namespaces
-	createNamespaces()
+	cleanupServiceAccounts()
 	cleanNamespaces()
 
 	if flags.DeployTestingInfrastructureFlag {
@@ -705,8 +703,6 @@ func SynchronizedBeforeTestSetup() []byte {
 		detectInstallNamespace()
 	}
 
-	createNamespaces()
-	createServiceAccounts()
 	if flags.DeployTestingInfrastructureFlag {
 		WipeTestingInfrastructure()
 		DeployTestingInfrastructure()
@@ -1218,12 +1214,12 @@ func cleanupSubresourceServiceAccount() {
 		PanicOnError(err)
 	}
 
-	err = virtCli.RbacV1().ClusterRoles().Delete(SubresourceServiceAccountName, nil)
+	err = virtCli.RbacV1().Roles(NamespaceTestDefault).Delete(SubresourceServiceAccountName, nil)
 	if !errors.IsNotFound(err) {
 		PanicOnError(err)
 	}
 
-	err = virtCli.RbacV1().ClusterRoleBindings().Delete(SubresourceServiceAccountName, nil)
+	err = virtCli.RbacV1().RoleBindings(NamespaceTestDefault).Delete(SubresourceServiceAccountName, nil)
 	if !errors.IsNotFound(err) {
 		PanicOnError(err)
 	}
@@ -1290,7 +1286,7 @@ func createServiceAccount(saName string, clusterRole string) {
 		PanicOnError(err)
 	}
 
-	roleBinding := rbacv1.ClusterRoleBinding{
+	roleBinding := rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      saName,
 			Namespace: NamespaceTestDefault,
@@ -1310,7 +1306,7 @@ func createServiceAccount(saName string, clusterRole string) {
 		Namespace: NamespaceTestDefault,
 	})
 
-	_, err = virtCli.RbacV1().ClusterRoleBindings().Create(&roleBinding)
+	_, err = virtCli.RbacV1().RoleBindings(NamespaceTestDefault).Create(&roleBinding)
 	if !errors.IsAlreadyExists(err) {
 		PanicOnError(err)
 	}
@@ -1320,7 +1316,7 @@ func cleanupServiceAccount(saName string) {
 	virtCli, err := kubecli.GetKubevirtClient()
 	PanicOnError(err)
 
-	err = virtCli.RbacV1().ClusterRoleBindings().Delete(saName, nil)
+	err = virtCli.RbacV1().RoleBindings(NamespaceTestDefault).Delete(saName, nil)
 	if !errors.IsNotFound(err) {
 		PanicOnError(err)
 	}
@@ -1350,7 +1346,7 @@ func createSubresourceServiceAccount() {
 		PanicOnError(err)
 	}
 
-	role := rbacv1.ClusterRole{
+	role := rbacv1.Role{
 
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      SubresourceServiceAccountName,
@@ -1366,12 +1362,12 @@ func createSubresourceServiceAccount() {
 		Verbs:     []string{"get"},
 	})
 
-	_, err = virtCli.RbacV1().ClusterRoles().Create(&role)
+	_, err = virtCli.RbacV1().Roles(NamespaceTestDefault).Create(&role)
 	if !errors.IsAlreadyExists(err) {
 		PanicOnError(err)
 	}
 
-	roleBinding := rbacv1.ClusterRoleBinding{
+	roleBinding := rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      SubresourceServiceAccountName,
 			Namespace: NamespaceTestDefault,
@@ -1380,7 +1376,7 @@ func createSubresourceServiceAccount() {
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
-			Kind:     "ClusterRole",
+			Kind:     "Role",
 			Name:     SubresourceServiceAccountName,
 			APIGroup: "rbac.authorization.k8s.io",
 		},
@@ -1391,7 +1387,7 @@ func createSubresourceServiceAccount() {
 		Namespace: NamespaceTestDefault,
 	})
 
-	_, err = virtCli.RbacV1().ClusterRoleBindings().Create(&roleBinding)
+	_, err = virtCli.RbacV1().RoleBindings(NamespaceTestDefault).Create(&roleBinding)
 	if !errors.IsAlreadyExists(err) {
 		PanicOnError(err)
 	}
