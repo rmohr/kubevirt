@@ -817,7 +817,9 @@ func createStorageClass(name string) {
 		Provisioner: name,
 	}
 	_, err = virtClient.StorageV1().StorageClasses().Create(sc)
-	PanicOnError(err)
+	if !errors.IsAlreadyExists(err) {
+		PanicOnError(err)
+	}
 }
 
 func deleteStorageClass(name string) {
@@ -1358,8 +1360,8 @@ func createSubresourceServiceAccount() {
 	}
 	role.Rules = append(role.Rules, rbacv1.PolicyRule{
 		APIGroups: []string{"subresources.kubevirt.io"},
-		Resources: []string{"virtualmachineinstances/test"},
-		Verbs:     []string{"get"},
+		Resources: []string{"virtualmachines/start"},
+		Verbs:     []string{"update"},
 	})
 
 	_, err = virtCli.RbacV1().Roles(NamespaceTestDefault).Create(&role)
