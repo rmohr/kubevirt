@@ -694,6 +694,17 @@ func Taint(nodeName string, key string, effect k8sv1.TaintEffect) {
 	Expect(err).ToNot(HaveOccurred())
 }
 
+// calculateNamespaces checks on which ginkgo gest node the tests are run and sets the namespaces accordingly
+func calculateNamespaces() {
+	worker := config.GinkgoConfig.ParallelNode
+	NamespaceTestDefault = fmt.Sprintf("%s%d", NamespaceTestDefault, worker)
+	NamespaceTestAlternative = fmt.Sprintf("%s%d", NamespaceTestAlternative, worker)
+	// TODO, that is not needed, just a shortcut to not have to treat this namespace
+	// differently when running in parallel
+	NamespaceTestOperator = fmt.Sprintf("%s%d", NamespaceTestOperator, worker)
+	testNamespaces = []string{NamespaceTestDefault, NamespaceTestAlternative, NamespaceTestOperator}
+}
+
 func SynchronizedBeforeTestSetup() []byte {
 	var err error
 	Config, err = loadConfig()
@@ -726,10 +737,6 @@ func SynchronizedBeforeTestSetup() []byte {
 
 	CreateHostPathPv(osAlpineHostPath, HostPathAlpine)
 
-	if IsRunningOnKindInfraIPv6() {
-		createPodPreset("fix-node-uuid", "fake-product-uuid", "virt-launcher", "/kind/product_uuid", "/sys/class/dmi/id/product_uuid")
-	}
-
 	EnsureKVMPresent()
 	AdjustKubeVirtResource()
 
@@ -748,17 +755,14 @@ func BeforeTestSuitSetup(_ []byte) {
 	var err error
 	Config, err = loadConfig()
 	Expect(err).ToNot(HaveOccurred())
-	// Set the right namespaces for this test node
-	worker := config.GinkgoConfig.ParallelNode
-	NamespaceTestDefault = fmt.Sprintf("%s%d", NamespaceTestDefault, worker)
-	NamespaceTestAlternative = fmt.Sprintf("%s%d", NamespaceTestAlternative, worker)
-	// TODO, that is not needed, just a shortcut to not have to treat this namespace
-	// differently when running in parallel
-	NamespaceTestOperator = fmt.Sprintf("%s%d", NamespaceTestOperator, worker)
-	testNamespaces = []string{NamespaceTestDefault, NamespaceTestAlternative, NamespaceTestOperator}
+	calculateNamespaces()
 
 	createNamespaces()
 	createServiceAccounts()
+
+	if IsRunningOnKindInfraIPv6() {
+		createPodPreset("fix-node-uuid", "fake-product-uuid", "virt-launcher", "/kind/product_uuid", "/sys/class/dmi/id/product_uuid")
+	}
 
 	CreateHostPathPVC(osAlpineHostPath, defaultDiskSize)
 	CreatePVC(osWindows, defaultWindowsDiskSize, Config.StorageClassWindows)
