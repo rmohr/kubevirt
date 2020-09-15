@@ -30,7 +30,6 @@ const (
 	DefaultResourceMemory        = "8192Ki"
 	DefaultTestGracePeriod int64 = 0
 	DefaultVmiName               = "testvmi"
-	NamespaceTestDefault         = "kubevirt-test-default"
 )
 
 // NewFedora instantiates a new Fedora based VMI configuration,
@@ -48,7 +47,7 @@ func NewFedora(opts ...Option) *kvirtv1.VirtualMachineInstance {
 		WithCloudInitNoCloudUserData(configurePassword, true),
 	)
 	opts = append(fedoraOptions, opts...)
-	return New(NamespaceTestDefault, RandName(DefaultVmiName), opts...)
+	return New(RandName(DefaultVmiName), opts...)
 }
 
 // defaultOptions returns a list of "default" options.
