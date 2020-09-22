@@ -75,7 +75,7 @@ done
 managed_namespaces=(${namespace} ${cdi_namespace})
 
 # Delete all traces of kubevirt
-namespaces=(default ${namespace} ${cdi_namespace})
+namespaces=(${namespace} ${cdi_namespace})
 labels=("operator.kubevirt.io" "operator.cdi.kubevirt.io" "kubevirt.io" "cdi.kubevirt.io")
 
 # Namespaced resources
