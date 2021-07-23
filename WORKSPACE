@@ -333,24 +333,6 @@ container_pull(
     tag = "32",
 )
 
-# Pull fedora 32 customize container-disk
-# WARNING: please update any automated process to push this image to quay.io
-# instead of index.docker.io
-# TODO build fedora_sriov_lane for multi-arch
-container_pull(
-    name = "fedora_sriov_lane",
-    digest = "sha256:6f66ee747d62c354c0d36e640f8c97d6be0b6ad88a9e8c0180496ac55cba31bf",
-    registry = "quay.io",
-    repository = "kubevirtci/fedora-sriov-testing",
-)
-
-container_pull(
-    name = "fedora_sriov_lane_aarch64",
-    digest = "sha256:6f66ee747d62c354c0d36e640f8c97d6be0b6ad88a9e8c0180496ac55cba31bf",
-    registry = "quay.io",
-    repository = "kubevirtci/fedora-sriov-testing",
-)
-
 # Pull go_image_base
 container_pull(
     name = "go_image_base",
@@ -389,9 +371,9 @@ container_pull(
 # TODO build fedora_with_test_tooling for multi-arch
 container_pull(
     name = "fedora_with_test_tooling",
-    digest = "sha256:ce36d2b4f81b038fba0b61b1bb1ac7f671d47687fb1f9d7ddedd22742cc79dd9",
     registry = "quay.io",
-    repository = "kubevirtci/fedora-with-test-tooling",
+    repository = "rmohr/fedora-with-test-tooling",
+    tag = "fc32-2107231046",
 )
 
 container_pull(
