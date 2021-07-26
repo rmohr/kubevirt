@@ -174,11 +174,10 @@ http_file(
 
 http_archive(
     name = "bazeldnf",
-    sha256 = "4197e2cf741dd2c56471b80dddd22a180f6eac7dbd18fac9a03e6ea2c8ee539d",
-    strip_prefix = "bazeldnf-0.3.1",
+    sha256 = "abafb10f3d7ff74b17558046ae34e4c36568318db942c646db487a4eea8bd45f",
+    strip_prefix = "bazeldnf-c4053054471289ceb348de0f454bddf614896bfc",
     urls = [
-        "https://github.com/rmohr/bazeldnf/archive/v0.3.1.tar.gz",
-        "https://storage.googleapis.com/builddeps/4197e2cf741dd2c56471b80dddd22a180f6eac7dbd18fac9a03e6ea2c8ee539d",
+        "https://github.com/rmohr/bazeldnf/archive/c4053054471289ceb348de0f454bddf614896bfc.tar.gz",
     ],
 )
 
