@@ -18,9 +18,14 @@
 #
 set -e
 
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    source hack/common.sh
+    source hack/config.sh
+fi
+
 sandbox_root=${SANDBOX_DIR}/default/root
-sandbox_hash_x86_64="f3d02634c05975795e2b5f2463013ccbc369caa5"
-sandbox_hash_aarch64="aa22ccaacf1cd486ac87250323a34957f09fb266"
+sandbox_hash_x86_64="dcf10ba6720e92acd45e36e52e6ba010fa55de32"
+sandbox_hash_aarch64="38ee5a6e0926ef69428e530516ec4a724fe1b884"
 
 declare -A hashes=(["x86_64"]="${sandbox_hash_x86_64}" ["aarch64"]="${sandbox_hash_aarch64}")
 
@@ -35,12 +40,15 @@ function kubevirt::bootstrap::regenerate() {
         rm ${SANDBOX_DIR} -rf
         rm sandbox.bazelrc -f
         bazel run --config ${HOST_ARCHITECTURE} //rpm:sandbox_${1}
+        bazel clean
 
         cat <<EOT >>sandbox.bazelrc
 build --sandbox_add_mount_pair=${sandbox_root}/usr/:/usr/
 build --sandbox_add_mount_pair=${sandbox_root}/lib64:/lib64
 build --sandbox_add_mount_pair=${sandbox_root}/lib:/lib
 build --sandbox_add_mount_pair=${sandbox_root}/bin:/bin
+
+build --incompatible_enable_cc_toolchain_resolution --platforms=//bazel/platforms:x86_64-none-linux-gnu
 EOT
         local sha=$(kubevirt::bootstrap::sha256)
         touch ${SANDBOX_DIR}/${sha}
