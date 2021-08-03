@@ -109,6 +109,28 @@ bazel run \
     --config=${ARCHITECTURE} \
     //:bazeldnf -- rpmtree \
     --public --nobest \
+    --name sandboxroot_x86_64 \
+    --repofile rpm/centos-repo.yaml \
+    -f centos-stream-release \
+    $centos_base \
+    $centos_extra \
+    gcc python36
+
+bazel run \
+    --config=${ARCHITECTURE} \
+    //:bazeldnf -- rpmtree \
+    --public --nobest \
+    --name sandboxroot_aarch64 --arch aarch64 \
+    --repofile rpm/centos-repo.yaml \
+    -f centos-stream-release \
+    $centos_base \
+    $centos_extra \
+    gcc python36
+
+bazel run \
+    --config=${ARCHITECTURE} \
+    //:bazeldnf -- rpmtree \
+    --public --nobest \
     --name libvirt-devel_aarch64 --arch aarch64 \
     --repofile rpm/centos-repo.yaml \
     --basesystem centos-stream-release \
@@ -200,15 +222,6 @@ bazel run \
     --config=${ARCHITECTURE} \
     //:bazeldnf -- prune
 
-# FIXME: For an unknown reason the run target afterwards can get
-# out dated tar files, build them explicitly first.
-bazel build \
-    --config=${ARCHITECTURE} \
-    //rpm:libvirt-devel_x86_64
-
-bazel build \
-    --config=${ARCHITECTURE} \
-    //rpm:libvirt-devel_aarch64
 # update tar2files targets which act as an adapter between rpms
 # and cc_library which we need for virt-launcher and virt-handler
 bazel run \
@@ -218,3 +231,9 @@ bazel run \
 bazel run \
     --config=${ARCHITECTURE} \
     //rpm:ldd_aarch64
+
+# regenerate sandboxes
+rm ${SANDBOX_DIR} -rf
+kubevirt::bootstrap::regenerate aarch64
+rm ${SANDBOX_DIR} -rf
+kubevirt::bootstrap::regenerate x86_64
