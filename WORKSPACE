@@ -2154,6 +2154,18 @@ rpm(
 )
 
 rpm(
+    name = "glibc-static-0__2.28-162.el8.aarch64",
+    sha256 = "0dfe36e18e2a972cb7ca78798c2fa7514c9d961888c95af1f06c361a8cfcec68",
+    urls = ["http://mirror.centos.org/centos/8-stream/PowerTools/aarch64/os/Packages/glibc-static-2.28-162.el8.aarch64.rpm"],
+)
+
+rpm(
+    name = "glibc-static-0__2.28-162.el8.x86_64",
+    sha256 = "59224aa355b2fefd8e906a1ebbc80eae035abce4dc2d0fd9af5a9c35b99a7903",
+    urls = ["http://mirror.centos.org/centos/8-stream/PowerTools/x86_64/os/Packages/glibc-static-2.28-162.el8.x86_64.rpm"],
+)
+
+rpm(
     name = "gmp-1__6.1.2-10.el8.aarch64",
     sha256 = "8d407f8ad961169fca2ee5e22e824cbc2d2b5fedca9701896cc492d4cb788603",
     urls = ["http://mirror.centos.org/centos/8-stream/BaseOS/aarch64/os/Packages/gmp-6.1.2-10.el8.aarch64.rpm"],
@@ -4731,6 +4743,18 @@ rpm(
     name = "libxcrypt-devel-0__4.1.1-6.el8.x86_64",
     sha256 = "6d84082741a4b7f1a98872a7ee8f12efca835b3dbcb15401aa1b5eccfc674bd4",
     urls = ["http://mirror.centos.org/centos/8-stream/BaseOS/x86_64/os/Packages/libxcrypt-devel-4.1.1-6.el8.x86_64.rpm"],
+)
+
+rpm(
+    name = "libxcrypt-static-0__4.1.1-6.el8.aarch64",
+    sha256 = "a8268856b30e6700f0f67651a6a43449b1e5fccaff512a95280d305468e44dfc",
+    urls = ["http://mirror.centos.org/centos/8-stream/PowerTools/aarch64/os/Packages/libxcrypt-static-4.1.1-6.el8.aarch64.rpm"],
+)
+
+rpm(
+    name = "libxcrypt-static-0__4.1.1-6.el8.x86_64",
+    sha256 = "599cded5497aa6155c409321f3bb88b7a820341e1d502eac80bf17447283a29b",
+    urls = ["http://mirror.centos.org/centos/8-stream/PowerTools/x86_64/os/Packages/libxcrypt-static-4.1.1-6.el8.x86_64.rpm"],
 )
 
 rpm(

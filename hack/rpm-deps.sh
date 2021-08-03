@@ -114,7 +114,7 @@ bazel run \
     -f centos-stream-release \
     $centos_base \
     $centos_extra \
-    gcc python36
+    gcc python36 glibc-static
 
 bazel run \
     --config=${ARCHITECTURE} \
@@ -125,7 +125,7 @@ bazel run \
     -f centos-stream-release \
     $centos_base \
     $centos_extra \
-    gcc python36
+    gcc python36 glibc-static
 
 bazel run \
     --config=${ARCHITECTURE} \
