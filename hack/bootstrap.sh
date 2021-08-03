@@ -24,8 +24,8 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 fi
 
 sandbox_root=${SANDBOX_DIR}/default/root
-sandbox_hash_x86_64="dcf10ba6720e92acd45e36e52e6ba010fa55de32"
-sandbox_hash_aarch64="38ee5a6e0926ef69428e530516ec4a724fe1b884"
+sandbox_hash_x86_64="b13b1bea08eef143be6a1e059fff43c765f466ed"
+sandbox_hash_aarch64="b13b1bea08eef143be6a1e059fff43c765f466ed"
 
 declare -A hashes=(["x86_64"]="${sandbox_hash_x86_64}" ["aarch64"]="${sandbox_hash_aarch64}")
 
@@ -59,6 +59,6 @@ EOT
 function kubevirt::bootstrap::sha256() {
     (
         cd ${KUBEVIRT_DIR}
-        find ${sandbox_root}/ -type f -exec sha256sum {} \; | sha256sum | head -c 40
+        sha256sum rpm/BUILD.bazel | head -c 40
     )
 }
