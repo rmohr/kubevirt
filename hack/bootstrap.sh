@@ -62,5 +62,3 @@ function kubevirt::bootstrap::sha256() {
         find ${sandbox_root}/ -type f -exec sha256sum {} \; | sha256sum | head -c 40
     )
 }
-
-kubevirt::bootstrap::regenerate ${HOST_ARCHITECTURE}
