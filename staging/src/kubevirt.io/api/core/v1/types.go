@@ -38,6 +38,14 @@ import (
 
 const DefaultGracePeriodSeconds int64 = 30
 
+// VirtualMachineAccessToken
+//
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+type VirtualMachineAccessToken struct {
+	metav1.TypeMeta `json:",inline"`
+	Token           string `json:"token"`
+}
+
 // VirtualMachineInstance is *the* VirtualMachineInstance Definition. It represents a virtual machine in the runtime environment of kubernetes.
 //
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

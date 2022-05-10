@@ -45,29 +45,31 @@ import (
 
 type ConsoleHandler struct {
 	podIsolationDetector isolation.PodIsolationDetector
-	serialStopChans      map[types.UID](chan struct{})
-	vncStopChans         map[types.UID](chan struct{})
+	serialStopChans      map[types.UID]chan struct{}
+	vncStopChans         map[types.UID]chan struct{}
 	serialLock           *sync.Mutex
 	vncLock              *sync.Mutex
 	vmiInformer          cache.SharedIndexInformer
 	usbredir             map[types.UID]UsbredirHandlerVMI
 	usbredirLock         *sync.Mutex
+	tokenManager         TokenManager
 }
 
 type UsbredirHandlerVMI struct {
-	stopChans map[int](chan struct{})
+	stopChans map[int]chan struct{}
 }
 
 func NewConsoleHandler(podIsolationDetector isolation.PodIsolationDetector, vmiInformer cache.SharedIndexInformer) *ConsoleHandler {
 	return &ConsoleHandler{
 		podIsolationDetector: podIsolationDetector,
-		serialStopChans:      make(map[types.UID](chan struct{})),
-		vncStopChans:         make(map[types.UID](chan struct{})),
+		serialStopChans:      make(map[types.UID]chan struct{}),
+		vncStopChans:         make(map[types.UID]chan struct{}),
 		serialLock:           &sync.Mutex{},
 		vncLock:              &sync.Mutex{},
 		usbredirLock:         &sync.Mutex{},
 		vmiInformer:          vmiInformer,
 		usbredir:             make(map[types.UID]UsbredirHandlerVMI),
+		tokenManager:         NewTokenManager(),
 	}
 }
 
@@ -92,7 +94,7 @@ func (t *ConsoleHandler) USBRedirHandler(request *restful.Request, response *res
 		if _, exists := t.usbredir[uid]; !exists {
 			// Initialize
 			t.usbredir[uid] = UsbredirHandlerVMI{
-				stopChans: make(map[int](chan struct{})),
+				stopChans: make(map[int]chan struct{}),
 			}
 		}
 
@@ -133,6 +135,18 @@ func (t *ConsoleHandler) USBRedirHandler(request *restful.Request, response *res
 	}()
 	t.stream(vmi, request, response, unixSocketPath, stopChan)
 }
+func (t *ConsoleHandler) VNCTokenHandler(request *restful.Request, response *restful.Response) {
+	vmi, code, err := getVMI(request, t.vmiInformer)
+	if err != nil {
+		log.Log.Object(vmi).Reason(err).Error(failedRetrieveVMI)
+		response.WriteError(code, err)
+		return
+	}
+	token := t.tokenManager.Create(fmt.Sprintf("%s/%s", vmi.Namespace, vmi.Name))
+
+	accessToken := &v1.VirtualMachineAccessToken{Token: token.Value}
+	response.WriteEntity(accessToken)
+}
 
 func (t *ConsoleHandler) VNCHandler(request *restful.Request, response *restful.Response) {
 	vmi, code, err := getVMI(request, t.vmiInformer)
@@ -141,6 +155,15 @@ func (t *ConsoleHandler) VNCHandler(request *restful.Request, response *restful.
 		response.WriteError(code, err)
 		return
 	}
+
+	if token := getToken(request); token != "" {
+		if t.tokenManager.Validate(fmt.Sprintf("%s/%s", vmi.Namespace, vmi.Name), token); err != nil {
+			log.Log.Object(vmi).Reason(err).Error("Failed to validate provided VNC token")
+			response.WriteError(http.StatusForbidden, err)
+			return
+		}
+	}
+
 	unixSocketPath, err := t.getUnixSocketPath(vmi, "virt-vnc")
 	if err != nil {
 		log.Log.Object(vmi).Reason(err).Error("Failed finding unix socket for VNC console")
@@ -172,7 +195,7 @@ func (t *ConsoleHandler) SerialHandler(request *restful.Request, response *restf
 	t.stream(vmi, request, response, unixSocketPath, stopCh)
 }
 
-func newStopChan(uid types.UID, lock *sync.Mutex, stopChans map[types.UID](chan struct{})) chan struct{} {
+func newStopChan(uid types.UID, lock *sync.Mutex, stopChans map[types.UID]chan struct{}) chan struct{} {
 	lock.Lock()
 	defer lock.Unlock()
 	// close current connection, if exists
@@ -186,7 +209,7 @@ func newStopChan(uid types.UID, lock *sync.Mutex, stopChans map[types.UID](chan 
 	return stopCh
 }
 
-func deleteStopChan(uid types.UID, stopChn chan struct{}, lock *sync.Mutex, stopChans map[types.UID](chan struct{})) {
+func deleteStopChan(uid types.UID, stopChn chan struct{}, lock *sync.Mutex, stopChans map[types.UID]chan struct{}) {
 	lock.Lock()
 	defer lock.Unlock()
 	// delete the stop channel from the cache if needed

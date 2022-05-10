@@ -41,3 +41,7 @@ func getVMI(request *restful.Request, vmiInformer cache.SharedIndexInformer) (*v
 	}
 	return vmiObj.(*v1.VirtualMachineInstance), 0, nil
 }
+
+func getToken(request *restful.Request) string {
+	return request.QueryParameter("token")
+}
