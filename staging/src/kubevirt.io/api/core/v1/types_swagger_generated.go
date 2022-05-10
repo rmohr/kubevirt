@@ -2,6 +2,12 @@
 
 package v1
 
+func (VirtualMachineAccessToken) SwaggerDoc() map[string]string {
+	return map[string]string{
+		"": "VirtualMachineAccessToken\n\n+k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object",
+	}
+}
+
 func (VirtualMachineInstance) SwaggerDoc() map[string]string {
 	return map[string]string{
 		"":       "VirtualMachineInstance is *the* VirtualMachineInstance Definition. It represents a virtual machine in the runtime environment of kubernetes.\n\n+k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object\n+genclient",
