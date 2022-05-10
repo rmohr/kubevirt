@@ -338,6 +338,24 @@ func (app *virtAPIApp) composeSubresources() {
 			Operation(version.Version + "VNCScreenshot").
 			Doc("Get a PNG VNC screenshot of the specified VirtualMachineInstance."))
 		subws.Route(subws.GET(definitions.NamespacedResourcePath(subresourcesvmiGVR) + definitions.SubResourcePath("usbredir")).
+
+		subws.Route(subws.GET(rest.NamespacedResourcePath(subresourcesvmiGVR)+rest.SubResourcePath("vnc/token")).
+			To(subresourceApp.VNCTokenRequestHandler).
+			Param(rest.NamespaceParam(subws)).Param(rest.NameParam(subws)).
+			Operation(version.Version+"VNCToken").
+			Doc("Acquire a token for token based VNC access").
+			Produces(restful.MIME_JSON).
+			Writes(v1.VirtualMachineAccessToken{}).
+			Returns(http.StatusOK, "OK", v1.VirtualMachineAccessToken{}))
+
+		subws.Route(subws.GET(rest.NamespacedResourcePath(subresourcesvmiGVR) + rest.SubResourcePath("vnc/tokenaccess")).
+			To(subresourceApp.VNCTokenAccessRequestHandler).
+			Param(rest.NamespaceParam(subws)).Param(rest.NameParam(subws)).
+			Param(rest.TokenParam(subws)).
+			Operation(version.Version + "VNCTokenAccess").
+			Doc("Acquire a token for token based VNC access"))
+
+		subws.Route(subws.GET(rest.NamespacedResourcePath(subresourcesvmiGVR) + rest.SubResourcePath("usbredir")).
 			To(subresourceApp.USBRedirRequestHandler).
 			Param(definitions.NamespaceParam(subws)).
 			Param(definitions.NameParam(subws)).

@@ -582,6 +582,10 @@ func MoveCursorParam(ws *restful.WebService) *restful.Parameter {
 	return ws.QueryParameter(MoveCursorParamName, "Move the cursor on the VNC display to wake up the screen").DataType("boolean").DefaultValue("false")
 }
 
+func TokenParam(ws *restful.WebService) *restful.Parameter {
+	return ws.QueryParameter("token", "").Required(true).DataType("string")
+}
+
 func labelSelectorParam(ws *restful.WebService) *restful.Parameter {
 	return ws.QueryParameter("labelSelector", "A selector to restrict the list of returned objects by their labels. Defaults to everything")
 }
