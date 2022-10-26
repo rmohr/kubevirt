@@ -22,6 +22,40 @@ import (
 	"github.com/mitchellh/go-vnc"
 )
 
+func (app *SubresourceAPIApp) VNCTokenRequestHandler(request *restful.Request, response *restful.Response) {
+	validate := func(vmi *v1.VirtualMachineInstance) *errors.StatusError {
+		if vmi == nil || vmi.Status.Phase != v1.Running {
+			return errors.NewConflict(v1.Resource("virtualmachineinstance"), vmi.Name, fmt.Errorf(vmiNotRunning))
+		}
+		return nil
+	}
+	getURL := func(vmi *v1.VirtualMachineInstance, conn kubecli.VirtHandlerConn) (string, error) {
+		return conn.VNCTokenURI(vmi)
+	}
+
+	app.httpGetRequestHandler(request, response, validate, getURL, v1.VirtualMachineAccessToken{})
+}
+func (app *SubresourceAPIApp) VNCTokenAccessRequestHandler(request *restful.Request, response *restful.Response) {
+	token := request.QueryParameter("token")
+	activeConnectionMetric := apimetrics.NewActiveVNCConnection(request.PathParameter("namespace"), request.PathParameter("name"))
+	defer activeConnectionMetric.Dec()
+
+	streamer := NewRawStreamer(
+		app.FetchVirtualMachineInstance,
+		validateVMIForVNC,
+		app.virtHandlerDialer(func(vmi *v1.VirtualMachineInstance, conn kubecli.VirtHandlerConn) (string, error) {
+			uri, err := conn.VNCURI(vmi)
+			if err != nil {
+				return "", err
+			}
+			if token == "" {
+				return "", fmt.Errorf("access token seems to be empty")
+			}
+			return fmt.Sprintf("%s?token=%s", uri, token), nil
+		}),
+	)
+	streamer.Handle(request, response)
+}
 func (app *SubresourceAPIApp) VNCRequestHandler(request *restful.Request, response *restful.Response) {
 	activeConnectionMetric := apimetrics.NewActiveVNCConnection(request.PathParameter("namespace"), request.PathParameter("name"))
 	defer activeConnectionMetric.Dec()

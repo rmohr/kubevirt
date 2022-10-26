@@ -21,9 +21,12 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
 	"crypto/tls"
+	"encoding/binary"
 	"fmt"
 	"io"
+	math_rand "math/rand"
 	"net/http"
 	"os"
 	"os/signal"
@@ -507,6 +510,7 @@ func (app *virtHandlerApp) runServer(errCh chan error, consoleHandler *rest.Cons
 	ws := new(restful.WebService)
 	ws.Route(ws.GET("/v1/namespaces/{namespace}/virtualmachineinstances/{name}/console").To(consoleHandler.SerialHandler))
 	ws.Route(ws.GET("/v1/namespaces/{namespace}/virtualmachineinstances/{name}/vnc").To(consoleHandler.VNCHandler))
+	ws.Route(ws.GET("/v1/namespaces/{namespace}/virtualmachineinstances/{name}/vnc/token").To(consoleHandler.VNCTokenHandler))
 	ws.Route(ws.GET("/v1/namespaces/{namespace}/virtualmachineinstances/{name}/usbredir").To(consoleHandler.USBRedirHandler))
 	ws.Route(ws.PUT("/v1/namespaces/{namespace}/virtualmachineinstances/{name}/pause").To(lifecycleHandler.PauseHandler))
 	ws.Route(ws.PUT("/v1/namespaces/{namespace}/virtualmachineinstances/{name}/unpause").To(lifecycleHandler.UnpauseHandler))
@@ -608,6 +612,7 @@ func (app *virtHandlerApp) setupTLS(factory controller.KubeInformerFactory) erro
 }
 
 func main() {
+	seed()
 	app := &virtHandlerApp{}
 	service.Setup(app)
 	log.InitializeLogging("virt-handler")
@@ -638,4 +643,13 @@ func copy(sourceFile string, targetFile string) error {
 		return fmt.Errorf("failed to make file executable: %v", err)
 	}
 	return nil
+}
+
+func seed() {
+	var b [8]byte
+	_, err := rand.Read(b[:])
+	if err != nil {
+		panic("cannot seed math/rand package with cryptographically secure random number generator")
+	}
+	math_rand.Seed(int64(binary.LittleEndian.Uint64(b[:])))
 }

@@ -24,6 +24,7 @@ const (
 	consoleTemplateURI        = "wss://%s:%v/v1/namespaces/%s/virtualmachineinstances/%s/console"
 	usbredirTemplateURI       = "wss://%s:%v/v1/namespaces/%s/virtualmachineinstances/%s/usbredir"
 	vncTemplateURI            = "wss://%s:%v/v1/namespaces/%s/virtualmachineinstances/%s/vnc"
+	vncTokenTemplateURI       = "https://%s:%v/v1/namespaces/%s/virtualmachineinstances/%s/vnc/token"
 	pauseTemplateURI          = "https://%s:%v/v1/namespaces/%s/virtualmachineinstances/%s/pause"
 	unpauseTemplateURI        = "https://%s:%v/v1/namespaces/%s/virtualmachineinstances/%s/unpause"
 	freezeTemplateURI         = "https://%s:%v/v1/namespaces/%s/virtualmachineinstances/%s/freeze"
@@ -53,6 +54,7 @@ type VirtHandlerConn interface {
 	ConsoleURI(vmi *virtv1.VirtualMachineInstance) (string, error)
 	USBRedirURI(vmi *virtv1.VirtualMachineInstance) (string, error)
 	VNCURI(vmi *virtv1.VirtualMachineInstance) (string, error)
+	VNCTokenURI(vmi *virtv1.VirtualMachineInstance) (string, error)
 	PauseURI(vmi *virtv1.VirtualMachineInstance) (string, error)
 	UnpauseURI(vmi *virtv1.VirtualMachineInstance) (string, error)
 	FreezeURI(vmi *virtv1.VirtualMachineInstance) (string, error)
@@ -171,7 +173,9 @@ func (v *virtHandlerConn) USBRedirURI(vmi *virtv1.VirtualMachineInstance) (strin
 func (v *virtHandlerConn) VNCURI(vmi *virtv1.VirtualMachineInstance) (string, error) {
 	return v.formatURI(vncTemplateURI, vmi)
 }
-
+func (v *virtHandlerConn) VNCTokenURI(vmi *virtv1.VirtualMachineInstance) (string, error) {
+	return v.formatURI(vncTokenTemplateURI, vmi)
+}
 func (v *virtHandlerConn) FreezeURI(vmi *virtv1.VirtualMachineInstance) (string, error) {
 	return v.formatURI(freezeTemplateURI, vmi)
 }
