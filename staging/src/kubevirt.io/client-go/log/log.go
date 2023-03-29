@@ -32,11 +32,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-kit/kit/log"
+	klog "github.com/go-kit/kit/log"
 	"github.com/golang/glog"
 	flag "github.com/spf13/pflag"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/types"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8sruntime "k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/cache"
 )
 
 const (
@@ -62,16 +64,17 @@ var LogLevelNames = map[LogLevel]string{
 
 var lock sync.Mutex
 
-// Interface to avoid dependency
 type LoggableObject interface {
-	GetName() string
-	GetNamespace() string
-	GetUID() types.UID
-	GetObjectKind() schema.ObjectKind
+	metav1.ObjectMetaAccessor
+	k8sruntime.Object
+}
+
+type FilteredVerbosityLogger struct {
+	filteredLogger FilteredLogger
 }
 
 type FilteredLogger struct {
-	logger                log.Logger
+	logger                klog.Logger
 	component             string
 	filterLevel           LogLevel
 	currentLogLevel       LogLevel
@@ -102,7 +105,7 @@ func getDefaultVerbosity() int {
 }
 
 // Wrap a go-kit logger in a FilteredLogger. Not cached
-func MakeLogger(logger log.Logger) *FilteredLogger {
+func MakeLogger(logger klog.Logger) *FilteredLogger {
 	defaultLogLevel := INFO
 
 	defaultVerbosity = getDefaultVerbosity()
@@ -132,7 +135,7 @@ func createLogger(component string) {
 	defer lock.Unlock()
 	_, ok := loggers[component]
 	if ok == false {
-		logger := log.NewJSONLogger(os.Stderr)
+		logger := klog.NewJSONLogger(os.Stderr)
 		log := MakeLogger(logger)
 		log.component = component
 		loggers[component] = log
@@ -154,11 +157,11 @@ func DefaultLogger() *FilteredLogger {
 // SetIOWriter is meant to be used for testing. "log" and "glog" logs are sent to /dev/nil.
 // KubeVirt related log messages will be sent to this writer
 func (l *FilteredLogger) SetIOWriter(w io.Writer) {
-	l.logger = log.NewJSONLogger(w)
+	l.logger = klog.NewJSONLogger(w)
 	goflag.CommandLine.Set("logtostderr", "false")
 }
 
-func (l *FilteredLogger) SetLogger(logger log.Logger) *FilteredLogger {
+func (l *FilteredLogger) SetLogger(logger klog.Logger) *FilteredLogger {
 	l.logger = logger
 	return l
 }
@@ -183,6 +186,10 @@ func (l FilteredLogger) Log(params ...interface{}) error {
 	return l.log(2, params...)
 }
 
+func (l FilteredVerbosityLogger) Log(params ...interface{}) error {
+	return l.filteredLogger.log(2, params...)
+}
+
 func (l FilteredLogger) log(skipFrames int, params ...interface{}) error {
 	// messages should be logged if any of these conditions are met:
 	// The log filtering level is info and verbosity checks match
@@ -201,18 +208,47 @@ func (l FilteredLogger) log(skipFrames int, params ...interface{}) error {
 			"component", l.component,
 		)
 		if l.err != nil {
-			l.logger = log.With(l.logger, "reason", l.err)
+			l.logger = klog.With(l.logger, "reason", l.err)
 		}
-		return log.WithPrefix(l.logger, logParams...).Log(params...)
+		return klog.WithPrefix(l.logger, logParams...).Log(params...)
 	}
 	return nil
 }
 
+func (l FilteredLogger) Key(key string, kind string) *FilteredLogger {
+	if key == "" {
+		return &l
+
+	}
+	name, namespace, err := cache.SplitMetaNamespaceKey(key)
+	if err != nil {
+		return &l
+	}
+	logParams := make([]interface{}, 0)
+	if namespace != "" {
+		logParams = append(logParams, "namespace", namespace)
+	}
+	logParams = append(logParams, "name", name)
+	logParams = append(logParams, "kind", kind)
+	l.with(logParams...)
+	return &l
+}
+
+func (l FilteredVerbosityLogger) Object(obj LoggableObject) *FilteredVerbosityLogger {
+	l.filteredLogger.Object(obj)
+	return &l
+}
+
+func (l FilteredVerbosityLogger) ObjectRef(obj *v1.ObjectReference) *FilteredVerbosityLogger {
+	l.filteredLogger.ObjectRef(obj)
+	return &l
+}
+
 func (l FilteredLogger) Object(obj LoggableObject) *FilteredLogger {
 
-	name := obj.GetName()
-	namespace := obj.GetNamespace()
-	uid := obj.GetUID()
+	name := obj.GetObjectMeta().GetName()
+	namespace := obj.GetObjectMeta().GetNamespace()
+	uid := obj.GetObjectMeta().GetUID()
 	kind := obj.GetObjectKind().GroupVersionKind().Kind
 
 	logParams := make([]interface{}, 0)
@@ -227,13 +263,31 @@ func (l FilteredLogger) Object(obj LoggableObject) *FilteredLogger {
 	return &l
 }
 
+func (l FilteredLogger) ObjectRef(obj *v1.ObjectReference) *FilteredLogger {
+
+	if obj == nil {
+		return &l
+	}
+
+	logParams := make([]interface{}, 0)
+	if obj.Namespace != "" {
+		logParams = append(logParams, "namespace", obj.Namespace)
+	}
+	logParams = append(logParams, "name", obj.Name)
+	logParams = append(logParams, "kind", obj.Kind)
+	logParams = append(logParams, "uid", obj.UID)
+
+	l.with(logParams...)
+	return &l
+}
+
 func (l FilteredLogger) With(obj ...interface{}) *FilteredLogger {
-	l.logger = log.With(l.logger, obj...)
+	l.logger = klog.With(l.logger, obj...)
 	return &l
 }
 
 func (l *FilteredLogger) with(obj ...interface{}) *FilteredLogger {
-	l.logger = log.With(l.logger, obj...)
+	l.logger = klog.With(l.logger, obj...)
 	return l
 }
 
@@ -256,9 +310,18 @@ func (l *FilteredLogger) SetVerbosityLevel(level int) error {
 
 // It would be consistent to return an error from this function, but
 // a multi-value function would break the primary use case: log.V(2).Info()....
-func (l FilteredLogger) V(level int) *FilteredLogger {
+func (l FilteredLogger) V(level int) *FilteredVerbosityLogger {
 	if level >= 0 {
 		l.currentVerbosityLevel = level
+	}
+	return &FilteredVerbosityLogger{
+		filteredLogger: l,
+	}
+}
+
+func (l FilteredVerbosityLogger) V(level int) *FilteredVerbosityLogger {
+	if level >= 0 {
+		l.filteredLogger.currentVerbosityLevel = level
 	}
 	return &l
 }
@@ -279,6 +342,14 @@ func (l FilteredLogger) Info(msg string) {
 
 func (l FilteredLogger) Infof(msg string, args ...interface{}) {
 	l.Level(INFO).msgf(msg, args...)
+}
+
+func (l FilteredVerbosityLogger) Info(msg string) {
+	l.filteredLogger.Level(INFO).log(2, "msg", msg)
+}
+
+func (l FilteredVerbosityLogger) Infof(msg string, args ...interface{}) {
+	l.filteredLogger.log(2, "msg", fmt.Sprintf(msg, args...))
 }
 
 func (l FilteredLogger) Warning(msg string) {
