@@ -6,7 +6,11 @@ go_library(
     importpath = "kubevirt.io/kubevirt/pkg/service",
     visibility = ["//visibility:public"],
     deps = [
+        "//pkg/certificates/bootstrap:go_default_library",
+        "//pkg/virt-config:go_default_library",
         "//staging/src/kubevirt.io/client-go/kubecli:go_default_library",
+        "//staging/src/kubevirt.io/client-go/log:go_default_library",
         "//vendor/github.com/spf13/pflag:go_default_library",
+        "//vendor/k8s.io/client-go/util/certificate:go_default_library",
     ],
 )

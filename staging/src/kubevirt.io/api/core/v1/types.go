@@ -2109,6 +2109,12 @@ type KubeVirtSelfSignConfiguration struct {
 	Server *CertConfig `json:"server,omitempty"`
 }
 
+type CertManagerConfiguration struct {
+	IssuerRef            *k8sv1.TypedLocalObjectReference `json:"issuerRef"`
+	Duration             *metav1.Duration                 `json:"duration,omitempty"`
+	CaBundleConfigMapRef *k8sv1.TypedLocalObjectReference `json:"caBundleConfigMapRef"`
+}
+
 // CertConfig contains the tunables for TLS certificates
 type CertConfig struct {
 	// The requested 'duration' (i.e. lifetime) of the Certificate.
@@ -2120,7 +2126,8 @@ type CertConfig struct {
 }
 
 type KubeVirtCertificateRotateStrategy struct {
-	SelfSigned *KubeVirtSelfSignConfiguration `json:"selfSigned,omitempty"`
+	SelfSigned  *KubeVirtSelfSignConfiguration `json:"selfSigned,omitempty"`
+	CertManager *CertManagerConfiguration      `json:"certManager,omitempty"`
 }
 
 type WorkloadUpdateMethod string

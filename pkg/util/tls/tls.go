@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"strings"
 
 	"k8s.io/client-go/tools/cache"
 
@@ -156,8 +157,7 @@ func SetupTLSForServer(caManager ClientCAManager, certManager certificate.Manage
 		GetConfigForClient: func(info *tls.ClientHelloInfo) (config *tls.Config, err error) {
 			certPool, err := caManager.GetCurrent()
 			if err != nil {
-				log.Log.Reason(err).Error("Failed to get kubevirt CA")
-				return nil, err
+				return nil, fmt.Errorf("failed to get kubevirt CA from server: %v", err)
 			}
 			if certPool == nil {
 				return nil, fmt.Errorf("No ca certificate, server is not yet ready to receive traffic")
@@ -223,7 +223,7 @@ func SetupTLSForClients(caManager ClientCAManager, certManager certificate.Manag
 		VerifyPeerCertificate: func(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
 			certPool, err := caManager.GetCurrent()
 			if err != nil {
-				log.Log.Reason(err).Error("Failed to get kubevirt CA")
+				log.Log.Reason(err).Error("Failed to get kubevirt CA for client")
 				return err
 			}
 			return verifyPeerCert(rawCerts, externallyManaged, certPool, x509.ExtKeyUsageServerAuth, "node", commonNameType)
@@ -321,9 +321,10 @@ func verifyPeerCert(rawCerts [][]byte, externallyManaged bool, certPool *x509.Ce
 		return fmt.Errorf("could not verify peer certificate: %v", err)
 	}
 
-	fullCommonName := fmt.Sprintf("kubevirt.io:system:%s:%s", commonName, commonNameType)
-	if !externallyManaged && c.Subject.CommonName != fullCommonName {
-		return fmt.Errorf("common name is invalid, expected %s, but got %s", fullCommonName, c.Subject.CommonName)
+	fullCommonNameVirtHandler := fmt.Sprintf("kubevirt.io:system:%s:", commonName)
+	fullCommonNameVirtAPI := fmt.Sprintf("kubevirt.io:system:%s:virt-api", commonName)
+	if !externallyManaged && !strings.HasPrefix(c.Subject.CommonName, fullCommonNameVirtHandler) && !strings.HasPrefix(c.Subject.CommonName, fullCommonNameVirtAPI) {
+		return fmt.Errorf("common name is invalid, expected %s or %s, but got %s", fullCommonNameVirtHandler, fullCommonNameVirtAPI, c.Subject.CommonName)
 	}
 
 	return nil

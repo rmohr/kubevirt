@@ -24,6 +24,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	golog "log"
+	"net"
 	"net/http"
 	"os"
 
@@ -36,6 +37,7 @@ import (
 	aggregatorclient "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 
 	"kubevirt.io/kubevirt/pkg/certificates/bootstrap"
+	"kubevirt.io/kubevirt/pkg/virt-operator/certificates/approver"
 
 	validating_webhooks "kubevirt.io/kubevirt/pkg/util/webhooks/validating-webhooks"
 	"kubevirt.io/kubevirt/pkg/virt-operator/resource/generate/components"
@@ -193,6 +195,7 @@ func Execute() {
 		ConfigMap:                app.informerFactory.OperatorConfigMap(),
 		ClusterInstancetype:      app.informerFactory.VirtualMachineClusterInstancetype(),
 		ClusterPreference:        app.informerFactory.VirtualMachineClusterPreference(),
+		CertificateRequest:       app.informerFactory.CertificateRequest(),
 	}
 
 	onOpenShift, err := clusterutil.IsOnOpenShift(app.clientSet)
@@ -263,8 +266,6 @@ func Execute() {
 		app.informers.ValidatingAdmissionPolicy = app.informerFactory.DummyOperatorValidatingAdmissionPolicy()
 	}
 
-	app.prepareCertManagers()
-
 	app.kubeVirtRecorder = app.getNewRecorder(k8sv1.NamespaceAll, VirtOperator)
 	app.kubeVirtController, err = NewKubeVirtController(app.clientSet, app.aggregatorClient.ApiregistrationV1().APIServices(), app.kubeVirtRecorder, app.config, app.informers, app.operatorNamespace)
 	if err != nil {
@@ -283,6 +284,8 @@ func Execute() {
 		app.operatorNamespace,
 	)
 
+	app.prepareCertManagers()
+
 	if err != nil {
 		panic(err)
 	}
@@ -294,6 +297,7 @@ func Execute() {
 	app.reInitChan = make(chan string, 0)
 	app.clusterConfig.SetConfigModifiedCallback(app.shouldChangeLogVerbosity)
 	app.clusterConfig.SetConfigModifiedCallback(app.shouldUpdateConfigurationMetrics)
+	app.clusterConfig.SetConfigModifiedCallback(app.shouldUpdateCertificateManager)
 
 	go app.Run()
 	<-app.reInitChan
@@ -409,6 +413,7 @@ func (app *VirtOperatorApp) Run() {
 					log.Log.Infof("Started leading")
 
 					// run app
+					go approver.NewCRApprovingController(ctx, app.clientSet, app.Namespace, app.informerFactory.CertificateRequest()).Run(1, stop)
 					go app.kubeVirtController.Run(controllerThreads, stop)
 				},
 				OnStoppedLeading: func() {
@@ -473,12 +478,34 @@ func (app *VirtOperatorApp) AddFlags() {
 }
 
 func (app *VirtOperatorApp) prepareCertManagers() {
+	if app.PodName == "" {
+		defaultHostName, err := os.Hostname()
+		if err != nil {
+			panic(err)
+		}
+		app.PodName = defaultHostName
+	}
+	app.Name = components.VirtOperatorServiceName
+	var err error
+	app.Namespace, err = clientutil.GetNamespace()
+	if err != nil {
+		panic(err)
+	}
+	app.ClusterConfig = app.clusterConfig
 	app.operatorCertManager = bootstrap.NewFallbackCertificateManager(
+		app.clusterConfig,
 		bootstrap.NewSecretCertificateManager(
 			components.VirtOperatorCertSecretName,
 			app.operatorNamespace,
 			app.informers.Secrets.GetStore(),
 		),
+		app.SetupCertificateManager(app.clusterConfig, func(certStore certificate.Store, name string, component string, dnsSANs []string, ipSANs []net.IP, namespace string, clusterConfig *virtconfig.ClusterConfig) *bootstrap.CertificateRequestCertificateManagerConfig {
+			namespacedName := fmt.Sprintf("%s.%s", components.VirtOperatorServiceName, app.Namespace)
+			internalAPIServerFQDN := append([]string{
+				fmt.Sprintf("%s.svc", namespacedName),
+			}, dnsSANs...)
+			return bootstrap.LoadCertConfigForService(certStore, name, component, internalAPIServerFQDN, ipSANs, namespace, clusterConfig)
+		}),
 	)
 }
 
@@ -494,4 +521,30 @@ func (app *VirtOperatorApp) shouldChangeLogVerbosity() {
 func (app *VirtOperatorApp) shouldUpdateConfigurationMetrics() {
 	emulationEnabled := app.clusterConfig.GetDeveloperConfigurationUseEmulation()
 	metrics.SetEmulationEnabledMetric(emulationEnabled)
+}
+
+func (app *VirtOperatorApp) shouldUpdateCertificateManager() {
+
+	kv := app.clusterConfig.GetConfigFromKubeVirtCR()
+	if kv == nil {
+		log.Log.V(2).Infof("kubevirt is nil")
+		return
+	}
+	certificateManager := app.operatorCertManager.(*bootstrap.FallbackCertificateManager)
+	log.Log.V(2).Infof("CertificateRotationStrategy is %+v", kv.Spec.CertificateRotationStrategy)
+	log.Log.V(2).Infof("type of CurrentCertManager is %T", certificateManager.CurrentCertManager)
+	switch certificateManager.CurrentCertManager.(type) {
+	case *bootstrap.CertificateRequestCertificateManager:
+		log.Log.V(2).Infof("currently using cert-manager")
+		if kv.Spec.CertificateRotationStrategy.CertManager == nil {
+			log.Log.V(2).Infof("change certificate manager to selfsigned")
+			os.Exit(0)
+		}
+	case *bootstrap.SecretCertificateManager:
+		log.Log.V(2).Infof("currently using selfsigned")
+		if kv.Spec.CertificateRotationStrategy.CertManager != nil {
+			log.Log.V(2).Infof("change certificate manager to cert-manager")
+			os.Exit(0)
+		}
+	}
 }

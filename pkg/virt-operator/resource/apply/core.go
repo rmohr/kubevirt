@@ -327,9 +327,17 @@ func (r *Reconciler) createOrUpdateComponentsWithCertificates(queue workqueue.Ty
 	}
 
 	// create/update CA config map
-	caBundle, err := r.createOrUpdateKubeVirtCAConfigMap(queue, caCert, caRenewBefore, findRequiredCAConfigMap(components.KubeVirtCASecretName, r.targetStrategy.ConfigMaps()))
-	if err != nil {
-		return err
+	var caBundle []byte
+	if r.kv.Spec.CertificateRotationStrategy.CertManager != nil {
+		caBundle, err = r.getCustomKubeVirtCAConfigMap()
+		if err != nil {
+			return err
+		}
+	} else {
+		caBundle, err = r.createOrUpdateKubeVirtCAConfigMap(queue, caCert, caRenewBefore, findRequiredCAConfigMap(components.KubeVirtCASecretName, r.targetStrategy.ConfigMaps()))
+		if err != nil {
+			return err
+		}
 	}
 
 	// create/update export CA config map
@@ -631,4 +639,16 @@ func (r *Reconciler) createOrUpdateCACertificateSecret(queue workqueue.TypedRate
 		caCert = cert
 	}
 	return caCert, nil
+}
+
+func (r *Reconciler) getCustomKubeVirtCAConfigMap() (caBundle []byte, err error) {
+	if r.kv.Spec.CertificateRotationStrategy.CertManager == nil {
+		return nil, fmt.Errorf("CertificateRotationStrategy not set to certManager")
+	}
+	cmRef := r.kv.Spec.CertificateRotationStrategy.CertManager.CaBundleConfigMapRef
+	cm, err := r.clientset.CoreV1().ConfigMaps(r.kv.Namespace).Get(context.Background(), cmRef.Name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	return []byte(cm.Data[components.CABundleKey]), nil
 }

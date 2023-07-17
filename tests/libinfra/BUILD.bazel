@@ -12,6 +12,7 @@ go_library(
     importpath = "kubevirt.io/kubevirt/tests/libinfra",
     visibility = ["//visibility:public"],
     deps = [
+        "//pkg/certificates/bootstrap:go_default_library",
         "//pkg/certificates/triple/cert:go_default_library",
         "//pkg/downwardmetrics/vhostmd/api:go_default_library",
         "//pkg/virt-controller/leaderelectionconfig:go_default_library",

@@ -34,6 +34,7 @@ import (
 
 	containerdisk "kubevirt.io/kubevirt/pkg/container-disk"
 	kvtls "kubevirt.io/kubevirt/pkg/util/tls"
+	"kubevirt.io/kubevirt/pkg/virt-operator/resource/generate/components"
 
 	clone "kubevirt.io/api/clone/v1beta1"
 
@@ -60,6 +61,7 @@ import (
 	"k8s.io/client-go/tools/leaderelection"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/util/certificate"
 	"k8s.io/client-go/util/flowcontrol"
 
 	"kubevirt.io/kubevirt/pkg/util/ratelimiter"
@@ -260,6 +262,7 @@ type VirtControllerApp struct {
 	caConfigMapName          string
 	promCertFilePath         string
 	promKeyFilePath          string
+	promCertManager          certificate.Manager
 	nodeTopologyUpdater      topology.NodeTopologyUpdater
 	nodeTopologyUpdatePeriod time.Duration
 	reloadableRateLimiter    *ratelimiter.ReloadableRateLimiter
@@ -344,6 +347,7 @@ func Execute() {
 	app.clusterConfig.SetConfigModifiedCallback(app.configModificationCallback)
 	app.clusterConfig.SetConfigModifiedCallback(app.shouldChangeLogVerbosity)
 	app.clusterConfig.SetConfigModifiedCallback(app.shouldChangeRateLimiter)
+	app.clusterConfig.SetConfigModifiedCallback(app.shouldUpdateCertificateManager)
 
 	webService := new(restful.WebService)
 	webService.Path("/").Consumes(restful.MIME_JSON).Produces(restful.MIME_JSON)
@@ -508,12 +512,53 @@ func (vca *VirtControllerApp) shouldChangeLogVerbosity() {
 	}
 }
 
+func (vca *VirtControllerApp) shouldUpdateCertificateManager() {
+
+	kv := vca.clusterConfig.GetConfigFromKubeVirtCR()
+	if kv == nil {
+		return
+	}
+	switch vca.promCertManager.(type) {
+	case *bootstrap.CertificateRequestCertificateManager:
+		if kv.Spec.CertificateRotationStrategy.CertManager == nil {
+			log.Log.V(2).Infof("change certificate manager to selfsigned")
+			os.Exit(0)
+		}
+	case *bootstrap.FileCertificateManager:
+		if kv.Spec.CertificateRotationStrategy.CertManager != nil {
+			log.Log.V(2).Infof("change certificate manager to cert-manager")
+			os.Exit(0)
+		}
+	}
+}
+
 func (vca *VirtControllerApp) Run() {
 	logger := log.Log
 
-	promCertManager := bootstrap.NewFileCertificateManager(vca.promCertFilePath, vca.promKeyFilePath)
-	go promCertManager.Start()
-	promTLSConfig := kvtls.SetupPromTLS(promCertManager, vca.clusterConfig)
+	kv := vca.clusterConfig.GetConfigFromKubeVirtCR()
+	if vca.Name == "" {
+		vca.Name = components.VirtControllerServiceName
+	}
+	if vca.PodName == "" {
+		defaultHostName, err := os.Hostname()
+		if err != nil {
+			panic(err)
+		}
+		vca.PodName = defaultHostName
+	}
+	var err error
+	vca.Namespace, err = clientutil.GetNamespace()
+	if err != nil {
+		golog.Fatal(err)
+	}
+
+	if kv.Spec.CertificateRotationStrategy.CertManager != nil {
+		vca.promCertManager = vca.SetupCertificateManager(vca.clusterConfig, bootstrap.LoadCertConfigForService)
+	} else {
+		vca.promCertManager = bootstrap.NewFileCertificateManager(vca.promCertFilePath, vca.promKeyFilePath)
+	}
+	go vca.promCertManager.Start()
+	promTLSConfig := kvtls.SetupPromTLS(vca.promCertManager, vca.clusterConfig)
 
 	go func() {
 		httpLogger := logger.With("service", "http")

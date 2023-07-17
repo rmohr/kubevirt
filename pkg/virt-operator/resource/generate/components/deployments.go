@@ -341,10 +341,32 @@ func NewApiServerDeployment(namespace, repository, imagePrefix, version, product
 		"8443",
 		"--console-server-port",
 		"8186",
+		"--pod-ip-address",
+		"$(MY_POD_IP)",
+		"--pod-name",
+		"$(MY_POD_NAME)",
 		"--subresources-only",
 		"-v",
 		verbosity,
 	}
+	container.Env = append(container.Env, []corev1.EnvVar{
+		{
+			Name: "MY_POD_IP",
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					FieldPath: "status.podIP",
+				},
+			},
+		},
+		{
+			Name: "MY_POD_NAME",
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					FieldPath: "metadata.name",
+				},
+			},
+		},
+	}...)
 	container.Ports = []corev1.ContainerPort{
 		{
 			Name:          VirtAPIName,
@@ -426,9 +448,31 @@ func NewControllerDeployment(namespace, repository, imagePrefix, controllerVersi
 		exporterImage,
 		portName,
 		"8443",
+		"--pod-ip-address",
+		"$(MY_POD_IP)",
+		"--pod-name",
+		"$(MY_POD_NAME)",
 		"-v",
 		verbosity,
 	}
+	container.Env = append(container.Env, []corev1.EnvVar{
+		{
+			Name: "MY_POD_IP",
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					FieldPath: "status.podIP",
+				},
+			},
+		},
+		{
+			Name: "MY_POD_NAME",
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					FieldPath: "metadata.name",
+				},
+			},
+		},
+	}...)
 
 	container.Ports = []corev1.ContainerPort{
 		{
@@ -468,6 +512,7 @@ func NewControllerDeployment(namespace, repository, imagePrefix, controllerVersi
 	}
 
 	attachCertificateSecret(pod, VirtControllerCertSecretName, "/etc/virt-controller/certificates")
+	// attachCertificateSecret(pod, VirtControllerTestCertSecretName, "/etc/virt-controller/test-certificates")
 	attachCertificateSecret(pod, KubeVirtExportCASecretName, "/etc/virt-controller/exportca")
 	attachProfileVolume(pod)
 
@@ -556,6 +601,10 @@ func NewOperatorDeployment(namespace, repository, imagePrefix, version, verbosit
 							Args: []string{
 								portName,
 								"8443",
+								"--pod-ip-address",
+								"$(MY_POD_IP)",
+								"--pod-name",
+								"$(MY_POD_NAME)",
 								"-v",
 								verbosity,
 							},
@@ -609,6 +658,22 @@ func NewOperatorDeployment(namespace, repository, imagePrefix, version, verbosit
 									ValueFrom: &corev1.EnvVarSource{
 										FieldRef: &corev1.ObjectFieldSelector{
 											FieldPath: "metadata.annotations['olm.targetNamespaces']", // filled by OLM
+										},
+									},
+								},
+								{
+									Name: "MY_POD_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.podIP",
+										},
+									},
+								},
+								{
+									Name: "MY_POD_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "metadata.name",
 										},
 									},
 								},
@@ -688,8 +753,30 @@ func NewExportProxyDeployment(namespace, repository, imagePrefix, version, produ
 		VirtExportProxyName,
 		portName,
 		"8443",
+		"--pod-ip-address",
+		"$(MY_POD_IP)",
+		"--pod-name",
+		"$(MY_POD_NAME)",
 		"-v",
 		verbosity,
+	}
+	container.Env = []corev1.EnvVar{
+		{
+			Name: "MY_POD_IP",
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					FieldPath: "status.podIP",
+				},
+			},
+		},
+		{
+			Name: "MY_POD_NAME",
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					FieldPath: "metadata.name",
+				},
+			},
+		},
 	}
 	container.Ports = []corev1.ContainerPort{
 		{

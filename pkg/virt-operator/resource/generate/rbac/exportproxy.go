@@ -150,6 +150,11 @@ func newExportProxyRole(namespace string) *rbacv1.Role {
 					"kubevirt-export-ca",
 				},
 			},
+			{
+				APIGroups: []string{"cert-manager.io"},
+				Resources: []string{"certificaterequests"},
+				Verbs:     []string{"list", "watch", "create"},
+			},
 		},
 	}
 }

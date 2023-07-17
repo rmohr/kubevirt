@@ -28,6 +28,7 @@ import (
 	"github.com/onsi/gomega"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"kubevirt.io/kubevirt/pkg/certificates/bootstrap"
 	"kubevirt.io/kubevirt/pkg/certificates/triple/cert"
 	"kubevirt.io/kubevirt/pkg/virt-operator/resource/generate/components"
 
@@ -83,6 +84,17 @@ func EnsurePodsCertIsSynced(labelSelector string, namespace string, port string)
 	}).WithTimeout(90*time.Second).WithPolling(time.Second).Should(gomega.BeTrue(), "certificates across '%s' pods are not in sync", labelSelector)
 	if len(certs) > 0 {
 		return certs[0]
+	}
+	return nil
+}
+
+// GetCertFromSecret returns the certificate in the given secret in the KubeVirt install namespace.
+func GetCertFromSecret(secretName string) []byte {
+	virtClient := kubevirt.Client()
+	secret, err := virtClient.CoreV1().Secrets(flags.KubeVirtInstallNamespace).Get(context.Background(), secretName, v1.GetOptions{})
+	gomega.Expect(err).ToNot(gomega.HaveOccurred())
+	if rawBundle, ok := secret.Data[bootstrap.CertBytesValue]; ok {
+		return rawBundle
 	}
 	return nil
 }

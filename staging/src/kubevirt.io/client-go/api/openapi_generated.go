@@ -345,6 +345,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"kubevirt.io/api/core/v1.CPUFeature":                                                         schema_kubevirtio_api_core_v1_CPUFeature(ref),
 		"kubevirt.io/api/core/v1.CPUTopology":                                                        schema_kubevirtio_api_core_v1_CPUTopology(ref),
 		"kubevirt.io/api/core/v1.CertConfig":                                                         schema_kubevirtio_api_core_v1_CertConfig(ref),
+		"kubevirt.io/api/core/v1.CertManagerConfiguration":                                           schema_kubevirtio_api_core_v1_CertManagerConfiguration(ref),
 		"kubevirt.io/api/core/v1.Chassis":                                                            schema_kubevirtio_api_core_v1_Chassis(ref),
 		"kubevirt.io/api/core/v1.ClientPassthroughDevices":                                           schema_kubevirtio_api_core_v1_ClientPassthroughDevices(ref),
 		"kubevirt.io/api/core/v1.Clock":                                                              schema_kubevirtio_api_core_v1_Clock(ref),
@@ -18081,6 +18082,36 @@ func schema_kubevirtio_api_core_v1_CertConfig(ref common.ReferenceCallback) comm
 	}
 }
 
+func schema_kubevirtio_api_core_v1_CertManagerConfiguration(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"issuerRef": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("k8s.io/api/core/v1.TypedLocalObjectReference"),
+						},
+					},
+					"duration": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.Duration"),
+						},
+					},
+					"caBundleConfigMapRef": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("k8s.io/api/core/v1.TypedLocalObjectReference"),
+						},
+					},
+				},
+				Required: []string{"issuerRef", "caBundleConfigMapRef"},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/api/core/v1.TypedLocalObjectReference", "k8s.io/apimachinery/pkg/apis/meta/v1.Duration"},
+	}
+}
+
 func schema_kubevirtio_api_core_v1_Chassis(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -21283,11 +21314,16 @@ func schema_kubevirtio_api_core_v1_KubeVirtCertificateRotateStrategy(ref common.
 							Ref: ref("kubevirt.io/api/core/v1.KubeVirtSelfSignConfiguration"),
 						},
 					},
+					"certManager": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("kubevirt.io/api/core/v1.CertManagerConfiguration"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"kubevirt.io/api/core/v1.KubeVirtSelfSignConfiguration"},
+			"kubevirt.io/api/core/v1.CertManagerConfiguration", "kubevirt.io/api/core/v1.KubeVirtSelfSignConfiguration"},
 	}
 }
 

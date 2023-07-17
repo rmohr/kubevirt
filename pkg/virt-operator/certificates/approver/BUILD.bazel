@@ -1,0 +1,33 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["approver.go"],
+    importpath = "kubevirt.io/kubevirt/pkg/virt-operator/certificates/approver",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/virt-operator/certificates:go_default_library",
+        "//staging/src/kubevirt.io/client-go/kubecli:go_default_library",
+        "//staging/src/kubevirt.io/client-go/log:go_default_library",
+        "//vendor/github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1:go_default_library",
+        "//vendor/github.com/cert-manager/cert-manager/pkg/apis/meta/v1:go_default_library",
+        "//vendor/github.com/cert-manager/cert-manager/pkg/client/clientset/versioned:go_default_library",
+        "//vendor/k8s.io/api/authorization/v1:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/apis/meta/v1:go_default_library",
+        "//vendor/k8s.io/client-go/kubernetes:go_default_library",
+        "//vendor/k8s.io/client-go/tools/cache:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "approver_suite_test.go",
+        "approver_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//staging/src/kubevirt.io/client-go/testutils:go_default_library",
+        "//vendor/github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1:go_default_library",
+    ],
+)

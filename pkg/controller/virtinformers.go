@@ -68,6 +68,9 @@ import (
 	cdiv1 "kubevirt.io/containerized-data-importer-api/pkg/apis/core/v1beta1"
 
 	"kubevirt.io/kubevirt/pkg/testutils"
+
+	cmapi "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
+	cmclient "github.com/cert-manager/cert-manager/pkg/client/clientset/versioned"
 )
 
 const (
@@ -158,6 +161,9 @@ type KubeInformerFactory interface {
 
 	// Watches for the kubevirt CA config map
 	KubeVirtCAConfigMap() cache.SharedIndexInformer
+
+	// Watches for the cabundle config map
+	CaBundleConfigMap(name string) cache.SharedIndexInformer
 
 	// Watches for the kubevirt export CA config map
 	KubeVirtExportCAConfigMap() cache.SharedIndexInformer
@@ -318,6 +324,8 @@ type KubeInformerFactory interface {
 	ResourceQuota() cache.SharedIndexInformer
 
 	K8SInformerFactory() informers.SharedInformerFactory
+
+	CertificateRequest() cache.SharedIndexInformer
 }
 
 type kubeInformerFactory struct {
@@ -933,6 +941,15 @@ func (f *kubeInformerFactory) KubeVirtCAConfigMap() cache.SharedIndexInformer {
 	})
 }
 
+func (f *kubeInformerFactory) CaBundleConfigMap(name string) cache.SharedIndexInformer {
+	return f.getInformer(fmt.Sprintf("CaBundleConfigMap%sInformer", name), func() cache.SharedIndexInformer {
+		restClient := f.clientSet.CoreV1().RESTClient()
+		fieldSelector := fields.OneTermEqualSelector("metadata.name", name)
+		lw := cache.NewListWatchFromClient(restClient, "configmaps", f.kubevirtNamespace, fieldSelector)
+		return cache.NewSharedIndexInformer(lw, &k8sv1.ConfigMap{}, f.defaultResync, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc})
+	})
+}
+
 func (f *kubeInformerFactory) KubeVirtExportCAConfigMap() cache.SharedIndexInformer {
 	return f.getInformer("extensionsKubeVirtExportCAConfigMapInformer", func() cache.SharedIndexInformer {
 		restClient := f.clientSet.CoreV1().RESTClient()
@@ -1433,4 +1450,23 @@ func VolumeSnapshotClassInformer(clientSet kubecli.KubevirtClient, resyncPeriod 
 	restClient := clientSet.KubernetesSnapshotClient().SnapshotV1().RESTClient()
 	lw := cache.NewListWatchFromClient(restClient, "volumesnapshotclasses", k8sv1.NamespaceAll, fields.Everything())
 	return cache.NewSharedIndexInformer(lw, &vsv1.VolumeSnapshotClass{}, resyncPeriod, cache.Indexers{})
+}
+
+// CertificateRequest returns an informer for CertificateRequests
+func (f *kubeInformerFactory) CertificateRequest() cache.SharedIndexInformer {
+	return f.getInformer("certificateRequestInformer", func() cache.SharedIndexInformer {
+		restConfig, err := kubecli.GetKubevirtClientConfig()
+		if err != nil {
+			log.DefaultLogger().Reason(err).Errorf("failed to get kubevirt client")
+		}
+
+		clientSet, err := cmclient.NewForConfig(restConfig)
+		// cmClient, err := cmclient.NewForConfig(clientSet.Config())
+		if err != nil {
+			log.DefaultLogger().Reason(err).Errorf("failed to create cmClient")
+		}
+		// restClient := f.clientSet.CoreV1().RESTClient()
+		lw := cache.NewListWatchFromClient(clientSet.CertmanagerV1().RESTClient(), "certificaterequests", f.kubevirtNamespace, fields.Everything())
+		return cache.NewSharedIndexInformer(lw, &cmapi.CertificateRequest{}, f.defaultResync, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc})
+	})
 }

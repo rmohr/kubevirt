@@ -101,6 +101,9 @@ integ-test:
 functest: build-functests
 	hack/functests.sh
 
+install-cert-manager:
+	./cluster-up/kubectl.sh apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.11.0/cert-manager.yaml
+
 dump: bazel-build
 	hack/dump.sh
 

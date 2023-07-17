@@ -24,6 +24,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -44,6 +45,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/client-go/util/certificate"
 	certificate2 "k8s.io/client-go/util/certificate"
 	"k8s.io/client-go/util/flowcontrol"
 	aggregatorclient "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
@@ -906,8 +908,41 @@ func (app *virtAPIApp) readRequestHeader() error {
 }
 
 func (app *virtAPIApp) prepareCertManager() {
-	app.certmanager = bootstrap.NewFileCertificateManager(app.tlsCertFilePath, app.tlsKeyFilePath)
-	app.handlerCertManager = bootstrap.NewFileCertificateManager(app.handlerCertFilePath, app.handlerKeyFilePath)
+	if app.PodName == "" {
+		defaultHostName, err := os.Hostname()
+		if err != nil {
+			panic(err)
+		}
+		app.PodName = defaultHostName
+	}
+	var err error
+	app.Namespace, err = clientutil.GetNamespace()
+	if err != nil {
+		panic(err)
+	}
+	if app.Name == "" {
+		app.Name = components.VirtApiServiceName
+	}
+	kv := app.clusterConfig.GetConfigFromKubeVirtCR()
+	if kv.Spec.CertificateRotationStrategy.CertManager != nil {
+		app.certmanager = app.SetupCertificateManager(app.clusterConfig, func(certStore certificate.Store, name string, component string, dnsSANs []string, ipSANs []net.IP, namespace string, clusterConfig *virtconfig.ClusterConfig) *bootstrap.CertificateRequestCertificateManagerConfig {
+			namespacedName := fmt.Sprintf("%s.%s", components.VirtApiServiceName, app.namespace)
+			internalAPIServerFQDN := append([]string{
+				fmt.Sprintf("%s.svc", namespacedName),
+			}, dnsSANs...)
+			return bootstrap.LoadCertConfigForService(certStore, name, component, internalAPIServerFQDN, ipSANs, namespace, clusterConfig)
+		})
+		app.handlerCertManager = app.SetupCertificateManager(app.clusterConfig, func(certStore certificate.Store, name string, component string, dnsSANs []string, ipSANs []net.IP, namespace string, clusterConfig *virtconfig.ClusterConfig) *bootstrap.CertificateRequestCertificateManagerConfig {
+			namespacedName := fmt.Sprintf("%s.%s", components.VirtApiServiceName, app.namespace)
+			internalAPIServerFQDN := append([]string{
+				fmt.Sprintf("%s.svc", namespacedName),
+			}, dnsSANs...)
+			return bootstrap.LoadCertConfigForClient(certStore, name, component, internalAPIServerFQDN, ipSANs, namespace, clusterConfig)
+		})
+	} else {
+		app.certmanager = bootstrap.NewFileCertificateManager(app.tlsCertFilePath, app.tlsKeyFilePath)
+		app.handlerCertManager = bootstrap.NewFileCertificateManager(app.handlerCertFilePath, app.handlerKeyFilePath)
+	}
 }
 
 func (app *virtAPIApp) registerValidatingWebhooks(informers *webhooks.Informers) {
@@ -1011,7 +1046,7 @@ func (app *virtAPIApp) setupTLS(k8sCAManager kvtls.ClientCAManager, kubevirtCAMa
 	app.handlerTLSConfiguration = kvtls.SetupTLSForVirtHandlerClients(kubevirtCAManager, app.handlerCertManager, app.externallyManaged)
 }
 
-func (app *virtAPIApp) startTLS(informerFactory controller.KubeInformerFactory) error {
+func (app *virtAPIApp) startTLS(informerFactory controller.KubeInformerFactory, stopChan chan struct{}) error {
 
 	errors := make(chan error)
 	c := make(chan os.Signal, 1)
@@ -1024,10 +1059,21 @@ func (app *virtAPIApp) startTLS(informerFactory controller.KubeInformerFactory) 
 	)
 
 	authConfigMapInformer := informerFactory.ApiAuthConfigMap()
-	kubevirtCAConfigInformer := informerFactory.KubeVirtCAConfigMap()
-
 	k8sCAManager := kvtls.NewKubernetesClientCAManager(authConfigMapInformer.GetStore())
-	kubevirtCAInformer := kvtls.NewCAManager(kubevirtCAConfigInformer.GetStore(), app.namespace, app.caConfigMapName)
+
+	kv := app.clusterConfig.GetConfigFromKubeVirtCR()
+	var kubevirtCAInformer kvtls.ClientCAManager
+	if kv.Spec.CertificateRotationStrategy.CertManager != nil {
+		cmName := kv.Spec.CertificateRotationStrategy.CertManager.CaBundleConfigMapRef.Name
+		caBundleInformer := informerFactory.CaBundleConfigMap(cmName)
+		kubevirtCAInformer = kvtls.NewCAManager(caBundleInformer.GetStore(), app.namespace, cmName)
+	} else {
+		kubevirtCAConfigInformer := informerFactory.KubeVirtCAConfigMap()
+		kubevirtCAInformer = kvtls.NewCAManager(kubevirtCAConfigInformer.GetStore(), app.namespace, app.caConfigMapName)
+	}
+	informerFactory.Start(stopChan)
+	informerFactory.WaitForCacheSync(stopChan)
+
 	app.setupTLS(k8sCAManager, kubevirtCAInformer)
 
 	app.Compose()
@@ -1101,9 +1147,6 @@ func (app *virtAPIApp) Run() {
 		panic(err)
 	}
 
-	// Get/Set selfsigned cert
-	app.prepareCertManager()
-
 	// Run informers for webhooks usage
 	kubeInformerFactory := controller.NewKubeInformerFactory(app.virtCli.RestClient(), app.virtCli, app.aggregatorClient, app.namespace)
 
@@ -1134,6 +1177,7 @@ func (app *virtAPIApp) Run() {
 	app.clusterConfig.SetConfigModifiedCallback(app.configModificationCallback)
 	app.clusterConfig.SetConfigModifiedCallback(app.shouldChangeLogVerbosity)
 	app.clusterConfig.SetConfigModifiedCallback(app.shouldChangeRateLimiter)
+	app.clusterConfig.SetConfigModifiedCallback(app.shouldUpdateCertificateManager)
 
 	var dataSourceInformer cache.SharedIndexInformer
 	if app.hasCDIDataSource {
@@ -1164,16 +1208,18 @@ func (app *virtAPIApp) Run() {
 	app.registerMutatingWebhook(webhookInformers)
 	app.registerValidatingWebhooks(webhookInformers)
 
+	// Get/Set selfsigned cert
+	app.prepareCertManager()
+
 	go app.certmanager.Start()
 	go app.handlerCertManager.Start()
 
 	// start TLS server
 	// tls server will only accept connections when fetching a certificate and internal configuration passed once
-	err = app.startTLS(kubeInformerFactory)
+	err = app.startTLS(kubeInformerFactory, stopChan)
 	if err != nil {
 		panic(err)
 	}
-
 }
 
 // Detects if a config has been applied that requires
@@ -1208,6 +1254,27 @@ func (app *virtAPIApp) shouldChangeRateLimiter() {
 	burst = config.WebhookConfiguration.RestClient.RateLimiter.TokenBucketRateLimiter.Burst
 	app.reloadableWebhookRateLimiter.Set(flowcontrol.NewTokenBucketRateLimiter(qps, burst))
 	log.Log.V(2).Infof("setting rate limiter for webhooks to %v QPS and %v Burst", qps, burst)
+}
+
+func (app *virtAPIApp) shouldUpdateCertificateManager() {
+
+	kv := app.clusterConfig.GetConfigFromKubeVirtCR()
+	if kv == nil {
+		log.Log.V(2).Infof("kubevirt is nil")
+		return
+	}
+	switch app.certmanager.(type) {
+	case *bootstrap.CertificateRequestCertificateManager:
+		if kv.Spec.CertificateRotationStrategy.CertManager == nil {
+			log.Log.V(2).Infof("change certificate manager to selfsigned")
+			os.Exit(0)
+		}
+	case *bootstrap.FileCertificateManager:
+		if kv.Spec.CertificateRotationStrategy.CertManager != nil {
+			log.Log.V(2).Infof("change certificate manager to cert-manager")
+			os.Exit(0)
+		}
+	}
 }
 
 func (app *virtAPIApp) AddFlags() {

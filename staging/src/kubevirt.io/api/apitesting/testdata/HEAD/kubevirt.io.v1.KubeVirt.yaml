@@ -34,6 +34,16 @@ metadata:
   uid: uidValue
 spec:
   certificateRotateStrategy:
+    certManager:
+      caBundleConfigMapRef:
+        apiGroup: apiGroupValue
+        kind: kindValue
+        name: nameValue
+      duration: 1ns
+      issuerRef:
+        apiGroup: apiGroupValue
+        kind: kindValue
+        name: nameValue
     selfSigned:
       ca:
         duration: 1ns

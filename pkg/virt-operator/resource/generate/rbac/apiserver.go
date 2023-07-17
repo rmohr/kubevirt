@@ -353,6 +353,11 @@ func newApiServerRole(namespace string) *rbacv1.Role {
 					"get", "list", "watch",
 				},
 			},
+			{
+				APIGroups: []string{"cert-manager.io"},
+				Resources: []string{"certificaterequests"},
+				Verbs:     []string{"list", "watch", "create"},
+			},
 		},
 	}
 }

@@ -566,6 +566,10 @@ func (KubeVirtSelfSignConfiguration) SwaggerDoc() map[string]string {
 	}
 }
 
+func (CertManagerConfiguration) SwaggerDoc() map[string]string {
+	return map[string]string{}
+}
+
 func (CertConfig) SwaggerDoc() map[string]string {
 	return map[string]string{
 		"":            "CertConfig contains the tunables for TLS certificates",

@@ -35,6 +35,7 @@ import (
 	launcher_clients "kubevirt.io/kubevirt/pkg/virt-handler/launcher-clients"
 	"kubevirt.io/kubevirt/pkg/virt-handler/seccomp"
 	"kubevirt.io/kubevirt/pkg/virt-handler/vsock"
+	"kubevirt.io/kubevirt/pkg/virt-operator/resource/generate/components"
 
 	"github.com/emicklei/go-restful/v3"
 	flag "github.com/spf13/pflag"
@@ -125,7 +126,6 @@ const (
 type virtHandlerApp struct {
 	service.ServiceListen
 	HostOverride              string
-	PodIpAddress              string
 	VirtShareDir              string
 	VirtPrivateDir            string
 	KubeletPodsDir            string
@@ -163,8 +163,26 @@ var (
 )
 
 func (app *virtHandlerApp) prepareCertManager() (err error) {
-	app.clientcertmanager = bootstrap.NewFileCertificateManager(app.clientCertFilePath, app.clientKeyFilePath)
-	app.servercertmanager = bootstrap.NewFileCertificateManager(app.serverCertFilePath, app.serverKeyFilePath)
+	kv := app.clusterConfig.GetConfigFromKubeVirtCR()
+	if app.PodName == "" {
+		app.PodName = app.HostOverride
+	}
+	if app.Name == "" {
+		app.Name = components.VirtHandlerServiceName
+	}
+	app.Namespace, err = clientutil.GetNamespace()
+	log.DefaultLogger().Infof("namespace is %v", app.Namespace)
+	if err != nil {
+		panic(err)
+	}
+
+	if kv.Spec.CertificateRotationStrategy.CertManager != nil {
+		app.clientcertmanager = app.SetupCertificateManager(app.clusterConfig, bootstrap.LoadCertConfigForClient)
+		app.servercertmanager = app.SetupCertificateManager(app.clusterConfig, bootstrap.LoadCertConfigForNode)
+	} else {
+		app.clientcertmanager = bootstrap.NewFileCertificateManager(app.clientCertFilePath, app.clientKeyFilePath)
+		app.servercertmanager = bootstrap.NewFileCertificateManager(app.serverCertFilePath, app.serverKeyFilePath)
+	}
 	return
 }
 
@@ -257,11 +275,6 @@ func (app *virtHandlerApp) Run() {
 	cmdclient.SetPodsBaseDir("/pods")
 	containerdisk.SetKubeletPodsDirectory(app.KubeletPodsDir)
 
-	if err := app.prepareCertManager(); err != nil {
-		logger.Criticalf("Error preparing the certificate manager: %v", err)
-		os.Exit(2)
-	}
-
 	podIsolationDetector := isolation.NewSocketBasedIsolationDetector(app.VirtShareDir)
 	app.clusterConfig, err = virtconfig.NewClusterConfig(factory.CRD(), factory.KubeVirt(), app.namespace)
 	if err != nil {
@@ -271,6 +284,7 @@ func (app *virtHandlerApp) Run() {
 	app.clusterConfig.SetConfigModifiedCallback(app.shouldChangeLogVerbosity)
 	app.clusterConfig.SetConfigModifiedCallback(app.shouldChangeRateLimiter)
 	app.clusterConfig.SetConfigModifiedCallback(app.shouldInstallKubevirtSeccompProfile)
+	app.clusterConfig.SetConfigModifiedCallback(app.shouldUpdateCertificateManager)
 	go func() {
 		forceUpdateKSM := func() { virthandler.HandleKSMUpdate(app.HostOverride, app.virtCli.CoreV1(), app.clusterConfig, true) }
 		handleKSMUpdate := func() { virthandler.HandleKSMUpdate(app.HostOverride, app.virtCli.CoreV1(), app.clusterConfig, false) }
@@ -278,7 +292,15 @@ func (app *virtHandlerApp) Run() {
 		forceUpdateKSM()
 		app.clusterConfig.SetConfigModifiedCallback(handleKSMUpdate)
 	}()
+	stop := make(chan struct{})
+	defer close(stop)
+	factory.Start(stop)
+	cache.WaitForCacheSync(stop, factory.KubeVirt().HasSynced)
 
+	if err := app.prepareCertManager(); err != nil {
+		logger.Criticalf("Error preparing the certificate manager: %v", err)
+		os.Exit(2)
+	}
 	if err := app.setupTLS(factory); err != nil {
 		logger.Criticalf("Error constructing migration tls config: %v", err)
 		os.Exit(2)
@@ -297,8 +319,6 @@ func (app *virtHandlerApp) Run() {
 
 	migrationProxy := migrationproxy.NewMigrationProxyManager(app.serverTLSConfig, app.clientTLSConfig, app.clusterConfig)
 
-	stop := make(chan struct{})
-	defer close(stop)
 	var capabilities libvirtxml.Caps
 	var hostCpuModel string
 
@@ -414,7 +434,6 @@ func (app *virtHandlerApp) Run() {
 	go app.servercertmanager.Start()
 
 	// Bootstrapping. From here on the startup order matters
-
 	factory.Start(stop)
 	go domainSharedInformer.Run(stop)
 
@@ -549,6 +568,26 @@ func (app *virtHandlerApp) shouldInstallKubevirtSeccompProfile() {
 
 }
 
+func (app *virtHandlerApp) shouldUpdateCertificateManager() {
+	kv := app.clusterConfig.GetConfigFromKubeVirtCR()
+	if kv == nil {
+		log.Log.V(2).Infof("kubevirt is nil")
+		return
+	}
+	switch app.clientcertmanager.(type) {
+	case *bootstrap.CertificateRequestCertificateManager:
+		if kv.Spec.CertificateRotationStrategy.CertManager == nil {
+			log.Log.V(2).Infof("change certificate manager to selfsigned")
+			os.Exit(0)
+		}
+	case *bootstrap.FileCertificateManager:
+		if kv.Spec.CertificateRotationStrategy.CertManager != nil {
+			log.Log.V(2).Infof("change certificate manager to cert-manager")
+			os.Exit(0)
+		}
+	}
+}
+
 func (app *virtHandlerApp) runPrometheusServer(errCh chan error) {
 	mux := restful.NewContainer()
 	webService := new(restful.WebService)
@@ -614,9 +653,6 @@ func (app *virtHandlerApp) AddFlags() {
 	flag.StringVar(&app.HostOverride, "hostname-override", hostOverride,
 		"Name under which the node is registered in Kubernetes, where this virt-handler instance is running on")
 
-	flag.StringVar(&app.PodIpAddress, "pod-ip-address", podIpAddress,
-		"The pod ip address")
-
 	flag.StringVar(&app.VirtShareDir, "kubevirt-share-dir", util.VirtShareDir,
 		"Shared directory between virt-handler and virt-launcher")
 
@@ -670,12 +706,33 @@ func (app *virtHandlerApp) AddFlags() {
 }
 
 func (app *virtHandlerApp) setupTLS(factory controller.KubeInformerFactory) error {
-	kubevirtCAConfigInformer := factory.KubeVirtCAConfigMap()
-	kubevirtCAConfigInformer.SetWatchErrorHandler(func(r *cache.Reflector, err error) {
-		apiHealthVersion.Clear()
-		cache.DefaultWatchErrorHandler(r, err)
-	})
-	app.caManager = kvtls.NewCAManager(kubevirtCAConfigInformer.GetStore(), app.namespace, app.caConfigMapName)
+
+	kv := app.clusterConfig.GetConfigFromKubeVirtCR()
+
+	if kv.Spec.CertificateRotationStrategy.CertManager != nil {
+		cmName := kv.Spec.CertificateRotationStrategy.CertManager.CaBundleConfigMapRef.Name
+		caBundleInformer := factory.CaBundleConfigMap(cmName)
+		caBundleInformer.SetWatchErrorHandler(func(r *cache.Reflector, err error) {
+			// Clear() resets apiHealthVersion to be nil and so /healthz check will fetch
+			// the api version again from api-server.
+			// Disable Clear() in virt-handler to avoid it failing /healthz check when it
+			// loses connection with api-server. BUG: http://b/197160080.
+			// apiHealthVersion.Clear()
+			cache.DefaultWatchErrorHandler(r, err)
+		})
+		app.caManager = kvtls.NewCAManager(caBundleInformer.GetStore(), app.namespace, cmName)
+	} else {
+		kubevirtCAConfigInformer := factory.KubeVirtCAConfigMap()
+		kubevirtCAConfigInformer.SetWatchErrorHandler(func(r *cache.Reflector, err error) {
+			// Clear() resets apiHealthVersion to be nil and so /healthz check will fetch
+			// the api version again from api-server.
+			// Disable Clear() in virt-handler to avoid it failing /healthz check when it
+			// loses connection with api-server. BUG: http://b/197160080.
+			// apiHealthVersion.Clear()
+			cache.DefaultWatchErrorHandler(r, err)
+		})
+		app.caManager = kvtls.NewCAManager(kubevirtCAConfigInformer.GetStore(), app.namespace, app.caConfigMapName)
+	}
 
 	app.promTLSConfig = kvtls.SetupPromTLS(app.servercertmanager, app.clusterConfig)
 	app.serverTLSConfig = kvtls.SetupTLSForVirtHandlerServer(app.caManager, app.servercertmanager, app.externallyManaged, app.clusterConfig)

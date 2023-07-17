@@ -548,6 +548,22 @@ func NewOperatorRole(namespace string) *rbacv1.Role {
 					"get", "list", "watch", "delete", "update", "create", "patch",
 				},
 			},
+			{
+				APIGroups: []string{"cert-manager.io"},
+				Resources: []string{"certificaterequests/status"},
+				Verbs:     []string{"update"},
+			},
+			{
+				APIGroups: []string{"cert-manager.io"},
+				Resources: []string{"certificaterequests"},
+				Verbs:     []string{"list", "watch", "create", "delete"},
+			},
+			{
+				APIGroups:     []string{"cert-manager.io"},
+				Resources:     []string{"signers"},
+				Verbs:         []string{"approve"},
+				ResourceNames: []string{"issuers.cert-manager.io/*"},
+			},
 		},
 	}
 	operatorRole.Rules = append(operatorRole.Rules, getKubeVirtComponentsRules()...)

@@ -76,6 +76,19 @@
           "duration": "1ns",
           "renewBefore": "1ns"
         }
+      },
+      "certManager": {
+        "issuerRef": {
+          "apiGroup": "apiGroupValue",
+          "kind": "kindValue",
+          "name": "nameValue"
+        },
+        "duration": "1ns",
+        "caBundleConfigMapRef": {
+          "apiGroup": "apiGroupValue",
+          "kind": "kindValue",
+          "name": "nameValue"
+        }
       }
     },
     "productVersion": "productVersionValue",

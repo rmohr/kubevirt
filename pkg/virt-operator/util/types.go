@@ -64,6 +64,7 @@ type Stores struct {
 	ValidatingAdmissionPolicyCache        cache.Store
 	ClusterInstancetype                   cache.Store
 	ClusterPreference                     cache.Store
+	CertificateRequestCache               cache.Store
 }
 
 func (s *Stores) AllEmpty() bool {
@@ -170,6 +171,7 @@ type Informers struct {
 	ValidatingAdmissionPolicy        cache.SharedIndexInformer
 	ClusterInstancetype              cache.SharedIndexInformer
 	ClusterPreference                cache.SharedIndexInformer
+	CertificateRequest               cache.SharedIndexInformer
 }
 
 func (e *Expectations) DeleteExpectations(key string) {

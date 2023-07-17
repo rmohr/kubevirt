@@ -26,9 +26,12 @@ import (
 	"io"
 	"net/http"
 	"net/http/httputil"
+	"os"
 	"regexp"
 
 	kvtls "kubevirt.io/kubevirt/pkg/util/tls"
+	virtconfig "kubevirt.io/kubevirt/pkg/virt-config"
+	"kubevirt.io/kubevirt/pkg/virt-operator/resource/generate/components"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"k8s.io/client-go/tools/cache"
@@ -60,6 +63,7 @@ type exportProxyApp struct {
 	tlsKeyFilePath  string
 	certManager     certificate2.Manager
 	caManager       kvtls.ClientCAManager
+	clusterConfig   *virtconfig.ClusterConfig
 	exportStore     cache.Store
 	kubeVirtStore   cache.Store
 }
@@ -191,10 +195,35 @@ func (app *exportProxyApp) prepareInformers(stopChan <-chan struct{}) {
 	kubeInformerFactory.WaitForCacheSync(stopChan)
 
 	app.caManager = kvtls.NewCAManager(caInformer.GetStore(), namespace, "kubevirt-export-ca")
+
+	app.clusterConfig, err = virtconfig.NewClusterConfig(kubeInformerFactory.CRD(), kubeInformerFactory.KubeVirt(), namespace)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func (app *exportProxyApp) prepareCertManager() {
-	app.certManager = bootstrap.NewFileCertificateManager(app.tlsCertFilePath, app.tlsKeyFilePath)
+	kv := app.clusterConfig.GetConfigFromKubeVirtCR()
+	if app.Name == "" {
+		app.Name = components.VirtExportProxyServiceName
+	}
+	if app.PodName == "" {
+		defaultHostName, err := os.Hostname()
+		if err != nil {
+			panic(err)
+		}
+		app.PodName = defaultHostName
+	}
+	var err error
+	app.Namespace, err = clientutil.GetNamespace()
+	if err != nil {
+		panic(err)
+	}
+	if kv.Spec.CertificateRotationStrategy.CertManager != nil {
+		app.certManager = app.SetupCertificateManager(app.clusterConfig, bootstrap.LoadCertConfigForService)
+	} else {
+		app.certManager = bootstrap.NewFileCertificateManager(app.tlsCertFilePath, app.tlsKeyFilePath)
+	}
 }
 
 func main() {
